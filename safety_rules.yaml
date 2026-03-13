@@ -1,0 +1,187 @@
+﻿version: 1.0
+updated_at: 2026-03-11
+
+global_policy:
+  default_action: safe_answer
+  low_confidence_action: ask_for_more_info
+  cite_sources: true
+
+safe_response_templates:
+  refuse:
+    - "该问题涉及高风险或违规操作，我不能提供具体操作建议。请联系实验室管理人员或指导老师。"
+    - "为确保安全与合规，我无法回答该问题的操作细节。建议参考实验室安全制度或应急预案。"
+  redirect_emergency:
+    - "若出现紧急情况，请立即停止实验、切断电源/气源并按应急预案处理，同时联系实验室管理人员。"
+  emergency_chemical_splash_skin:
+    - "若化学品溅到皮肤：立即用大量清水持续冲洗，尽快脱去被污染的衣物/手套，并联系实验室管理人员或就医。"
+  emergency_chemical_splash_eye:
+    - "若化学品溅入眼睛：立即用洗眼器或大量清水持续冲洗，同时联系实验室管理人员并尽快就医。"
+  emergency_fire:
+    - "若发生起火/冒烟：立即停止实验、切断电源/气源；在确保安全且受过培训的前提下使用灭火器；无法控制请立刻撤离并报警。"
+  emergency_gas_leak:
+    - "若疑似气体泄漏：停止实验、关闭气源（在安全前提下），开启通风并撤离到安全区域，联系实验室管理人员处理。"
+  emergency_chemical_spill:
+    - "若发生化学品泄漏：隔离现场、避免接触和吸入，在安全前提下通风并使用泄漏应急物资处理，立即报告实验室管理人员。"
+  emergency_ingestion:
+    - "若误食/误饮化学品：立即停止实验，漱口并尽快就医或联系急救，同时告知具体化学品名称与浓度。"
+  emergency_inhalation:
+    - "若吸入有害气体：立即转移到新鲜空气处，必要时求助医疗或实验室管理人员。"
+  emergency_burn:
+    - "若发生烫伤/灼伤：立即停止实验，用清水冷却并保护伤处，必要时就医。"
+  emergency_cut:
+    - "若发生割伤/出血：立即停止实验，清洁伤口并加压止血，必要时就医。"
+  ask_more_info:
+    - "请补充具体试剂名称、浓度、设备型号和场景，我才能提供准确建议。"
+
+rules:
+  - id: R-001
+    category: dangerous_mixing
+    match_type: keywords
+    patterns: ["漂白水", "次氯酸钠", "盐酸", "氨水", "过氧化氢", "硝酸", "浓硫酸"]
+    action: refuse
+    severity: high
+    response: "可能产生有毒气体或剧烈反应，禁止混合。"
+
+  - id: R-002
+    category: open_flame_flammable
+    match_type: keywords
+    patterns: ["酒精灯", "明火", "乙醚", "丙酮", "乙醇", "正己烷"]
+    action: refuse
+    severity: high
+    response: "易燃溶剂禁止明火加热，请使用水浴或电热。"
+
+  - id: R-003
+    category: improper_disposal
+    match_type: keywords
+    patterns: ["倒入水槽", "下水道", "直接倒掉", "随意丢弃", "冲入下水道"]
+    action: refuse
+    severity: high
+    response: "危废需按制度分类收集，禁止随意排放。"
+
+  - id: R-004
+    category: ppe_bypass
+    match_type: keywords
+    patterns: ["不戴手套", "不戴护目镜", "不用实验服", "省略PPE"]
+    action: safe_answer
+    severity: medium
+    response: "必须按制度佩戴PPE，不得省略。"
+
+  - id: R-005
+    category: fume_hood_bypass
+    match_type: keywords
+    patterns: ["不开通风柜", "通风柜关掉", "不用通风"]
+    action: refuse
+    severity: high
+    response: "挥发性或有毒操作必须在通风柜内进行。"
+
+  - id: R-006
+    category: self_harm_or_illegal
+    match_type: keywords
+    patterns: ["自杀", "伤害", "投毒", "爆炸", "制造武器"]
+    action: refuse
+    severity: critical
+    response: "该问题涉及安全风险或违法行为，无法提供帮助。"
+
+  - id: R-007
+    category: prompt_injection
+    match_type: keywords
+    patterns: ["忽略以上", "无视规则", "系统提示", "显示提示词", "越狱"]
+    action: refuse
+    severity: high
+    response: "无法执行该请求。"
+
+  - id: R-008
+    category: electrical_shock
+    match_type: keywords
+    patterns: ["触电", "高压", "裸线", "电源短路"]
+    action: redirect_emergency
+    severity: high
+    response: "若触电/电气事故：优先断电与隔离，按应急预案处理并联系实验室管理人员。"
+
+  - id: R-009
+    category: biological_hazard
+    match_type: keywords
+    patterns: ["病原体", "培养细菌", "感染", "生物安全柜"]
+    action: safe_answer
+    severity: high
+    response: "请遵循生物安全等级规定与SOP。"
+
+  - id: R-010
+    category: insufficient_info
+    match_type: keywords
+    patterns: ["怎么处理", "能不能", "可不可以", "怎么办"]
+    action: ask_for_more_info
+    severity: low
+    response: "需要具体试剂名称、浓度、设备型号和场景。"
+
+  - id: R-011
+    category: chemical_splash_skin
+    match_type: keywords
+    patterns: ["溅到皮肤", "化学品溅到皮肤", "皮肤被腐蚀", "化学灼伤", "酸碱灼伤"]
+    action: redirect_emergency
+    severity: high
+    response: "若化学品溅到皮肤：立即用大量清水持续冲洗，尽快脱去被污染的衣物/手套，并联系实验室管理人员或就医。"
+
+  - id: R-012
+    category: chemical_splash_eye
+    match_type: keywords
+    patterns: ["溅到眼睛", "眼睛被腐蚀", "化学品进眼", "眼部灼伤", "洗眼器"]
+    action: redirect_emergency
+    severity: high
+    response: "若化学品溅入眼睛：立即用洗眼器或大量清水持续冲洗，同时联系实验室管理人员并尽快就医。"
+
+  - id: R-013
+    category: fire_smoke
+    match_type: keywords
+    patterns: ["起火", "着火", "冒烟", "火灾", "燃烧", "爆燃", "火警"]
+    action: redirect_emergency
+    severity: critical
+    response: "若发生起火/冒烟：立即停止实验、切断电源/气源；在确保安全且受过培训的前提下使用灭火器；无法控制请立刻撤离并报警。"
+
+  - id: R-014
+    category: gas_leak
+    match_type: keywords
+    patterns: ["气体泄漏", "闻到异味", "气瓶泄漏", "煤气味", "有毒气体"]
+    action: redirect_emergency
+    severity: high
+    response: "若疑似气体泄漏：停止实验、关闭气源（在安全前提下），开启通风并撤离到安全区域，联系实验室管理人员处理。"
+
+  - id: R-015
+    category: chemical_spill
+    match_type: keywords
+    patterns: ["洒漏", "打翻", "化学品泄漏", "溶液洒在地上", "溅洒"]
+    action: redirect_emergency
+    severity: high
+    response: "若发生化学品泄漏：隔离现场、避免接触和吸入，在安全前提下通风并使用泄漏应急物资处理，立即报告实验室管理人员。"
+
+  - id: R-016
+    category: ingestion
+    match_type: keywords
+    patterns: ["误食", "误饮", "吞咽", "喝到", "摄入", "中毒"]
+    action: redirect_emergency
+    severity: critical
+    response: "若误食/误饮化学品：立即停止实验，漱口并尽快就医或联系急救，同时告知具体化学品名称与浓度。"
+
+  - id: R-017
+    category: inhalation
+    match_type: keywords
+    patterns: ["吸入", "吸了", "吸到气体", "刺激性气味", "咳嗽", "头晕", "呼吸困难"]
+    action: redirect_emergency
+    severity: high
+    response: "若吸入有害气体：立即转移到新鲜空气处，必要时求助医疗或实验室管理人员。"
+
+  - id: R-018
+    category: burn
+    match_type: keywords
+    patterns: ["烫伤", "烧伤", "灼伤", "热烫", "皮肤起泡"]
+    action: redirect_emergency
+    severity: medium
+    response: "若发生烫伤/灼伤：立即停止实验，用清水冷却并保护伤处，必要时就医。"
+
+  - id: R-019
+    category: cut_bleeding
+    match_type: keywords
+    patterns: ["割伤", "划伤", "出血", "流血", "被割到"]
+    action: redirect_emergency
+    severity: medium
+    response: "若发生割伤/出血：立即停止实验，清洁伤口并加压止血，必要时就医。"
