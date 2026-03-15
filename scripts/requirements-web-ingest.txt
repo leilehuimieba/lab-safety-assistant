@@ -1,0 +1,2 @@
+httpx>=0.28,<0.29
+beautifulsoup4>=4.12,<5

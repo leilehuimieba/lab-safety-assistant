@@ -25,3 +25,5 @@ docker/volumes/
 
 __pycache__/
 *.pyc
+.venv/
+artifacts/

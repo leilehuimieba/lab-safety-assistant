@@ -1,0 +1,3 @@
+rule_id,path_pattern,force_ocr,body_start_page,skip_pages,notes
+PDF-RULE-EXAMPLE-001,_extracted\某目录_*\某文件.pdf,true,5,"1,2",示例：字体映射异常且前两页为封面或前言
+PDF-RULE-EXAMPLE-002,*高压绝缘电阻表.pdf,false,7,,示例：仅锁定正文起始页，不强制 OCR
