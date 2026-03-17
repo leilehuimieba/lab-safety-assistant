@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>实验室安全小助手 - 在线演示</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --sub: #64748b;
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+      --border: #dbe4ee;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 10% 10%, #d8f3ea, transparent 35%),
+                  radial-gradient(circle at 90% 0%, #dbeafe, transparent 35%),
+                  var(--bg);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .header {
+      margin-bottom: 16px;
+    }
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+    .header p {
+      margin: 0;
+      color: var(--sub);
+      line-height: 1.6;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+    }
+    .mode-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .mode-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #f8fafc;
+      cursor: pointer;
+      user-select: none;
+    }
+    .mode-option input {
+      margin: 0;
+    }
+    textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 15px;
+      resize: vertical;
+      min-height: 120px;
+      line-height: 1.6;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-ghost {
+      background: #e2e8f0;
+      color: #334155;
+    }
+    .result {
+      line-height: 1.7;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 120px;
+      overflow-wrap: anywhere;
+    }
+    .result p {
+      margin: 0 0 10px;
+    }
+    .result h1, .result h2, .result h3, .result h4 {
+      margin: 14px 0 8px;
+      line-height: 1.45;
+    }
+    .result ul, .result ol {
+      margin: 8px 0 12px 22px;
+      padding: 0;
+    }
+    .result li {
+      margin: 4px 0;
+    }
+    .result code {
+      background: #e2e8f0;
+      color: #0f172a;
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      font-size: 13px;
+    }
+    .result pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+      overflow-x: auto;
+      margin: 10px 0 12px;
+    }
+    .result pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+    .result blockquote {
+      margin: 10px 0;
+      padding: 8px 12px;
+      border-left: 4px solid #94a3b8;
+      background: #eef2f7;
+      color: #334155;
+    }
+    .result table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    .result th, .result td {
+      border: 1px solid #cbd5e1;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .muted { color: var(--sub); font-size: 13px; }
+
+    @media (min-width: 860px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <h1>实验室安全小助手 在线演示</h1>
+      <p>支持两种模式：项目协作智能体、实验室安全小助手。页面仅演示能力，不包含敏感配置。</p>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h3>提问区</h3>
+        <div class="mode-group">
+          <label class="mode-option">
+            <input type="radio" name="mode" value="agent" />
+            <span>项目协作智能体</span>
+          </label>
+          <label class="mode-option">
+            <input type="radio" name="mode" value="lab" checked />
+            <span>实验室安全小助手</span>
+          </label>
+        </div>
+        <textarea id="question" placeholder="例如：盐酸和漂白水能混用吗？如果误混了应该怎么应急处理？"></textarea>
+        <div class="actions">
+          <button class="btn-primary" id="sendBtn">发送问题</button>
+          <button class="btn-ghost" id="clearBtn">清空</button>
+        </div>
+        <p class="muted">建议一次只问一个场景问题，回答会更稳定。</p>
+      </div>
+
+      <div class="card">
+        <h3>回答区</h3>
+        <div id="result" class="result">等待提问...</div>
+        <p class="muted" id="metaInfo"></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <script>
+    const sendBtn = document.getElementById('sendBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const questionInput = document.getElementById('question');
+    const result = document.getElementById('result');
+    const metaInfo = document.getElementById('metaInfo');
+
+    function cleanModelText(raw) {
+      if (!raw) return '';
+      let text = String(raw);
+      // 去掉某些模型可能暴露的思考标签或中转噪声标记
+      text = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+      text = text.replace(/^\[WebSearch\].*$/gmi, '');
+      return text.trim();
+    }
+
+    function renderAnswer(rawText) {
+      const cleaned = cleanModelText(rawText);
+      if (!cleaned) {
+        result.textContent = '模型未返回文本。';
+        return;
+      }
+
+      // 具备 Markdown 渲染能力时，按 Markdown 渲染；否则降级为纯文本。
+      if (window.marked && window.DOMPurify) {
+        marked.setOptions({
+          breaks: true,
+          gfm: true
+        });
+        const html = marked.parse(cleaned);
+        result.innerHTML = DOMPurify.sanitize(html);
+      } else {
+        result.textContent = cleaned;
+      }
+    }
+
+    function getMode() {
+      const checked = document.querySelector('input[name="mode"]:checked');
+      return checked ? checked.value : 'lab';
+    }
+
+    async function ask() {
+      const question = questionInput.value.trim();
+      if (!question) {
+        result.textContent = '请先输入问题。';
+        return;
+      }
+
+      sendBtn.disabled = true;
+      sendBtn.textContent = '处理中...';
+      result.textContent = '正在请求模型，请稍候...';
+      metaInfo.textContent = '';
+
+      try {
+        const resp = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: getMode(), question })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) {
+          result.textContent = data.detail || '请求失败，请稍后再试。';
+          return;
+        }
+
+        renderAnswer(data.answer || '');
+        metaInfo.textContent = `模式：${data.mode} | 模型：${data.model}`;
+      } catch (err) {
+        result.textContent = `请求异常：${err.message}`;
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = '发送问题';
+      }
+    }
+
+    sendBtn.addEventListener('click', ask);
+    clearBtn.addEventListener('click', () => {
+      questionInput.value = '';
+      result.textContent = '等待提问...';
+      metaInfo.textContent = '';
+    });
+  </script>
+</body>
+</html>
