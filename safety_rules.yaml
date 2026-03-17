@@ -109,10 +109,13 @@ rules:
   - id: R-010
     category: insufficient_info
     match_type: keywords
-    patterns: ["怎么处理", "能不能", "可不可以", "怎么办"]
+    # 仅匹配真正缺少主语/对象的模糊提问，不得匹配含明确场景的应急问题
+    # 【重要】本规则优先级最低，仅在其他规则均未触发时使用
+    # 已移除 "怎么办" 和 "怎么处理"（太宽泛，会误触发应急类问题）
+    patterns: ["不知道该怎么", "这个能不能", "那个可不可以", "随便可以吗", "有什么要注意的"]
     action: ask_for_more_info
     severity: low
-    response: "需要具体试剂名称、浓度、设备型号和场景。"
+    response: "请补充具体的试剂/设备名称、浓度/型号和操作场景，我才能提供准确的安全建议。"
 
   - id: R-011
     category: chemical_splash_skin
@@ -185,3 +188,43 @@ rules:
     action: redirect_emergency
     severity: medium
     response: "若发生割伤/出血：立即停止实验，清洁伤口并加压止血，必要时就医。"
+
+  - id: R-020
+    category: radiation_emergency
+    match_type: keywords
+    patterns: ["放射源丢失", "辐射污染", "意外照射", "放射性泄漏", "核素污染"]
+    action: redirect_emergency
+    severity: critical
+    response: "发生辐射事故：立即疏散周围人员并隔离区域，皮肤污染用流水清洗，第一时间通知辐射安全负责人，1小时内上报生态环境部门，配合专业机构处置。"
+
+  - id: R-021
+    category: laser_injury
+    match_type: keywords
+    patterns: ["激光伤眼", "激光照到眼", "激光灼伤", "被激光照射"]
+    action: redirect_emergency
+    severity: high
+    response: "激光伤眼是紧急情况：立即停止操作，用大量清水冲洗眼部，禁止揉眼，立即就医并告知激光波长和功率信息。"
+
+  - id: R-022
+    category: cryogenic_injury
+    match_type: keywords
+    patterns: ["液氮冻伤", "低温冻伤", "被液氮烫", "液氮溅到", "冻伤"]
+    action: redirect_emergency
+    severity: high
+    response: "低温冻伤处置：将冻伤部位浸入37-40°C温水中缓慢复温，禁止摩擦或揉搓，立即就医。若在密闭空间大量液氮泄漏，立即撤离至通风处。"
+
+  - id: R-023
+    category: centrifuge_violation
+    match_type: keywords
+    patterns: ["离心机转着", "离心机运转时", "离心机没停"]
+    action: refuse
+    severity: high
+    response: "绝对不能在离心机运转时开盖！必须等转子完全停止后才能打开，强行开盖有严重危险。"
+
+  - id: R-024
+    category: autoclave_violation
+    match_type: keywords
+    patterns: ["灭菌锅有压力", "灭菌结束立刻", "高压灭菌直接开"]
+    action: refuse
+    severity: high
+    response: "有压力时严禁强制开门！灭菌结束后须慢速放汽，等压力归零、温度降至安全值后，人站在两侧才能缓慢开盖。"

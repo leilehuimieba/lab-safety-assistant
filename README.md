@@ -33,19 +33,35 @@
 
 当前仓库已经形成一套可用于展示和继续迭代的 MVP 材料：
 
-- 项目申报书：包含可提交版 `docx` 和 `md` 文档
-- 核心知识库：`knowledge_base_curated.csv`
-- 规则库：`safety_rules.yaml`
-- 评测集：`eval_set_v1.csv`
-- 验收标准：`eval_criteria.md`
-- 调参记录：`retrieval_tuning_report.md`
+| 文件 | 说明 |
+|------|------|
+| `knowledge_base_curated.csv` | 核心知识库，**80 条**结构化条目 |
+| `safety_rules.yaml` | 规则库，**24 条**规则（含应急/拒答/重定向） |
+| `eval_set_v1.csv` | 评测集，**50 条**测试问题 |
+| `eval_criteria.md` | 验收指标 |
+| `retrieval_tuning_report.md` | 检索调参记录 |
+| `docs/embedding_setup.md` | Embedding 接入指南（Ollama / 云端方案） |
+| 项目申报书 | 包含可提交版 `docx` 和 `md` 文档 |
+
+知识库覆盖场景：
+
+- 化学实验：通风柜、危化品、废液处置、易燃溶剂、酸碱腐蚀
+- MSDS 专项：丙酮、甲醇、NaOH、浓硫酸、氯仿（三氯甲烷）
+- 电气安全：触电、激光、电气火灾
+- 生物安全：生物安全柜、高压灭菌锅
+- 物理安全：液氮/低温冻伤、离心机
+- 应急处置：火灾疏散、灭火器使用、化学品溅伤
+- 辐射安全：准入要求、辐射污染应急
+- 管理制度：实验室分级、危化品储存量限制、剧毒品双人双锁
 
 当前阶段已完成的代表性工作包括：
 
-- 清洗并重建实验室安全知识库样例
-- 修正 `Dify` 工作流输出绑定问题
-- 完成首轮召回测试与 `Top K` 调整
-- 建立评测集和阶段性验收指标
+- 清洗并重建实验室安全知识库（从 25 条扩充至 80 条，含 MSDS 专项）
+- 运行网络爬取流水线，从 18 个权威高校安全页面抓取并清洗知识条目
+- 修正 `Dify` 工作流输出绑定问题，完成首轮召回测试与 `Top K` 调整
+- 建立评测集（50 条）和阶段性验收指标
+- 修复规则库 R-010 过触发问题，新增辐射/激光/低温/离心机/灭菌锅 5 类规则
+- 编写 Embedding 模型接入指南（Ollama 本地方案与云端备选方案）
 - 完成 GitHub 展示页与项目文档整理
 
 ## 文档导航
@@ -56,6 +72,7 @@
 - [演示脚本](./docs/demo_script.md)
 - [运行手册](./docs/runbook.md)
 - [数据源建设方案](./docs/data_source_plan.md)
+- [Embedding 接入指南](./docs/embedding_setup.md)（如何配置向量检索，替代纯关键词模式）
 - [评测集](./eval_set_v1.csv)
 - [验收指标](./eval_criteria.md)
 - [检索调参记录](./retrieval_tuning_report.md)
@@ -86,17 +103,28 @@ lab-safety-assistant/
 ├─ docs/
 │  ├─ demo_script.md
 │  ├─ runbook.md
-│  └─ data_source_plan.md
+│  ├─ data_source_plan.md
+│  └─ embedding_setup.md        ← Embedding / 混合检索接入指南
+├─ scripts/
+│  ├─ web_ingest_pipeline.py    ← 网络知识爬取与结构化流水线
+│  ├─ _clean_web_entries.py     ← 清洗网络抓取条目（删除垃圾/修剪导航）
+│  ├─ _add_new_entries.py       ← 补充 KB-1026~1037（辐射/激光/液氮等）
+│  ├─ _add_msds_entries.py      ← 补充 KB-1038~1042（MSDS 专项）
+│  └─ _expand_eval_set.py       ← 扩充评测集至 50 条
+├─ data_sources/
+│  └─ web_seed_urls.csv         ← 18 个权威高校安全页面种子 URL
+├─ artifacts/                   ← 脚本运行产物（不纳入知识库主文件）
+│  └─ web_ingest_v2/
 ├─ 实验室安全小助手_项目申报立项书_可提交版.docx
 ├─ 实验室安全小助手_项目申报立项书_可提交版.md
 ├─ 立项书优化稿_实验室安全小助手.md
-├─ knowledge_base_curated.csv
+├─ knowledge_base_curated.csv   ← 主知识库（80 条）
 ├─ knowledge_base_template.csv
 ├─ knowledge_entry_schema.json
 ├─ knowledge_entry_template.json
-├─ safety_rules.yaml
+├─ safety_rules.yaml            ← 规则库（24 条）
 ├─ safety_rules_guide.md
-├─ eval_set_v1.csv
+├─ eval_set_v1.csv              ← 评测集（50 条）
 ├─ eval_set_template.csv
 ├─ eval_criteria.md
 ├─ kb_build_report.md
@@ -123,10 +151,10 @@ flowchart LR
 
 当前原型以 `Dify + RAG + 规则约束` 为主，后续可进一步接入：
 
-- Embedding 模型
-- 混合检索与重排序
+- **Embedding 模型**（已有接入指南，见 `docs/embedding_setup.md`；推荐 Ollama + bge-m3）
+- **混合检索与重排序**（配置 Embedding 后可在 Dify 工作流一键启用）
 - 本地模型部署
-- 更正式的制度文件与 `MSDS` 数据源
+- 更多正式制度文件与 `MSDS` 数据源
 
 ## 如何使用本仓库
 
@@ -155,11 +183,12 @@ flowchart LR
 
 ## 后续计划
 
-- 补充更权威的实验室制度、`SOP`、`MSDS` 作为正式知识源
-- 增加更多化学、电气、生物、消防等细分场景样本
-- 引入 Embedding、混合检索和重排序，降低召回噪声
-- 加入更明确的演示脚本和验收流程
-- 在原型稳定后推进本地模型部署与效果对比
+- ✅ 补充 MSDS 专项知识（丙酮/甲醇/NaOH/浓硫酸/氯仿）
+- ✅ 增加辐射、激光、低温、离心机、灭菌锅等细分场景样本
+- ✅ 完善规则库，修复 R-010 过触发，新增 R-020~R-024
+- 配置 Embedding 模型（参考 `docs/embedding_setup.md`），启用混合检索
+- 补充更权威的制度文件 `SOP` 原文作为正式知识源
+- 在原型稳定后推进本地模型部署与回答质量对比评测
 
 ## 项目说明
 
