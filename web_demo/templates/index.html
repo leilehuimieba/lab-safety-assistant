@@ -106,13 +106,67 @@
       color: #334155;
     }
     .result {
-      white-space: pre-wrap;
       line-height: 1.7;
       background: #f8fafc;
       border: 1px dashed #cbd5e1;
       border-radius: 10px;
       padding: 12px;
       min-height: 120px;
+      overflow-wrap: anywhere;
+    }
+    .result p {
+      margin: 0 0 10px;
+    }
+    .result h1, .result h2, .result h3, .result h4 {
+      margin: 14px 0 8px;
+      line-height: 1.45;
+    }
+    .result ul, .result ol {
+      margin: 8px 0 12px 22px;
+      padding: 0;
+    }
+    .result li {
+      margin: 4px 0;
+    }
+    .result code {
+      background: #e2e8f0;
+      color: #0f172a;
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      font-size: 13px;
+    }
+    .result pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+      overflow-x: auto;
+      margin: 10px 0 12px;
+    }
+    .result pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+    .result blockquote {
+      margin: 10px 0;
+      padding: 8px 12px;
+      border-left: 4px solid #94a3b8;
+      background: #eef2f7;
+      color: #334155;
+    }
+    .result table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    .result th, .result td {
+      border: 1px solid #cbd5e1;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
     }
     .muted { color: var(--sub); font-size: 13px; }
 
@@ -159,12 +213,43 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script>
     const sendBtn = document.getElementById('sendBtn');
     const clearBtn = document.getElementById('clearBtn');
     const questionInput = document.getElementById('question');
     const result = document.getElementById('result');
     const metaInfo = document.getElementById('metaInfo');
+
+    function cleanModelText(raw) {
+      if (!raw) return '';
+      let text = String(raw);
+      // 去掉某些模型可能暴露的思考标签或中转噪声标记
+      text = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+      text = text.replace(/^\[WebSearch\].*$/gmi, '');
+      return text.trim();
+    }
+
+    function renderAnswer(rawText) {
+      const cleaned = cleanModelText(rawText);
+      if (!cleaned) {
+        result.textContent = '模型未返回文本。';
+        return;
+      }
+
+      // 具备 Markdown 渲染能力时，按 Markdown 渲染；否则降级为纯文本。
+      if (window.marked && window.DOMPurify) {
+        marked.setOptions({
+          breaks: true,
+          gfm: true
+        });
+        const html = marked.parse(cleaned);
+        result.innerHTML = DOMPurify.sanitize(html);
+      } else {
+        result.textContent = cleaned;
+      }
+    }
 
     function getMode() {
       const checked = document.querySelector('input[name="mode"]:checked');
@@ -196,7 +281,7 @@
           return;
         }
 
-        result.textContent = data.answer || '模型未返回文本。';
+        renderAnswer(data.answer || '');
         metaInfo.textContent = `模式：${data.mode} | 模型：${data.model}`;
       } catch (err) {
         result.textContent = `请求异常：${err.message}`;
@@ -215,4 +300,3 @@
   </script>
 </body>
 </html>
-
