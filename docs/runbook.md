@@ -300,12 +300,28 @@ pip install pre-commit
 pre-commit install
 ```
 
+最小单测：
+
+```powershell
+pytest
+```
+
 自动化冒烟评测（10 条快速回归）：
 
 ```powershell
 set DIFY_BASE_URL=http://localhost
 set DIFY_APP_API_KEY=<app-xxxx>
 python scripts/eval_smoke.py --use-dify --limit 10
+```
+
+人工复核流程：
+
+```powershell
+# 1) 先得到 eval_smoke 产出的 detailed_results.csv
+python scripts/eval_review.py --detailed-results <detailed_results.csv> --generate-template
+
+# 2) 人工填写模板后，生成最终汇总
+python scripts/eval_review.py --detailed-results <detailed_results.csv> --manual-review-csv <manual_review_filled.csv>
 ```
 
 ## 后续建议

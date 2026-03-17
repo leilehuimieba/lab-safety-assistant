@@ -76,6 +76,7 @@
 - [评测集](./eval_set_v1.csv)
 - [验收指标](./eval_criteria.md)
 - [检索调参记录](./retrieval_tuning_report.md)
+- [答辩技术证据页](./docs/defense_tech_evidence.md)
 
 ## 核心能力设计
 
@@ -176,6 +177,8 @@ flowchart LR
 - 提交前密钥扫描：`scripts/secret_scan.py`
 - 本地质量门：`scripts/quality_gate.py`
 - 自动化冒烟评测：`scripts/eval_smoke.py`
+- 人工复核与汇总：`scripts/eval_review.py`
+- 最小单测：`tests/`（`pytest`）
 - GitHub Actions：`.github/workflows/quality-gate.yml`
 
 推荐命令：
@@ -188,16 +191,25 @@ pre-commit install
 # 2) 全仓质量门检查（schema + 规则 ID + secret scan）
 python scripts/quality_gate.py
 
-# 3) 生成评测应答模板（人工填写或外部系统回填）
+# 3) 运行最小单测
+pytest
+
+# 4) 生成评测应答模板（人工填写或外部系统回填）
 python scripts/eval_smoke.py --generate-template
 
-# 4) 基于回填 responses.csv 生成评测报告
+# 5) 基于回填 responses.csv 生成自动评测报告
 python scripts/eval_smoke.py --responses-csv <your_responses.csv>
 
-# 5) 直接调用 Dify App API 做 smoke 评测
+# 6) 直接调用 Dify App API 做 smoke 评测
 set DIFY_BASE_URL=http://localhost
 set DIFY_APP_API_KEY=<app-xxxx>
 python scripts/eval_smoke.py --use-dify --limit 10
+
+# 7) 生成人工复核模板（从 detailed_results.csv 生成）
+python scripts/eval_review.py --detailed-results <detailed_results.csv> --generate-template
+
+# 8) 合并人工复核结果并输出最终汇总
+python scripts/eval_review.py --detailed-results <detailed_results.csv> --manual-review-csv <manual_review_filled.csv>
 ```
 
 ## 当前边界

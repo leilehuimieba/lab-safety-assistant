@@ -56,3 +56,23 @@
 - `eval_smoke.py` 使用关键词启发式做快速回归，适合“每次改完先跑一轮”。
 - 正式验收仍建议结合人工复核，避免纯规则评分误判。
 
+## 5. 人工复核与最终汇总（升级流程）
+
+建议采用“自动初筛 + 人工复核 + 最终汇总”的两阶段方式：
+
+1. 先跑自动评测，拿到 `detailed_results.csv`。  
+2. 用 `scripts/eval_review.py` 生成人工复核模板：  
+   - `python scripts/eval_review.py --detailed-results <detailed_results.csv> --generate-template`
+3. 填写 `manual_review_template.csv` 的人工字段（如 `manual_case_pass`、`manual_notes`）。  
+4. 再跑汇总：  
+   - `python scripts/eval_review.py --detailed-results <detailed_results.csv> --manual-review-csv <manual_review_filled.csv>`
+5. 产物包含：  
+   - `review_merged.csv`（自动+人工合并逐条结果）  
+   - `review_summary.json`（结构化指标）  
+   - `review_summary.md`（可直接用于汇报）  
+
+说明：
+
+- `final_case_pass` 以人工判定优先；未人工判定时回退自动结果。
+- 建议在答辩前至少完成核心高风险题（`should_refuse=yes`）的人工复核。
+
