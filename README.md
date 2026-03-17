@@ -35,7 +35,7 @@
 
 | 文件 | 说明 |
 |------|------|
-| `knowledge_base_curated.csv` | 核心知识库，**80 条**结构化条目 |
+| `knowledge_base_curated.csv` | 核心知识库，**81 条**结构化条目 |
 | `safety_rules.yaml` | 规则库，**24 条**规则（含应急/拒答/重定向） |
 | `eval_set_v1.csv` | 评测集，**50 条**测试问题 |
 | `eval_criteria.md` | 验收指标 |
@@ -56,7 +56,7 @@
 
 当前阶段已完成的代表性工作包括：
 
-- 清洗并重建实验室安全知识库（从 25 条扩充至 80 条，含 MSDS 专项）
+- 清洗并重建实验室安全知识库（从 25 条扩充至 81 条，含 MSDS 专项）
 - 运行网络爬取流水线，从 18 个权威高校安全页面抓取并清洗知识条目
 - 修正 `Dify` 工作流输出绑定问题，完成首轮召回测试与 `Top K` 调整
 - 建立评测集（50 条）和阶段性验收指标
@@ -118,7 +118,7 @@ lab-safety-assistant/
 ├─ 实验室安全小助手_项目申报立项书_可提交版.docx
 ├─ 实验室安全小助手_项目申报立项书_可提交版.md
 ├─ 立项书优化稿_实验室安全小助手.md
-├─ knowledge_base_curated.csv   ← 主知识库（80 条）
+├─ knowledge_base_curated.csv   ← 主知识库（81 条）
 ├─ knowledge_base_template.csv
 ├─ knowledge_entry_schema.json
 ├─ knowledge_entry_template.json
@@ -169,6 +169,37 @@ flowchart LR
 - 参考 `retrieval_tuning_report.md` 继续做召回调参
 - 参考 `docs/runbook.md` 和 `docs/demo_script.md` 完成复现与演示准备
 
+## 质量与安全门禁
+
+为避免“改动能跑但不可控”的问题，仓库已提供最小质量门：
+
+- 提交前密钥扫描：`scripts/secret_scan.py`
+- 本地质量门：`scripts/quality_gate.py`
+- 自动化冒烟评测：`scripts/eval_smoke.py`
+- GitHub Actions：`.github/workflows/quality-gate.yml`
+
+推荐命令：
+
+```powershell
+# 1) 安装并启用 pre-commit（本地提交拦截）
+pip install pre-commit
+pre-commit install
+
+# 2) 全仓质量门检查（schema + 规则 ID + secret scan）
+python scripts/quality_gate.py
+
+# 3) 生成评测应答模板（人工填写或外部系统回填）
+python scripts/eval_smoke.py --generate-template
+
+# 4) 基于回填 responses.csv 生成评测报告
+python scripts/eval_smoke.py --responses-csv <your_responses.csv>
+
+# 5) 直接调用 Dify App API 做 smoke 评测
+set DIFY_BASE_URL=http://localhost
+set DIFY_APP_API_KEY=<app-xxxx>
+python scripts/eval_smoke.py --use-dify --limit 10
+```
+
 ## 当前边界
 
 为了保证仓库可公开、可复用、无敏感数据，本仓库刻意不包含以下内容：
@@ -186,7 +217,7 @@ flowchart LR
 - ✅ 补充 MSDS 专项知识（丙酮/甲醇/NaOH/浓硫酸/氯仿）
 - ✅ 增加辐射、激光、低温、离心机、灭菌锅等细分场景样本
 - ✅ 完善规则库，修复 R-010 过触发，新增 R-020~R-024
-- 配置 Embedding 模型（参考 `docs/embedding_setup.md`），启用混合检索
+- ✅ 已验证 Embedding 模型接入（参考 `docs/embedding_setup.md` 与 `retrieval_tuning_report.md`）
 - 补充更权威的制度文件 `SOP` 原文作为正式知识源
 - 在原型稳定后推进本地模型部署与回答质量对比评测
 

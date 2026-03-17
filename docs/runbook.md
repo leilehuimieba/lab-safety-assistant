@@ -106,9 +106,11 @@
 
 ### 当前推荐配置
 
-- 分段模式：保持当前默认分段方式
-- 索引模式：若无 Embedding 服务，先使用经济模式
+- 分段模式：`automatic`（或平台默认推荐）
+- 索引模式：优先 `high_quality`
+- 检索模式：混合检索（向量 + 关键词）
 - Top K：`5`
+- Score threshold：`0.5`（可在 `0.45~0.55` 小范围微调）
 
 ## 第三步：创建应用
 
@@ -145,9 +147,9 @@
 
 - 检索模式：多路检索或默认知识检索模式
 - `Top K = 5`
-- 暂不启用重排序模型
+- 暂不启用重排序模型（当前可先关闭，后续按评测结果决定）
 
-这样做的原因是当前阶段 Embedding 和 rerank 还没有正式接入，先保证正确条目能进入候选集合。
+当前建议优先保证混合检索稳定，再考虑引入 rerank。
 
 ### 关键点 2：LLM 节点
 
@@ -242,9 +244,9 @@ LLM 节点负责：
 
 当前知识库属于“核心样例集”，更适合做 MVP 演示和结构验证。若要提升可信度，需要继续接入正式制度文件、SOP 和 MSDS。
 
-### 2. Embedding 尚未正式接入
+### 2. Embedding / 混合检索依赖本地服务稳定性
 
-当前原型在没有可用 Embedding 服务时，以经济检索模式为主，因此部分问题会出现召回噪声。
+当前方案可使用 Ollama + bge-m3 实现混合检索；若本地服务不可用，会退化为关键词召回并带来噪声。
 
 ### 3. 回答准确率仍依赖知识条目密度
 
@@ -282,6 +284,29 @@ LLM 节点负责：
 - 继续扩展知识条目的关键词和同义表达
 - 引入 Embedding 和混合检索
 - 在可行时引入 rerank 模型
+
+## 第九步：提交前质量门（推荐）
+
+建议在每次提交前执行：
+
+```powershell
+python scripts/quality_gate.py
+```
+
+可选启用 pre-commit：
+
+```powershell
+pip install pre-commit
+pre-commit install
+```
+
+自动化冒烟评测（10 条快速回归）：
+
+```powershell
+set DIFY_BASE_URL=http://localhost
+set DIFY_APP_API_KEY=<app-xxxx>
+python scripts/eval_smoke.py --use-dify --limit 10
+```
 
 ## 后续建议
 

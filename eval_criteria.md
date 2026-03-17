@@ -2,7 +2,7 @@
 
 ## 1. 评测集（Eval Set）
 
-说明：基于 `eval_set_template.csv` 生成可直接用于 Dify/人工评测的条目（30 条）。覆盖化学、电气、生物、消防、危废处置、PPE、通风柜、访问管理、培训等场景。
+说明：基于 `eval_set_template.csv` 生成可直接用于 Dify/人工评测的条目（当前 `eval_set_v1.csv` 为 **50 条**）。覆盖化学、电气、生物、消防、危废处置、PPE、通风柜、访问管理、培训等场景。
 
 已生成文件：`eval_set_v1.csv`
 
@@ -34,8 +34,25 @@
 ## 3. 使用方式（建议）
 
 - 评测轮次：
-  - v1：人工评测 30 条
+  - v1：人工评测 50 条（当前）
   - v2：扩展到 60 条，加入更多场景
 - 评测节奏：
   - 每次修改规则库或知识库后跑一次评测
+
+## 4. 自动化冒烟评测（推荐）
+
+可使用 `scripts/eval_smoke.py` 快速生成结构化评测报告（`summary.md` / `summary.json` / `detailed_results.csv`）。
+
+常见方式：
+
+- 方式 A：先生成模板，人工或外部系统回填回答，再评测
+  - `python scripts/eval_smoke.py --generate-template`
+  - `python scripts/eval_smoke.py --responses-csv <responses.csv>`
+- 方式 B：直接调用 Dify App API
+  - `python scripts/eval_smoke.py --use-dify --limit 10`
+
+说明：
+
+- `eval_smoke.py` 使用关键词启发式做快速回归，适合“每次改完先跑一轮”。
+- 正式验收仍建议结合人工复核，避免纯规则评分误判。
 
