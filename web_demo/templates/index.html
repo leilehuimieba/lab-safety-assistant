@@ -174,6 +174,16 @@
       color: #334155;
       font-size: 13px;
     }
+    .low-confidence-alert {
+      margin-top: 8px;
+      border: 1px solid #fbbf24;
+      background: #fffbeb;
+      color: #92400e;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
     .citation-box {
       margin-top: 12px;
       border-top: 1px solid #dbe4ee;
@@ -260,6 +270,7 @@
         <h3>回答区</h3>
         <div id="result" class="result">等待提问...</div>
         <p class="route-info" id="routeInfo"></p>
+        <div id="lowConfidenceAlert" class="low-confidence-alert" style="display:none;"></div>
         <div id="citationBox" class="citation-box"></div>
         <p class="muted" id="metaInfo"></p>
       </div>
@@ -274,6 +285,7 @@
     const questionInput = document.getElementById('question');
     const result = document.getElementById('result');
     const routeInfo = document.getElementById('routeInfo');
+    const lowConfidenceAlert = document.getElementById('lowConfidenceAlert');
     const citationBox = document.getElementById('citationBox');
     const metaInfo = document.getElementById('metaInfo');
 
@@ -315,6 +327,7 @@
       const map = {
         llm_answer: '常规问答',
         llm_answer_guarded: '规则约束 + 问答',
+        llm_low_confidence: '低置信度谨慎回答',
         emergency_redirect: '应急分流',
         rule_blocked: '高风险拦截',
         need_more_info: '信息补充引导'
@@ -382,6 +395,8 @@
       sendBtn.textContent = '处理中...';
       result.textContent = '正在请求模型，请稍候...';
       routeInfo.textContent = '';
+      lowConfidenceAlert.style.display = 'none';
+      lowConfidenceAlert.textContent = '';
       citationBox.innerHTML = '';
       metaInfo.textContent = '';
 
@@ -401,11 +416,21 @@
         renderAnswer(data.answer || '');
         const route = `分流：${decisionLabel(data.decision)} | 风险等级：${data.risk_level || '-'}${data.matched_rule_id ? ` | 命中规则：${data.matched_rule_id}` : ''}`;
         routeInfo.textContent = route;
+        if (data.low_confidence) {
+          const logged = data.followup_logged ? '是（已写入待补任务队列）' : '否（已存在相同问题记录）';
+          lowConfidenceAlert.textContent = `检索置信度不足：${data.low_confidence_reason || '原因未标注'}。系统已自动触发数据补充流程：${logged}。`;
+          lowConfidenceAlert.style.display = 'block';
+        } else {
+          lowConfidenceAlert.style.display = 'none';
+          lowConfidenceAlert.textContent = '';
+        }
         renderCitations(data.citations || []);
         metaInfo.textContent = `模式：${data.mode} | 模型：${data.model}${data.matched_rule_action ? ` | 动作：${data.matched_rule_action}` : ''}`;
       } catch (err) {
         result.textContent = `请求异常：${err.message}`;
         routeInfo.textContent = '';
+        lowConfidenceAlert.style.display = 'none';
+        lowConfidenceAlert.textContent = '';
         citationBox.innerHTML = '';
       } finally {
         sendBtn.disabled = false;
@@ -418,6 +443,8 @@
       questionInput.value = '';
       result.textContent = '等待提问...';
       routeInfo.textContent = '';
+      lowConfidenceAlert.style.display = 'none';
+      lowConfidenceAlert.textContent = '';
       citationBox.innerHTML = '';
       metaInfo.textContent = '';
     });

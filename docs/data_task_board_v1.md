@@ -29,6 +29,7 @@
 | T-006 | clean | 运行unified入库批次 | 待分配 | todo | manifest+rules+web_seed | `knowledge_base_unified.csv` | yyyy-mm-dd | 解析成功率>=95% |
 | T-007 | eval | 运行质量门和冒烟评测 | 待分配 | todo | 批次CSV + Dify API | 评测报告 | yyyy-mm-dd | 通过率>=80% |
 | T-008 | release | 发布本周正式批次到Dify | 待分配 | todo | 上述输出物 | 发布记录 | yyyy-mm-dd | 回滚方案可用 |
+| T-009 | clean | 处理低置信度待补任务队列 | 待分配 | todo | `artifacts/low_confidence_followups/data_gap_queue.csv` | 更新manifest/KB并关闭todo | yyyy-mm-dd | high/critical 堆积清零 |
 
 ## 4. 建议的Git协作规范
 分支命名：

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import os
 import re
 import threading
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -23,11 +25,34 @@ REPO_ROOT = BASE_DIR.parent
 HTML_FILE = BASE_DIR / "templates" / "index.html"
 KB_FILE = REPO_ROOT / "knowledge_base_curated.csv"
 RULES_FILE = REPO_ROOT / "safety_rules.yaml"
+LOW_CONFIDENCE_QUEUE_FILE = (
+    REPO_ROOT / "artifacts" / "low_confidence_followups" / "data_gap_queue.csv"
+)
 
 DEFAULT_BASE_URL = "http://ai.little100.cn:3000/v1"
 DEFAULT_MODEL = "gpt-5.2-codex"
 DEFAULT_FALLBACK_MODELS = "grok-3-mini,grok-4,grok-3"
 DEFAULT_TOP_K = 3
+DEFAULT_LOW_CONFIDENCE_TOP_SCORE = 3.5
+QUEUE_HEADERS = [
+    "created_at",
+    "question_hash",
+    "question",
+    "mode",
+    "decision",
+    "risk_level",
+    "matched_rule_id",
+    "matched_rule_action",
+    "low_confidence_reason",
+    "citation_count",
+    "top_score",
+    "top_kb_id",
+    "top_source_title",
+    "suggested_lane",
+    "suggested_action",
+    "status",
+    "notes",
+]
 
 SEVERITY_SCORE = {"critical": 4, "high": 3, "medium": 2, "low": 1}
 TERMINAL_ACTIONS = {"refuse", "redirect_emergency", "ask_for_more_info"}
@@ -59,6 +84,7 @@ EMERGENCY_TEMPLATE_BY_CATEGORY = {
 _CACHE_LOCK = threading.Lock()
 _KB_CACHE: list[dict[str, str]] | None = None
 _RULES_CACHE: dict[str, Any] | None = None
+_QUEUE_LOCK = threading.Lock()
 
 
 class ChatRequest(BaseModel):
@@ -85,6 +111,9 @@ class ChatResponse(BaseModel):
     risk_level: str = ""
     matched_rule_id: str = ""
     matched_rule_action: str = ""
+    low_confidence: bool = False
+    low_confidence_reason: str = ""
+    followup_logged: bool = False
     citations: list[Citation] = Field(default_factory=list)
 
 
@@ -262,6 +291,136 @@ def build_context_block(citations: list[Citation]) -> str:
             lines.append(f"链接：{item.source_url}")
         blocks.append("\n".join(lines))
     return "\n\n".join(blocks)
+
+
+def get_low_confidence_top_score() -> float:
+    raw = os.getenv("LOW_CONFIDENCE_TOP_SCORE", "").strip()
+    if not raw:
+        return DEFAULT_LOW_CONFIDENCE_TOP_SCORE
+    try:
+        value = float(raw)
+    except ValueError:
+        return DEFAULT_LOW_CONFIDENCE_TOP_SCORE
+    return max(0.0, value)
+
+
+def assess_low_confidence(citations: list[Citation]) -> tuple[bool, str]:
+    if not citations:
+        return True, "未命中知识库条目"
+
+    top = citations[0]
+    threshold = get_low_confidence_top_score()
+    if top.score < threshold:
+        return True, f"最高检索分{top.score}低于阈值{threshold}"
+
+    empty_source = not (top.source_title or top.source_org or top.source_url)
+    if empty_source and top.score < (threshold + 1.5):
+        return True, "命中条目来源信息不足，需人工复核"
+
+    return False, ""
+
+
+def _resolve_queue_file(queue_file: Path | None = None) -> Path:
+    if queue_file is not None:
+        return queue_file
+    env_value = os.getenv("LOW_CONFIDENCE_QUEUE_FILE", "").strip()
+    if env_value:
+        return Path(env_value)
+    return LOW_CONFIDENCE_QUEUE_FILE
+
+
+def _read_existing_question_hashes(path: Path) -> set[str]:
+    if not path.exists():
+        return set()
+    hashes: set[str] = set()
+    with path.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            token = (row.get("question_hash") or "").strip()
+            if token:
+                hashes.add(token)
+    return hashes
+
+
+def build_low_confidence_followup_row(
+    *,
+    question: str,
+    mode: str,
+    decision: str,
+    risk_level: str,
+    matched_rule_id: str,
+    matched_rule_action: str,
+    low_confidence_reason: str,
+    citations: list[Citation],
+) -> dict[str, str]:
+    normalized = normalize_text(question)
+    question_hash = hashlib.sha1(normalized.encode("utf-8")).hexdigest()[:12]
+
+    top = citations[0] if citations else Citation(kb_id="", title="")
+    suggested_lane = "collect" if not citations else "clean"
+    suggested_action = (
+        "补充该问题相关权威来源文档并更新manifest"
+        if not citations
+        else "检查命中条目质量并优化标签/问句映射"
+    )
+    return {
+        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "question_hash": question_hash,
+        "question": question.strip(),
+        "mode": mode,
+        "decision": decision,
+        "risk_level": risk_level,
+        "matched_rule_id": matched_rule_id,
+        "matched_rule_action": matched_rule_action,
+        "low_confidence_reason": low_confidence_reason,
+        "citation_count": str(len(citations)),
+        "top_score": str(top.score if citations else 0.0),
+        "top_kb_id": top.kb_id if citations else "",
+        "top_source_title": top.source_title if citations else "",
+        "suggested_lane": suggested_lane,
+        "suggested_action": suggested_action,
+        "status": "todo",
+        "notes": "",
+    }
+
+
+def append_low_confidence_followup(
+    *,
+    question: str,
+    mode: str,
+    decision: str,
+    risk_level: str,
+    matched_rule_id: str,
+    matched_rule_action: str,
+    low_confidence_reason: str,
+    citations: list[Citation],
+    queue_file: Path | None = None,
+) -> bool:
+    row = build_low_confidence_followup_row(
+        question=question,
+        mode=mode,
+        decision=decision,
+        risk_level=risk_level,
+        matched_rule_id=matched_rule_id,
+        matched_rule_action=matched_rule_action,
+        low_confidence_reason=low_confidence_reason,
+        citations=citations,
+    )
+    path = _resolve_queue_file(queue_file)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with _QUEUE_LOCK:
+        existing_hashes = _read_existing_question_hashes(path)
+        if row["question_hash"] in existing_hashes:
+            return False
+
+        file_exists = path.exists()
+        with path.open("a", encoding="utf-8-sig", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=QUEUE_HEADERS)
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(row)
+    return True
 
 
 def match_rule(question: str) -> dict[str, Any] | None:
@@ -600,6 +759,9 @@ def chat(payload: ChatRequest) -> ChatResponse:
     risk_level = matched_rule.get("severity", "") if matched_rule else ""
     matched_rule_id = matched_rule.get("id", "") if matched_rule else ""
     matched_rule_action = matched_rule.get("action", "") if matched_rule else ""
+    low_confidence = False
+    low_confidence_reason = ""
+    followup_logged = False
 
     if matched_rule and matched_rule_action in TERMINAL_ACTIONS:
         answer = build_rule_answer(matched_rule, citations)
@@ -613,14 +775,34 @@ def chat(payload: ChatRequest) -> ChatResponse:
     else:
         context_block = build_context_block(citations)
         guardrail = matched_rule.get("response", "") if matched_rule else ""
+        if mode == "lab":
+            low_confidence, low_confidence_reason = assess_low_confidence(citations)
+            if low_confidence:
+                decision = "llm_low_confidence"
+                guardrail = (
+                    f"{guardrail} 检索置信度较低（{low_confidence_reason}），"
+                    "请明确不确定性并给出保守、安全、可上报的建议。"
+                ).strip()
         answer, model = call_upstream(
             mode=mode,
             question=question,
             context_block=context_block,
             guardrail=guardrail,
         )
-        if matched_rule:
+        if matched_rule and not low_confidence:
             decision = "llm_answer_guarded"
+
+    if mode == "lab" and low_confidence:
+        followup_logged = append_low_confidence_followup(
+            question=question,
+            mode=mode,
+            decision=decision,
+            risk_level=risk_level,
+            matched_rule_id=matched_rule_id,
+            matched_rule_action=matched_rule_action,
+            low_confidence_reason=low_confidence_reason,
+            citations=citations,
+        )
 
     if not answer:
         answer = "模型未返回文本，请重试。"
@@ -632,5 +814,8 @@ def chat(payload: ChatRequest) -> ChatResponse:
         risk_level=risk_level,
         matched_rule_id=matched_rule_id,
         matched_rule_action=matched_rule_action,
+        low_confidence=low_confidence,
+        low_confidence_reason=low_confidence_reason,
+        followup_logged=followup_logged,
         citations=citations,
     )
