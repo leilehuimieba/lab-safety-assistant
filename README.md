@@ -185,6 +185,7 @@ flowchart LR
 - 本地质量门：`scripts/quality_gate.py`
 - 自动化冒烟评测：`scripts/eval_smoke.py`
 - 人工复核与汇总：`scripts/eval_review.py`
+- 回归流水线与看板刷新：`scripts/run_eval_regression_pipeline.py`
 - 最小单测：`tests/`（`pytest`）
 - GitHub Actions：`.github/workflows/quality-gate.yml`
 
@@ -217,7 +218,18 @@ python scripts/eval_review.py --detailed-results <detailed_results.csv> --genera
 
 # 8) 合并人工复核结果并输出最终汇总
 python scripts/eval_review.py --detailed-results <detailed_results.csv> --manual-review-csv <manual_review_filled.csv>
+
+# 9) 触发一轮真实回归并自动刷新评测看板（需配置 Dify 凭据）
+set DIFY_BASE_URL=http://localhost
+set DIFY_APP_API_KEY=<app-xxxx>
+python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
 ```
+
+看板门禁说明：
+
+- 已启用 `docs/eval_dashboard_gate_enabled.flag`
+- 质量门会执行 `scripts/validate_eval_dashboard_gate.py`
+- 当关键指标连续两周低于阈值时，质量门失败（阻止发布）
 
 ## 当前边界
 

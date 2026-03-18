@@ -9,6 +9,7 @@ Checks include:
 - Rule ID integrity for safety_rules.yaml
 - data_sources CSV schema and key field integrity
 - release_review_log entry integrity
+- eval_dashboard gate integrity
 """
 
 from __future__ import annotations
@@ -247,6 +248,22 @@ def run_release_review_log_check(repo_root: Path, errors: list[str]) -> None:
         )
 
 
+def run_eval_dashboard_gate_check(repo_root: Path, errors: list[str]) -> None:
+    cmd = [
+        sys.executable,
+        str(repo_root / "scripts" / "validate_eval_dashboard_gate.py"),
+        "--repo-root",
+        str(repo_root),
+        "--quiet",
+    ]
+    completed = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if completed.returncode != 0:
+        errors.append(
+            "eval_dashboard_gate 检查未通过。"
+            + (f"\n  detail: {completed.stdout.strip()}" if completed.stdout else "")
+        )
+
+
 def print_summary(errors: list[str]) -> None:
     if not errors:
         print("Quality gate passed.")
@@ -265,6 +282,7 @@ def main() -> int:
         run_secret_scan(repo_root, errors)
     run_data_sources_check(repo_root, errors)
     run_release_review_log_check(repo_root, errors)
+    run_eval_dashboard_gate_check(repo_root, errors)
     check_kb(repo_root, errors)
     check_eval(repo_root, errors)
     check_rules(repo_root, errors)

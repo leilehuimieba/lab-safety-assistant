@@ -336,6 +336,20 @@ python scripts/generate_eval_dashboard.py --repo-root .
 - `docs/eval_dashboard_data.json`
 - `docs/eval_dashboard_runs.csv`
 
+真实回归流水线（自动 smoke + 自动复核汇总 + 刷新看板）：
+
+```powershell
+set DIFY_BASE_URL=http://localhost
+set DIFY_APP_API_KEY=<app-xxxx>
+python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
+```
+
+门禁规则（已启用）：
+
+- 标记文件：`docs/eval_dashboard_gate_enabled.flag`
+- 检查脚本：`scripts/validate_eval_dashboard_gate.py`
+- 触发条件：关键指标连续两周低于阈值时，`quality_gate` 失败并阻止发布。
+
 ## 后续建议
 
 在完成本手册的最小复现后，建议继续推进：
