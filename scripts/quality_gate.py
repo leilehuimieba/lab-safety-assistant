@@ -7,6 +7,7 @@ Checks include:
 - Knowledge base schema and ID integrity
 - Eval set schema and value integrity
 - Rule ID integrity for safety_rules.yaml
+- data_sources CSV schema and key field integrity
 """
 
 from __future__ import annotations
@@ -213,6 +214,22 @@ def run_secret_scan(repo_root: Path, errors: list[str]) -> None:
         )
 
 
+def run_data_sources_check(repo_root: Path, errors: list[str]) -> None:
+    cmd = [
+        sys.executable,
+        str(repo_root / "scripts" / "validate_data_sources.py"),
+        "--repo-root",
+        str(repo_root),
+        "--quiet",
+    ]
+    completed = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if completed.returncode != 0:
+        errors.append(
+            "data_sources schema 检查未通过。"
+            + (f"\n  detail: {completed.stdout.strip()}" if completed.stdout else "")
+        )
+
+
 def print_summary(errors: list[str]) -> None:
     if not errors:
         print("Quality gate passed.")
@@ -229,6 +246,7 @@ def main() -> int:
 
     if not args.skip_secret_scan:
         run_secret_scan(repo_root, errors)
+    run_data_sources_check(repo_root, errors)
     check_kb(repo_root, errors)
     check_eval(repo_root, errors)
     check_rules(repo_root, errors)
@@ -239,4 +257,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
