@@ -169,6 +169,57 @@
       vertical-align: top;
     }
     .muted { color: var(--sub); font-size: 13px; }
+    .route-info {
+      margin-top: 10px;
+      color: #334155;
+      font-size: 13px;
+    }
+    .citation-box {
+      margin-top: 12px;
+      border-top: 1px solid #dbe4ee;
+      padding-top: 10px;
+    }
+    .citation-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      color: #0f172a;
+    }
+    .citation-item {
+      border: 1px solid #dbe4ee;
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .citation-item:last-child {
+      margin-bottom: 0;
+    }
+    .citation-item .row-1 {
+      font-size: 13px;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .citation-item .row-2 {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .citation-item .row-3 {
+      font-size: 12px;
+      color: #1f2937;
+      line-height: 1.5;
+      margin-bottom: 4px;
+    }
+    .citation-item a {
+      font-size: 12px;
+      color: #0369a1;
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .citation-item a:hover {
+      text-decoration: underline;
+    }
 
     @media (min-width: 860px) {
       .grid {
@@ -208,6 +259,8 @@
       <div class="card">
         <h3>回答区</h3>
         <div id="result" class="result">等待提问...</div>
+        <p class="route-info" id="routeInfo"></p>
+        <div id="citationBox" class="citation-box"></div>
         <p class="muted" id="metaInfo"></p>
       </div>
     </section>
@@ -220,6 +273,8 @@
     const clearBtn = document.getElementById('clearBtn');
     const questionInput = document.getElementById('question');
     const result = document.getElementById('result');
+    const routeInfo = document.getElementById('routeInfo');
+    const citationBox = document.getElementById('citationBox');
     const metaInfo = document.getElementById('metaInfo');
 
     function cleanModelText(raw) {
@@ -256,6 +311,66 @@
       return checked ? checked.value : 'lab';
     }
 
+    function decisionLabel(decision) {
+      const map = {
+        llm_answer: '常规问答',
+        llm_answer_guarded: '规则约束 + 问答',
+        emergency_redirect: '应急分流',
+        rule_blocked: '高风险拦截',
+        need_more_info: '信息补充引导'
+      };
+      return map[decision] || decision || '未知';
+    }
+
+    function renderCitations(citations) {
+      citationBox.innerHTML = '';
+
+      if (!Array.isArray(citations) || citations.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'muted';
+        empty.textContent = '当前问题未命中可展示的证据来源。';
+        citationBox.appendChild(empty);
+        return;
+      }
+
+      const title = document.createElement('p');
+      title.className = 'citation-title';
+      title.textContent = '证据来源';
+      citationBox.appendChild(title);
+
+      citations.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'citation-item';
+
+        const row1 = document.createElement('div');
+        row1.className = 'row-1';
+        row1.textContent = `${index + 1}. [${item.kb_id || '-'}] ${item.title || '未命名条目'}`;
+
+        const row2 = document.createElement('div');
+        row2.className = 'row-2';
+        row2.textContent = `来源：${item.source_title || '未标注'} | 机构：${item.source_org || '未标注'} | 风险等级：${item.risk_level || '-'}`;
+
+        const row3 = document.createElement('div');
+        row3.className = 'row-3';
+        row3.textContent = item.snippet || '暂无摘要';
+
+        card.appendChild(row1);
+        card.appendChild(row2);
+        card.appendChild(row3);
+
+        if (item.source_url) {
+          const link = document.createElement('a');
+          link.href = item.source_url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = item.source_url;
+          card.appendChild(link);
+        }
+
+        citationBox.appendChild(card);
+      });
+    }
+
     async function ask() {
       const question = questionInput.value.trim();
       if (!question) {
@@ -266,6 +381,8 @@
       sendBtn.disabled = true;
       sendBtn.textContent = '处理中...';
       result.textContent = '正在请求模型，请稍候...';
+      routeInfo.textContent = '';
+      citationBox.innerHTML = '';
       metaInfo.textContent = '';
 
       try {
@@ -282,9 +399,14 @@
         }
 
         renderAnswer(data.answer || '');
-        metaInfo.textContent = `模式：${data.mode} | 模型：${data.model}`;
+        const route = `分流：${decisionLabel(data.decision)} | 风险等级：${data.risk_level || '-'}${data.matched_rule_id ? ` | 命中规则：${data.matched_rule_id}` : ''}`;
+        routeInfo.textContent = route;
+        renderCitations(data.citations || []);
+        metaInfo.textContent = `模式：${data.mode} | 模型：${data.model}${data.matched_rule_action ? ` | 动作：${data.matched_rule_action}` : ''}`;
       } catch (err) {
         result.textContent = `请求异常：${err.message}`;
+        routeInfo.textContent = '';
+        citationBox.innerHTML = '';
       } finally {
         sendBtn.disabled = false;
         sendBtn.textContent = '发送问题';
@@ -295,6 +417,8 @@
     clearBtn.addEventListener('click', () => {
       questionInput.value = '';
       result.textContent = '等待提问...';
+      routeInfo.textContent = '';
+      citationBox.innerHTML = '';
       metaInfo.textContent = '';
     });
   </script>
