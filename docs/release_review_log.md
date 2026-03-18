@@ -6,6 +6,12 @@
 - 至少两位审核人签名（可填写 GitHub 用户名）。
 - 任一高风险错误建议未关闭时，禁止发布。
 
+可选：使用脚本自动追加验收条目
+
+```powershell
+python scripts\generate_release_review_entry.py --help
+```
+
 模板（复制以下块追加到文末）：
 
 ```text
