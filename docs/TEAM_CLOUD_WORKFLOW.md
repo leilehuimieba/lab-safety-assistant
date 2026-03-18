@@ -53,3 +53,20 @@ Word 版下载：
 3. 上线前人工问答审核（强制）
 4. 连续 2 个批次稳定后，再做“当前模型 vs 内置模型”对比
 
+## 6. 周报自动生成（推荐）
+发布负责人每周可直接运行：
+
+```powershell
+python scripts\generate_weekly_team_report.py --repo-root . --since "7 days ago" --until "now"
+```
+
+默认输出：
+
+- `docs/weekly_reports/weekly_report_YYYYMMDD.md`
+
+这个周报会自动汇总：
+
+1. 本周提交数和活跃贡献者
+2. 收集/清洗/发布相关提交数量
+3. 数据规模快照（manifest/web_seed/rules）
+4. 最新发布验收状态
