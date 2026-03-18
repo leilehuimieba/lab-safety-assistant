@@ -12,6 +12,7 @@ import argparse
 import csv
 import json
 import re
+import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -154,7 +155,21 @@ def html_to_text(html: str) -> tuple[str, str]:
 
 def fetch_jina(url: str, timeout: int, max_chars: int) -> FetchResult:
     jina_url = f"https://r.jina.ai/http://{url}" if url.startswith("http://") else f"https://r.jina.ai/{url}"
-    resp = requests.get(jina_url, timeout=timeout)
+    try:
+        resp = requests.get(jina_url, timeout=timeout)
+    except requests.RequestException as exc:
+        return FetchResult(
+            url=url,
+            status="error",
+            provider="jina",
+            title="",
+            content="",
+            quality_score=0.0,
+            requires_auth=False,
+            http_status=None,
+            error_reason=f"jina_request_error:{type(exc).__name__}",
+            fetched_at=utc_now(),
+        )
     text = (resp.text or "").strip()
     requires_auth = detect_auth_wall(text)
     status = "ok" if resp.status_code == 200 and text else "error"
@@ -342,13 +357,17 @@ def main() -> int:
             out_path = Path.cwd() / out_path
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    output = json.dumps(payload, ensure_ascii=False)
+    # Windows 默认控制台编码可能是 gbk，遇到特殊字符时直接 print 会抛 UnicodeEncodeError。
     if args.pretty:
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
-    else:
-        print(json.dumps(payload, ensure_ascii=False))
+        output = json.dumps(payload, ensure_ascii=False, indent=2)
+    try:
+        print(output)
+    except UnicodeEncodeError:  # pragma: no cover
+        sys.stdout.buffer.write(output.encode("utf-8", errors="replace"))
+        sys.stdout.buffer.write(b"\n")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
