@@ -350,6 +350,31 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
 - 检查脚本：`scripts/validate_eval_dashboard_gate.py`
 - 触发条件：关键指标连续两周低于阈值时，`quality_gate` 失败并阻止发布。
 
+## 第十步：使用网页提取 Skill（可选）
+
+当需要从链接提取正文并做实验入库时，可使用仓库内置 Skill：
+
+```powershell
+python skills/web-content-fetcher/scripts/fetch_web_content.py `
+  --url "https://example.com/post" `
+  --max-chars 30000 `
+  --pretty
+```
+
+批量模式（从 `web_seed_urls.csv` 读取）：
+
+```powershell
+python skills/web-content-fetcher/scripts/fetch_web_content.py `
+  --url-file data_sources/web_seed_urls.csv `
+  --url-column url `
+  --out-json artifacts/web_fetch_output.json
+```
+
+合规要求请先阅读：
+
+- `docs/web_content_fetch_skill_合规说明_v1.md`
+- `skills/web-content-fetcher/references/compliance_scope.md`
+
 ## 后续建议
 
 在完成本手册的最小复现后，建议继续推进：

@@ -78,6 +78,7 @@
 - [运行手册](./docs/runbook.md)
 - [数据源建设方案](./docs/data_source_plan.md)
 - [低置信度待补任务处理SOP](./docs/low_confidence_followup_sop_v1.md)
+- [网页提取 Skill 合规说明](./docs/web_content_fetch_skill_合规说明_v1.md)
 - [Embedding 接入指南](./docs/embedding_setup.md)（如何配置向量检索，替代纯关键词模式）
 - [评测结果看板](./docs/eval_dashboard.md)
 - [评测集](./eval_set_v1.csv)
@@ -102,6 +103,10 @@
 ### 3. 可评测、可迭代
 
 项目不是只做一个能聊天的原型，而是同步建设评测集、知识库样例、验收指标和调参记录，便于后续继续优化准确率、召回率与稳定性。
+
+### 4. 网页提取技能化
+
+已新增可复用 Skill：`skills/web-content-fetcher`，用于“先提取正文，再总结/入库”的多通道网页抓取流程（`jina -> scrapling -> direct`）。
 
 ## 仓库结构
 
