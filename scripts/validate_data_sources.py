@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import re
 import sys
 from pathlib import Path
@@ -58,6 +59,11 @@ PDF_RULE_HEADERS = [
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate data_sources CSV files.")
     parser.add_argument("--repo-root", default=".", help="Repository root path.")
+    parser.add_argument(
+        "--dictionary",
+        default="data_sources/field_dictionary.json",
+        help="Field dictionary json path (relative to repo root by default).",
+    )
     parser.add_argument("--quiet", action="store_true", help="Print concise output.")
     return parser.parse_args()
 
@@ -70,7 +76,28 @@ def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
     return headers, rows
 
 
-def validate_manifest(path: Path, errors: list[str], warnings: list[str]) -> None:
+def load_field_dictionary(path: Path, errors: list[str]) -> dict:
+    if not path.exists():
+        errors.append(f"缺少字段字典文件：{path}")
+        return {}
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as exc:
+        errors.append(f"字段字典 JSON 解析失败：{path} ({exc})")
+        return {}
+    if not isinstance(data, dict):
+        errors.append(f"字段字典格式非法：{path}（应为 JSON object）")
+        return {}
+    return data
+
+
+def validate_manifest(
+    path: Path,
+    errors: list[str],
+    warnings: list[str],
+    allowed: dict[str, set[str]],
+) -> None:
     if not path.exists():
         errors.append(f"缺少文件：{path}")
         return
@@ -87,7 +114,10 @@ def validate_manifest(path: Path, errors: list[str], warnings: list[str]) -> Non
     for i, row in enumerate(rows, start=2):
         rel_path = (row.get("path") or "").strip()
         title = (row.get("source_title") or "").strip()
+        category = (row.get("category") or "").strip()
+        lab_type = (row.get("lab_type") or "").strip()
         risk = (row.get("risk_level") or "").strip()
+        language = (row.get("language") or "").strip()
         q_hint = (row.get("question_hint") or "").strip()
 
         if not rel_path:
@@ -96,8 +126,20 @@ def validate_manifest(path: Path, errors: list[str], warnings: list[str]) -> Non
             errors.append(f"{path.name} 第{i}行 path 不能是绝对路径：{rel_path}")
         if not title:
             errors.append(f"{path.name} 第{i}行 source_title 为空")
+        if category and allowed.get("category") and category not in allowed["category"]:
+            errors.append(
+                f"{path.name} 第{i}行 category 非法：{category}，允许值见 data_sources/field_dictionary.json"
+            )
+        if lab_type and allowed.get("lab_type") and lab_type not in allowed["lab_type"]:
+            errors.append(
+                f"{path.name} 第{i}行 lab_type 非法：{lab_type}，允许值见 data_sources/field_dictionary.json"
+            )
         if risk not in RISK_LEVELS:
             errors.append(f"{path.name} 第{i}行 risk_level 非法：{risk}")
+        if language and allowed.get("language") and language not in allowed["language"]:
+            errors.append(
+                f"{path.name} 第{i}行 language 非法：{language}，允许值见 data_sources/field_dictionary.json"
+            )
         if not q_hint:
             errors.append(f"{path.name} 第{i}行 question_hint 为空")
 
@@ -110,7 +152,12 @@ def validate_manifest(path: Path, errors: list[str], warnings: list[str]) -> Non
         warnings.append(f"{path.name} 存在重复 path：{sorted(dup_paths)}")
 
 
-def validate_web_seed(path: Path, errors: list[str], warnings: list[str]) -> None:
+def validate_web_seed(
+    path: Path,
+    errors: list[str],
+    warnings: list[str],
+    allowed: dict[str, set[str]],
+) -> None:
     if not path.exists():
         errors.append(f"缺少文件：{path}")
         return
@@ -127,17 +174,32 @@ def validate_web_seed(path: Path, errors: list[str], warnings: list[str]) -> Non
     for i, row in enumerate(rows, start=2):
         source_id = (row.get("source_id") or "").strip()
         title = (row.get("title") or "").strip()
+        category = (row.get("category") or "").strip()
+        lab_type = (row.get("lab_type") or "").strip()
         url = (row.get("url") or "").strip()
         risk = (row.get("risk_level") or "").strip()
+        language = (row.get("language") or "").strip()
 
         if not source_id:
             errors.append(f"{path.name} 第{i}行 source_id 为空")
         if not title:
             errors.append(f"{path.name} 第{i}行 title 为空")
+        if category and allowed.get("category") and category not in allowed["category"]:
+            errors.append(
+                f"{path.name} 第{i}行 category 非法：{category}，允许值见 data_sources/field_dictionary.json"
+            )
+        if lab_type and allowed.get("lab_type") and lab_type not in allowed["lab_type"]:
+            errors.append(
+                f"{path.name} 第{i}行 lab_type 非法：{lab_type}，允许值见 data_sources/field_dictionary.json"
+            )
         if not url or not re.match(r"^https?://", url):
             errors.append(f"{path.name} 第{i}行 url 非法：{url}")
         if risk not in RISK_LEVELS:
             errors.append(f"{path.name} 第{i}行 risk_level 非法：{risk}")
+        if language and allowed.get("language") and language not in allowed["language"]:
+            errors.append(
+                f"{path.name} 第{i}行 language 非法：{language}，允许值见 data_sources/field_dictionary.json"
+            )
 
         if source_id:
             if source_id in seen_ids:
@@ -207,12 +269,27 @@ def main() -> int:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
     base = repo_root / "data_sources"
+    dictionary_path = Path(args.dictionary)
+    if not dictionary_path.is_absolute():
+        dictionary_path = repo_root / dictionary_path
 
     errors: list[str] = []
     warnings: list[str] = []
+    field_dict = load_field_dictionary(dictionary_path, errors)
 
-    validate_manifest(base / "document_manifest.csv", errors, warnings)
-    validate_web_seed(base / "web_seed_urls.csv", errors, warnings)
+    manifest_allowed = {
+        "category": set(field_dict.get("document_manifest", {}).get("category", [])),
+        "lab_type": set(field_dict.get("document_manifest", {}).get("lab_type", [])),
+        "language": set(field_dict.get("document_manifest", {}).get("language", [])),
+    }
+    web_allowed = {
+        "category": set(field_dict.get("web_seed_urls", {}).get("category", [])),
+        "lab_type": set(field_dict.get("web_seed_urls", {}).get("lab_type", [])),
+        "language": set(field_dict.get("web_seed_urls", {}).get("language", [])),
+    }
+
+    validate_manifest(base / "document_manifest.csv", errors, warnings, manifest_allowed)
+    validate_web_seed(base / "web_seed_urls.csv", errors, warnings, web_allowed)
     validate_pdf_rules(base / "pdf_special_rules.csv", errors, warnings)
 
     print_summary(errors, warnings, args.quiet)
@@ -221,4 +298,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
