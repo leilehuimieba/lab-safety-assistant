@@ -1,0 +1,67 @@
+name: 数据收集任务
+description: 提交新的资料收集任务（给信息收集员）
+title: "[数据收集] <主题> <截止日期>"
+labels:
+  - data-collection
+  - todo
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请只填写与本次数据收集相关的信息。提交后由负责人分配执行人。
+  - type: input
+    id: scope
+    attributes:
+      label: 收集范围
+      description: 例如：危化品SDS、校内制度、应急预案
+      placeholder: 例：校内危化品管理制度 + 乙醇/丙酮/硫酸 SDS
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级
+      options:
+        - P0（必须）
+        - P1（强烈建议）
+        - P2（可选）
+    validations:
+      required: true
+  - type: textarea
+    id: accepted_sources
+    attributes:
+      label: 可接受来源
+      description: 请明确来源类型和示例网址
+      placeholder: |
+        1) 学校官网实验室安全栏目
+        2) 国家标准全文公开系统
+        3) 供应商官方 SDS 页面
+    validations:
+      required: true
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: 交付要求
+      description: 说明提交到哪些文件
+      value: |
+        1) 更新 data_sources/document_manifest.csv
+        2) 更新 data_sources/web_seed_urls.csv（如有网页来源）
+        3) 在 PR 描述中给出新增数量、来源占比、是否可直接清洗
+    validations:
+      required: true
+  - type: input
+    id: deadline
+    attributes:
+      label: 截止时间
+      placeholder: YYYY-MM-DD
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: 备注
+      description: 可填写版权限制、访问限制、风险提示
+    validations:
+      required: false
+
