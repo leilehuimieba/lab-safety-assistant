@@ -63,6 +63,16 @@ def parse_args() -> argparse.Namespace:
         default="docs/release_review_log.md",
         help="Output markdown file to append entry.",
     )
+    parser.add_argument(
+        "--gate-flag",
+        default="docs/release_review_gate_enabled.flag",
+        help="Gate flag file path. Created/updated after first entry is appended.",
+    )
+    parser.add_argument(
+        "--skip-gate-flag",
+        action="store_true",
+        help="Do not touch gate flag file.",
+    )
     return parser.parse_args()
 
 
@@ -189,10 +199,19 @@ def main() -> int:
     else:
         output.write_text(block, encoding="utf-8")
 
+    if not args.skip_gate_flag:
+        gate_flag = Path(args.gate_flag)
+        gate_flag.parent.mkdir(parents=True, exist_ok=True)
+        enabled_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        gate_flag.write_text(
+            f"enabled_at={enabled_at}\nreason=first_release_review_entry_created\n",
+            encoding="utf-8",
+        )
+        print(f"Release gate flag enabled: {gate_flag}")
+
     print(f"Appended release review entry to: {output}")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

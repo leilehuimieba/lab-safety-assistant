@@ -36,6 +36,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Fail if no release entry block is found.",
     )
+    parser.add_argument(
+        "--gate-flag",
+        default="docs/release_review_gate_enabled.flag",
+        help="Gate flag file path (relative to repo root by default). If exists, require-entry is enforced.",
+    )
     parser.add_argument("--quiet", action="store_true", help="Concise output.")
     return parser.parse_args()
 
@@ -101,6 +106,9 @@ def main() -> int:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
     path = repo_root / args.file
+    gate_flag = Path(args.gate_flag)
+    if not gate_flag.is_absolute():
+        gate_flag = repo_root / gate_flag
 
     if not path.exists():
         print(f"missing file: {path}")
@@ -108,10 +116,13 @@ def main() -> int:
 
     lines = path.read_text(encoding="utf-8").splitlines()
     entries = extract_entries(lines)
+    require_entry_enabled = args.require_entry or gate_flag.exists()
 
     if not entries:
-        if args.require_entry:
+        if require_entry_enabled:
             print("release_review_log check failed: no release entries found.")
+            if gate_flag.exists():
+                print(f"- gate flag enabled: {gate_flag}")
             return 1
         if not args.quiet:
             print("release_review_log check passed: no entries yet (template mode).")
@@ -128,7 +139,14 @@ def main() -> int:
         return 1
 
     if not args.quiet:
-        print(f"release_review_log check passed ({len(entries)} entries).")
+        if gate_flag.exists():
+            print(
+                f"release_review_log check passed ({len(entries)} entries, gate=enabled)."
+            )
+        else:
+            print(
+                f"release_review_log check passed ({len(entries)} entries, gate=template mode)."
+            )
     return 0
 
 

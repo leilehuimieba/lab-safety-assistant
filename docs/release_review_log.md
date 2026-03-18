@@ -12,6 +12,12 @@
 python scripts\generate_release_review_entry.py --help
 ```
 
+门禁开关说明（新增）：
+
+- 首次用 `generate_release_review_entry.py` 追加正式记录后，会自动生成 `docs/release_review_gate_enabled.flag`。
+- 一旦该标记文件存在，质量门会强制要求 `release_review_log` 至少存在 1 条正式记录（require-entry）。
+- 若你确实要临时回到模板模式，可删除该标记文件（不建议在生产流程中使用）。
+
 模板（复制以下块追加到文末）：
 
 ```text
