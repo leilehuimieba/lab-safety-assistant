@@ -64,6 +64,11 @@ def parse_args() -> argparse.Namespace:
         help="Output markdown file to append entry.",
     )
     parser.add_argument(
+        "--csv-output",
+        default="docs/release_review_log.csv",
+        help="CSV log output file for structured release review statistics.",
+    )
+    parser.add_argument(
         "--gate-flag",
         default="docs/release_review_gate_enabled.flag",
         help="Gate flag file path. Created/updated after first entry is appended.",
@@ -153,6 +158,72 @@ def build_block(
     return "\n".join(lines)
 
 
+def append_csv_row(
+    path: Path,
+    *,
+    batch_name: str,
+    review_date: str,
+    reviewer_a: str,
+    reviewer_b: str,
+    eval_set_version: str,
+    human_questions: int,
+    human_pass: int,
+    high_risk_errors: int,
+    allow_release: str,
+    doc_rows: int,
+    web_rows: int,
+    merged_rows: int,
+    manual_total: int | None,
+    manual_done: int | None,
+    manual_pending: int | None,
+    notes: str,
+) -> None:
+    fieldnames = [
+        "batch_name",
+        "review_date",
+        "reviewer_a",
+        "reviewer_b",
+        "eval_set_version",
+        "human_review_questions",
+        "human_review_pass",
+        "high_risk_errors",
+        "allow_release",
+        "document_rows",
+        "web_rows",
+        "merged_rows",
+        "manual_review_total",
+        "manual_review_done",
+        "manual_review_pending",
+        "notes",
+    ]
+    row = {
+        "batch_name": batch_name,
+        "review_date": review_date,
+        "reviewer_a": reviewer_a,
+        "reviewer_b": reviewer_b,
+        "eval_set_version": eval_set_version,
+        "human_review_questions": str(human_questions),
+        "human_review_pass": str(human_pass),
+        "high_risk_errors": str(high_risk_errors),
+        "allow_release": allow_release,
+        "document_rows": str(doc_rows),
+        "web_rows": str(web_rows),
+        "merged_rows": str(merged_rows),
+        "manual_review_total": "" if manual_total is None else str(manual_total),
+        "manual_review_done": "" if manual_done is None else str(manual_done),
+        "manual_review_pending": "" if manual_pending is None else str(manual_pending),
+        "notes": notes or "",
+    }
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    file_exists = path.exists()
+    with path.open("a", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(row)
+
+
 def main() -> int:
     args = parse_args()
     run_report_path = Path(args.run_report)
@@ -199,6 +270,27 @@ def main() -> int:
     else:
         output.write_text(block, encoding="utf-8")
 
+    csv_output = Path(args.csv_output)
+    append_csv_row(
+        csv_output,
+        batch_name=args.batch_name,
+        review_date=review_date,
+        reviewer_a=args.reviewer_a,
+        reviewer_b=args.reviewer_b,
+        eval_set_version=args.eval_set_version,
+        human_questions=args.human_review_questions,
+        human_pass=args.human_review_pass,
+        high_risk_errors=args.high_risk_errors,
+        allow_release=args.allow_release,
+        doc_rows=doc_rows,
+        web_rows=web_rows,
+        merged_rows=merged_rows,
+        manual_total=manual_total,
+        manual_done=manual_done,
+        manual_pending=manual_pending,
+        notes=args.notes,
+    )
+
     if not args.skip_gate_flag:
         gate_flag = Path(args.gate_flag)
         gate_flag.parent.mkdir(parents=True, exist_ok=True)
@@ -210,6 +302,7 @@ def main() -> int:
         print(f"Release gate flag enabled: {gate_flag}")
 
     print(f"Appended release review entry to: {output}")
+    print(f"Appended release review csv row to: {csv_output}")
     return 0
 
 

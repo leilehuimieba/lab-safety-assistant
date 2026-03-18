@@ -6,6 +6,7 @@ Validate docs/release_review_log.md entry completeness and value constraints.
 from __future__ import annotations
 
 import argparse
+import csv
 import re
 from pathlib import Path
 
@@ -30,6 +31,11 @@ def parse_args() -> argparse.Namespace:
         "--file",
         default="docs/release_review_log.md",
         help="Release review markdown path (relative to repo root).",
+    )
+    parser.add_argument(
+        "--csv-file",
+        default="docs/release_review_log.csv",
+        help="Release review csv path (relative to repo root).",
     )
     parser.add_argument(
         "--require-entry",
@@ -102,10 +108,46 @@ def validate_entry(title: str, data: dict[str, str], errors: list[str]) -> None:
         errors.append(f"[{title}] 高风险错误建议>0 时不允许发布（yes）")
 
 
+def read_csv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
+    with path.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        headers = reader.fieldnames or []
+        rows = list(reader)
+    return headers, rows
+
+
+def validate_csv_rows(rows: list[dict[str, str]], errors: list[str]) -> None:
+    for idx, row in enumerate(rows, start=2):
+        batch = (row.get("batch_name") or "").strip()
+        allow = (row.get("allow_release") or "").strip().lower()
+        q_raw = (row.get("human_review_questions") or "").strip()
+        p_raw = (row.get("human_review_pass") or "").strip()
+        e_raw = (row.get("high_risk_errors") or "").strip()
+
+        if not batch:
+            errors.append(f"[CSV row {idx}] batch_name 为空")
+        if allow not in {"yes", "no"}:
+            errors.append(f"[CSV row {idx}] allow_release 必须是 yes/no：{allow}")
+
+        for name, value in (
+            ("human_review_questions", q_raw),
+            ("human_review_pass", p_raw),
+            ("high_risk_errors", e_raw),
+        ):
+            if not value.isdigit():
+                errors.append(f"[CSV row {idx}] {name} 非法：{value}")
+
+        if q_raw.isdigit() and p_raw.isdigit() and int(p_raw) > int(q_raw):
+            errors.append(f"[CSV row {idx}] human_review_pass 不能大于 human_review_questions")
+        if e_raw.isdigit() and allow == "yes" and int(e_raw) > 0:
+            errors.append(f"[CSV row {idx}] high_risk_errors>0 时 allow_release 不能是 yes")
+
+
 def main() -> int:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
     path = repo_root / args.file
+    csv_path = repo_root / args.csv_file
     gate_flag = Path(args.gate_flag)
     if not gate_flag.is_absolute():
         gate_flag = repo_root / gate_flag
@@ -113,10 +155,38 @@ def main() -> int:
     if not path.exists():
         print(f"missing file: {path}")
         return 1
+    if not csv_path.exists():
+        print(f"missing file: {csv_path}")
+        return 1
 
     lines = path.read_text(encoding="utf-8").splitlines()
     entries = extract_entries(lines)
+    csv_headers, csv_rows = read_csv_rows(csv_path)
     require_entry_enabled = args.require_entry or gate_flag.exists()
+
+    expected_headers = [
+        "batch_name",
+        "review_date",
+        "reviewer_a",
+        "reviewer_b",
+        "eval_set_version",
+        "human_review_questions",
+        "human_review_pass",
+        "high_risk_errors",
+        "allow_release",
+        "document_rows",
+        "web_rows",
+        "merged_rows",
+        "manual_review_total",
+        "manual_review_done",
+        "manual_review_pending",
+        "notes",
+    ]
+    if csv_headers != expected_headers:
+        print("release_review_log check failed: csv header mismatch")
+        print(f"- expected={expected_headers}")
+        print(f"- actual={csv_headers}")
+        return 1
 
     if not entries:
         if require_entry_enabled:
@@ -128,9 +198,15 @@ def main() -> int:
             print("release_review_log check passed: no entries yet (template mode).")
         return 0
 
+    if require_entry_enabled and not csv_rows:
+        print("release_review_log check failed: gate enabled but csv rows are empty.")
+        print(f"- gate flag enabled: {gate_flag}")
+        return 1
+
     errors: list[str] = []
     for title, data in entries:
         validate_entry(title, data, errors)
+    validate_csv_rows(csv_rows, errors)
 
     if errors:
         print("release_review_log check failed:")
@@ -141,11 +217,11 @@ def main() -> int:
     if not args.quiet:
         if gate_flag.exists():
             print(
-                f"release_review_log check passed ({len(entries)} entries, gate=enabled)."
+                f"release_review_log check passed ({len(entries)} md entries, {len(csv_rows)} csv rows, gate=enabled)."
             )
         else:
             print(
-                f"release_review_log check passed ({len(entries)} entries, gate=template mode)."
+                f"release_review_log check passed ({len(entries)} md entries, {len(csv_rows)} csv rows, gate=template mode)."
             )
     return 0
 

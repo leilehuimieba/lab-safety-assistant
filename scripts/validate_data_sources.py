@@ -76,6 +76,11 @@ def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
     return headers, rows
 
 
+def split_hazard_types(raw: str) -> list[str]:
+    normalized = raw.replace("；", ";").replace("，", ";").replace(",", ";")
+    return [item.strip() for item in normalized.split(";") if item.strip()]
+
+
 def load_field_dictionary(path: Path, errors: list[str]) -> dict:
     if not path.exists():
         errors.append(f"缺少字段字典文件：{path}")
@@ -115,8 +120,10 @@ def validate_manifest(
         rel_path = (row.get("path") or "").strip()
         title = (row.get("source_title") or "").strip()
         category = (row.get("category") or "").strip()
+        subcategory = (row.get("subcategory") or "").strip()
         lab_type = (row.get("lab_type") or "").strip()
         risk = (row.get("risk_level") or "").strip()
+        hazard_types = (row.get("hazard_types") or "").strip()
         language = (row.get("language") or "").strip()
         q_hint = (row.get("question_hint") or "").strip()
 
@@ -130,10 +137,24 @@ def validate_manifest(
             errors.append(
                 f"{path.name} 第{i}行 category 非法：{category}，允许值见 data_sources/field_dictionary.json"
             )
+        if (
+            subcategory
+            and allowed.get("subcategory")
+            and subcategory not in allowed["subcategory"]
+        ):
+            errors.append(
+                f"{path.name} 第{i}行 subcategory 非法：{subcategory}，允许值见 data_sources/field_dictionary.json"
+            )
         if lab_type and allowed.get("lab_type") and lab_type not in allowed["lab_type"]:
             errors.append(
                 f"{path.name} 第{i}行 lab_type 非法：{lab_type}，允许值见 data_sources/field_dictionary.json"
             )
+        if hazard_types and allowed.get("hazard_types"):
+            for token in split_hazard_types(hazard_types):
+                if token not in allowed["hazard_types"]:
+                    errors.append(
+                        f"{path.name} 第{i}行 hazard_types 非法项：{token}，允许值见 data_sources/field_dictionary.json"
+                    )
         if risk not in RISK_LEVELS:
             errors.append(f"{path.name} 第{i}行 risk_level 非法：{risk}")
         if language and allowed.get("language") and language not in allowed["language"]:
@@ -175,9 +196,11 @@ def validate_web_seed(
         source_id = (row.get("source_id") or "").strip()
         title = (row.get("title") or "").strip()
         category = (row.get("category") or "").strip()
+        subcategory = (row.get("subcategory") or "").strip()
         lab_type = (row.get("lab_type") or "").strip()
         url = (row.get("url") or "").strip()
         risk = (row.get("risk_level") or "").strip()
+        hazard_types = (row.get("hazard_types") or "").strip()
         language = (row.get("language") or "").strip()
 
         if not source_id:
@@ -188,10 +211,24 @@ def validate_web_seed(
             errors.append(
                 f"{path.name} 第{i}行 category 非法：{category}，允许值见 data_sources/field_dictionary.json"
             )
+        if (
+            subcategory
+            and allowed.get("subcategory")
+            and subcategory not in allowed["subcategory"]
+        ):
+            errors.append(
+                f"{path.name} 第{i}行 subcategory 非法：{subcategory}，允许值见 data_sources/field_dictionary.json"
+            )
         if lab_type and allowed.get("lab_type") and lab_type not in allowed["lab_type"]:
             errors.append(
                 f"{path.name} 第{i}行 lab_type 非法：{lab_type}，允许值见 data_sources/field_dictionary.json"
             )
+        if hazard_types and allowed.get("hazard_types"):
+            for token in split_hazard_types(hazard_types):
+                if token not in allowed["hazard_types"]:
+                    errors.append(
+                        f"{path.name} 第{i}行 hazard_types 非法项：{token}，允许值见 data_sources/field_dictionary.json"
+                    )
         if not url or not re.match(r"^https?://", url):
             errors.append(f"{path.name} 第{i}行 url 非法：{url}")
         if risk not in RISK_LEVELS:
@@ -279,12 +316,18 @@ def main() -> int:
 
     manifest_allowed = {
         "category": set(field_dict.get("document_manifest", {}).get("category", [])),
+        "subcategory": set(field_dict.get("document_manifest", {}).get("subcategory", [])),
         "lab_type": set(field_dict.get("document_manifest", {}).get("lab_type", [])),
+        "hazard_types": set(
+            field_dict.get("document_manifest", {}).get("hazard_types", [])
+        ),
         "language": set(field_dict.get("document_manifest", {}).get("language", [])),
     }
     web_allowed = {
         "category": set(field_dict.get("web_seed_urls", {}).get("category", [])),
+        "subcategory": set(field_dict.get("web_seed_urls", {}).get("subcategory", [])),
         "lab_type": set(field_dict.get("web_seed_urls", {}).get("lab_type", [])),
+        "hazard_types": set(field_dict.get("web_seed_urls", {}).get("hazard_types", [])),
         "language": set(field_dict.get("web_seed_urls", {}).get("language", [])),
     }
 

@@ -5,12 +5,18 @@
 - 每次“知识库批次发布前”必须记录一次人工验收结论。
 - 至少两位审核人签名（可填写 GitHub 用户名）。
 - 任一高风险错误建议未关闭时，禁止发布。
+- 结构化统计请同步查看：`docs/release_review_log.csv`
 
 可选：使用脚本自动追加验收条目
 
 ```powershell
 python scripts\generate_release_review_entry.py --help
 ```
+
+脚本会同时写入：
+
+1. `docs/release_review_log.md`（可读版）
+2. `docs/release_review_log.csv`（统计版）
 
 门禁开关说明（新增）：
 
