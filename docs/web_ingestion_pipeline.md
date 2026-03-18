@@ -22,6 +22,7 @@
 依赖清单：
 
 - `scripts/requirements-web-ingest.txt`
+- Skill 模式额外建议：`requests`, `html2text`, `scrapling`（可选，未安装会自动降级）
 
 输出目录：
 
@@ -66,12 +67,21 @@
 cd D:\workspace\lab-safe-assistant-github
 py -m venv .venv
 .venv\Scripts\python -m pip install -r scripts\requirements-web-ingest.txt
+.venv\Scripts\python -m pip install requests html2text scrapling
 ```
 
 执行默认流水线：
 
 ```powershell
 .venv\Scripts\python scripts\web_ingest_pipeline.py
+```
+
+默认模式是 `auto`：优先使用 `skills/web-content-fetcher`，不可用时回退到 legacy HTML 抓取。
+
+强制走 Skill 路由抓取（推荐）：
+
+```powershell
+.venv\Scripts\python scripts\web_ingest_pipeline.py --fetcher-mode skill --skill-providers jina,scrapling,direct
 ```
 
 自定义输出目录：
@@ -86,17 +96,30 @@ py -m venv .venv
 .venv\Scripts\python scripts\web_ingest_pipeline.py --concurrency 5 --max-chars 1500 --overlap 150
 ```
 
+只用旧版抓取器（不经过 Skill）：
+
+```powershell
+.venv\Scripts\python scripts\web_ingest_pipeline.py --fetcher-mode legacy
+```
+
 确认结果没有问题后，直接并入现有知识库：
 
 ```powershell
 .venv\Scripts\python scripts\web_ingest_pipeline.py --output-dir artifacts\web_ingest_demo --merge-into knowledge_base_curated.csv
 ```
 
+Skill 侧一键包装命令（等价于 `--fetcher-mode skill`）：
+
+```powershell
+python skills/web-content-fetcher/scripts/run_web_ingest_pipeline.py --repo-root . --output-dir artifacts/web_ingest_skill
+```
+
 ## 输出解释
 
 `fetch_results.jsonl`
 
-- 记录每个 URL 的抓取状态、最终 URL、状态码、原始 HTML 存放位置
+- 记录每个 URL 的抓取状态、最终 URL、状态码、提取通道（provider）
+- Skill 模式下还包含 `quality_score`、`requires_auth`、`fetch_status`
 
 `clean_documents.jsonl`
 

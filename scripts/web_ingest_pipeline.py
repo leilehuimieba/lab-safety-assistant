@@ -10,12 +10,14 @@ import argparse
 import asyncio
 import csv
 import hashlib
+import importlib.util
 import json
 import re
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 from urllib.parse import urljoin
 
 try:
@@ -155,6 +157,35 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
+def resolve_skill_script_path(raw_path: str = "") -> Path:
+    if raw_path:
+        path = Path(raw_path)
+        if path.exists():
+            return path.resolve()
+    return (
+        Path(__file__).resolve().parents[1]
+        / "skills"
+        / "web-content-fetcher"
+        / "scripts"
+        / "fetch_web_content.py"
+    ).resolve()
+
+
+def load_skill_fetcher_module(script_path: Path) -> Any | None:
+    if not script_path.exists():
+        return None
+    spec = importlib.util.spec_from_file_location("skill_web_content_fetcher", script_path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    try:
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)  # type: ignore[attr-defined]
+        return module
+    except Exception:
+        return None
+
+
 def read_manifest(path: Path) -> list[SourceRow]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
@@ -283,6 +314,19 @@ def extract_publish_date(soup: BeautifulSoup, text: str) -> str:
     return ""
 
 
+def extract_publish_date_from_text(text: str) -> str:
+    patterns = [
+        r"(20\d{2}-\d{2}-\d{2})",
+        r"(20\d{2}/\d{2}/\d{2})",
+        r"(20\d{2}年\d{1,2}月\d{1,2}日)",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            return match.group(1)
+    return ""
+
+
 def find_best_content_node(soup: BeautifulSoup):
     def node_score(node) -> float:
         text = normalize_text(node.get_text("\n", strip=True))
@@ -356,9 +400,13 @@ async def fetch_source(
         "requested_url": row.url,
         "final_url": row.url,
         "status": "error",
+        "fetch_status": "error",
         "status_code": 0,
         "fetched_at": now_iso(),
         "html_path": str(html_path),
+        "provider": "legacy_html",
+        "quality_score": 0.0,
+        "requires_auth": False,
         "error": "",
     }
 
@@ -380,6 +428,7 @@ async def fetch_source(
             {
                 "final_url": final_url,
                 "status": "success",
+                "fetch_status": "ok",
                 "status_code": response.status_code,
                 "content_type": response.headers.get("content-type", ""),
                 "html_sha1": sha1_text(html),
@@ -403,6 +452,72 @@ async def fetch_all(rows: list[SourceRow], raw_dir: Path, concurrency: int) -> l
         return await asyncio.gather(*tasks)
 
 
+async def fetch_source_with_skill(
+    row: SourceRow,
+    skill_module: Any,
+    providers: list[str],
+    timeout: int,
+    max_chars: int,
+) -> dict:
+    def run_sync() -> dict:
+        result = skill_module.fetch_with_fallback(
+            row.url,
+            providers=providers,
+            timeout=timeout,
+            max_chars=max_chars,
+        )
+        payload = {
+            "source_id": row.source_id,
+            "requested_url": row.url,
+            "final_url": row.url,
+            "status": "error",
+            "fetch_status": str(getattr(result, "status", "error")),
+            "status_code": int(getattr(result, "http_status", 0) or 0),
+            "fetched_at": str(getattr(result, "fetched_at", now_iso())),
+            "html_path": "",
+            "content_type": "text/markdown",
+            "provider": str(getattr(result, "provider", "")),
+            "quality_score": float(getattr(result, "quality_score", 0.0) or 0.0),
+            "requires_auth": bool(getattr(result, "requires_auth", False)),
+            "error": str(getattr(result, "error_reason", "")),
+            "title": str(getattr(result, "title", "")),
+            "content_text": str(getattr(result, "content", "")),
+            "html_sha1": "",
+        }
+        if payload["fetch_status"] == "ok" and payload["content_text"]:
+            payload["status"] = "success"
+            payload["error"] = ""
+            payload["html_sha1"] = sha1_text(payload["content_text"])
+        return payload
+
+    return await asyncio.to_thread(run_sync)
+
+
+async def fetch_all_with_skill(
+    rows: list[SourceRow],
+    *,
+    skill_module: Any,
+    providers: list[str],
+    timeout: int,
+    max_chars: int,
+    concurrency: int,
+) -> list[dict]:
+    semaphore = asyncio.Semaphore(concurrency)
+
+    async def runner(row: SourceRow) -> dict:
+        async with semaphore:
+            return await fetch_source_with_skill(
+                row,
+                skill_module=skill_module,
+                providers=providers,
+                timeout=timeout,
+                max_chars=max_chars,
+            )
+
+    tasks = [runner(row) for row in rows]
+    return await asyncio.gather(*tasks)
+
+
 def write_jsonl(path: Path, rows: Iterable[dict]) -> None:
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:
@@ -416,12 +531,28 @@ def build_clean_documents(rows: list[SourceRow], fetch_results: list[dict]) -> l
         if item.get("status") != "success":
             continue
         source_row = row_by_id[item["source_id"]]
-        html = Path(item["html_path"]).read_text(encoding="utf-8")
-        title, description, main_text = extract_main_text(html)
+        provider = (item.get("provider") or "legacy_html").strip()
+        main_text = (item.get("content_text") or "").strip()
+        title = (item.get("title") or "").strip()
+        description = ""
+        published_date = ""
+
+        if main_text:
+            description = main_text[:160]
+            published_date = extract_publish_date_from_text(main_text)
+        else:
+            html_path = (item.get("html_path") or "").strip()
+            if not html_path:
+                continue
+            html = Path(html_path).read_text(encoding="utf-8")
+            title, description, main_text = extract_main_text(html)
+            if len(main_text) < 120:
+                continue
+            published_date = extract_publish_date(BeautifulSoup(html, "html.parser"), main_text)
+
         if len(main_text) < 120:
             continue
 
-        published_date = extract_publish_date(BeautifulSoup(html, "html.parser"), main_text)
         documents.append(
             {
                 "source_id": source_row.source_id,
@@ -435,6 +566,9 @@ def build_clean_documents(rows: list[SourceRow], fetch_results: list[dict]) -> l
                 "source_url": item["final_url"],
                 "requested_url": item["requested_url"],
                 "fetched_at": item["fetched_at"],
+                "fetch_provider": provider,
+                "quality_score": item.get("quality_score", 0.0),
+                "requires_auth": item.get("requires_auth", False),
                 "published_date": published_date,
                 "description": description,
                 "content": main_text,
@@ -482,7 +616,11 @@ def build_kb_rows(
                     "disposal": "",
                     "first_aid": "",
                     "emergency": "",
-                    "legal_notes": "基于公开网页资料自动抽取，导入知识库前请人工复核。",
+                    "legal_notes": (
+                        "基于公开网页资料自动抽取，导入知识库前请人工复核。"
+                        f"提取通道={document.get('fetch_provider', 'legacy_html')}；"
+                        f"quality_score={document.get('quality_score', 0.0)}。"
+                    ),
                     "references": f"{document['source_title']} | {document['source_url']}",
                     "source_type": "网页",
                     "source_title": document["source_title"],
@@ -533,10 +671,17 @@ def merge_into_csv(path: Path, new_rows: list[dict]) -> int:
 
 
 def write_report(path: Path, fetch_results: list[dict], documents: list[dict], kb_rows: list[dict]) -> None:
+    blocked_count = sum(1 for item in fetch_results if item.get("fetch_status") == "blocked")
+    provider_stat: dict[str, int] = {}
+    for item in fetch_results:
+        provider = str(item.get("provider", "unknown") or "unknown")
+        provider_stat[provider] = provider_stat.get(provider, 0) + 1
     report = {
         "generated_at": now_iso(),
         "requested_pages": len(fetch_results),
         "fetched_successfully": sum(1 for item in fetch_results if item.get("status") == "success"),
+        "blocked_pages": blocked_count,
+        "providers": provider_stat,
         "clean_documents": len(documents),
         "knowledge_rows": len(kb_rows),
     }
@@ -551,7 +696,40 @@ async def run_pipeline(args: argparse.Namespace) -> None:
     raw_dir.mkdir(parents=True, exist_ok=True)
 
     rows = read_manifest(manifest_path)
-    fetch_results = await fetch_all(rows, raw_dir=raw_dir, concurrency=args.concurrency)
+    skill_mode = args.fetcher_mode in {"auto", "skill"}
+    skill_module = None
+    skill_script_path = resolve_skill_script_path(args.skill_script)
+    if skill_mode:
+        skill_module = load_skill_fetcher_module(skill_script_path)
+        if args.fetcher_mode == "skill" and skill_module is None:
+            raise SystemExit(
+                f"Skill fetcher not available: {skill_script_path}\n"
+                "请先确保 skills/web-content-fetcher 已存在，或使用 --skill-script 指定脚本。"
+            )
+
+    providers = [
+        item.strip().lower()
+        for item in str(args.skill_providers).split(",")
+        if item.strip()
+    ]
+    providers = [p for p in providers if p in {"jina", "scrapling", "direct"}]
+    if not providers:
+        providers = ["jina", "scrapling", "direct"]
+
+    if skill_module is not None and args.fetcher_mode != "legacy":
+        print(f"Fetch mode: skill ({skill_script_path})")
+        fetch_results = await fetch_all_with_skill(
+            rows,
+            skill_module=skill_module,
+            providers=providers,
+            timeout=args.fetch_timeout,
+            max_chars=args.fetch_max_chars,
+            concurrency=args.concurrency,
+        )
+    else:
+        print("Fetch mode: legacy_html")
+        fetch_results = await fetch_all(rows, raw_dir=raw_dir, concurrency=args.concurrency)
+
     write_jsonl(output_dir / "fetch_results.jsonl", fetch_results)
 
     documents = build_clean_documents(rows, fetch_results)
@@ -608,6 +786,34 @@ def parse_args() -> argparse.Namespace:
         "--merge-into",
         default="",
         help="Optional path to append unique rows into an existing knowledge-base CSV.",
+    )
+    parser.add_argument(
+        "--fetcher-mode",
+        choices=["auto", "legacy", "skill"],
+        default="auto",
+        help="Web fetch mode: auto(优先skill), legacy(原HTML抓取), skill(强制skill抓取).",
+    )
+    parser.add_argument(
+        "--skill-script",
+        default="",
+        help="Optional path to skills/web-content-fetcher/scripts/fetch_web_content.py",
+    )
+    parser.add_argument(
+        "--skill-providers",
+        default="jina,scrapling,direct",
+        help="Provider order used by skill mode.",
+    )
+    parser.add_argument(
+        "--fetch-timeout",
+        type=int,
+        default=20,
+        help="Fetch timeout for skill provider requests.",
+    )
+    parser.add_argument(
+        "--fetch-max-chars",
+        type=int,
+        default=30000,
+        help="Max chars for skill fetch output before chunking.",
     )
     return parser.parse_args()
 

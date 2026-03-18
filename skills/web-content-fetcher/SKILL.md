@@ -46,6 +46,16 @@ python skills/web-content-fetcher/scripts/fetch_web_content.py `
   --providers "jina,scrapling,direct"
 ```
 
+Run repository web ingest pipeline with skill mode:
+
+```powershell
+python skills/web-content-fetcher/scripts/run_web_ingest_pipeline.py `
+  --repo-root . `
+  --manifest data_sources/web_seed_urls.csv `
+  --output-dir artifacts/web_ingest_skill `
+  --providers "jina,scrapling,direct"
+```
+
 ## Output Contract
 
 Each record contains:
@@ -78,5 +88,6 @@ Read `references/compliance_scope.md` before production ingestion.
 ## Resources
 
 - `scripts/fetch_web_content.py`: extraction router and CLI
+- `scripts/run_web_ingest_pipeline.py`: wrapper to run `scripts/web_ingest_pipeline.py` in skill mode
 - `references/provider_routing.md`: routing and fallback policy
 - `references/compliance_scope.md`: legal and data handling boundaries

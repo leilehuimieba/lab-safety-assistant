@@ -33,12 +33,16 @@
 
 - Skill 目录：`skills/web-content-fetcher/`
 - 关键脚本：`skills/web-content-fetcher/scripts/fetch_web_content.py`
+- Pipeline 包装脚本：`skills/web-content-fetcher/scripts/run_web_ingest_pipeline.py`
 - 路由策略：`skills/web-content-fetcher/references/provider_routing.md`
 - Skill 内合规文件：`skills/web-content-fetcher/references/compliance_scope.md`
+
+已接入主流水线：
+
+- `scripts/web_ingest_pipeline.py --fetcher-mode auto|skill|legacy`
 
 ## 5. 团队执行要求
 
 - 每周至少一次抽样检查提取结果准确性与来源合法性。
 - 若发现来源限制策略变化，及时更新路由或改为人工采集。
 - 对外展示时仅展示“摘要 + 来源链接”，不直接复制大量原文。
-
