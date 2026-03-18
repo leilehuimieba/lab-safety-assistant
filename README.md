@@ -79,6 +79,7 @@
 - [数据源建设方案](./docs/data_source_plan.md)
 - [低置信度待补任务处理SOP](./docs/low_confidence_followup_sop_v1.md)
 - [Embedding 接入指南](./docs/embedding_setup.md)（如何配置向量检索，替代纯关键词模式）
+- [评测结果看板](./docs/eval_dashboard.md)
 - [评测集](./eval_set_v1.csv)
 - [验收指标](./eval_criteria.md)
 - [检索调参记录](./retrieval_tuning_report.md)

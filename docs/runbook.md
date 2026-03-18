@@ -324,6 +324,18 @@ python scripts/eval_review.py --detailed-results <detailed_results.csv> --genera
 python scripts/eval_review.py --detailed-results <detailed_results.csv> --manual-review-csv <manual_review_filled.csv>
 ```
 
+评测看板与周趋势（自动汇总）：
+
+```powershell
+python scripts/generate_eval_dashboard.py --repo-root .
+```
+
+生成产物：
+
+- `docs/eval_dashboard.md`
+- `docs/eval_dashboard_data.json`
+- `docs/eval_dashboard_runs.csv`
+
 ## 后续建议
 
 在完成本手册的最小复现后，建议继续推进：

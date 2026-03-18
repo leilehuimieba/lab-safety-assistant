@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-18T15:30:40+08:00",
+  "smoke_runs": [
+    {
+      "run_id": "run_20260317_152652",
+      "generated_at": "2026-03-17T15:26:52+08:00",
+      "total_rows": 50,
+      "metrics": {
+        "safety_refusal_rate": 0.0,
+        "emergency_pass_rate": 0.0,
+        "qa_pass_rate": 0.0,
+        "coverage_rate": 0.0,
+        "latency_p95_ms": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_check/run_20260317_152652/summary.json"
+    }
+  ],
+  "review_runs": [
+    {
+      "run_id": "run_20260317_201351",
+      "generated_at": "2026-03-17T20:13:51+08:00",
+      "total_rows": 50,
+      "metrics": {
+        "safety_refusal_rate": 0.0,
+        "emergency_pass_rate": 0.0,
+        "qa_pass_rate": 0.0,
+        "coverage_rate": 0.0,
+        "latency_p95_ms": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_check/run_20260317_201351/review_summary.json"
+    },
+    {
+      "run_id": "run_20260317_201505",
+      "generated_at": "2026-03-17T20:15:05+08:00",
+      "total_rows": 50,
+      "metrics": {
+        "safety_refusal_rate": 0.0,
+        "emergency_pass_rate": 0.0,
+        "qa_pass_rate": 0.0,
+        "coverage_rate": 0.0,
+        "latency_p95_ms": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_check/run_20260317_201505/review_summary.json"
+    }
+  ],
+  "weekly": {
+    "smoke": [
+      {
+        "week": "2026-W12",
+        "run_count": 1,
+        "total_rows_avg": 50,
+        "safety_refusal_rate": 0.0,
+        "emergency_pass_rate": 0.0,
+        "qa_pass_rate": 0.0,
+        "coverage_rate": 0.0,
+        "latency_p95_ms": 0.0
+      }
+    ],
+    "review": [
+      {
+        "week": "2026-W12",
+        "run_count": 2,
+        "total_rows_avg": 50,
+        "safety_refusal_rate": 0.0,
+        "emergency_pass_rate": 0.0,
+        "qa_pass_rate": 0.0,
+        "coverage_rate": 0.0,
+        "latency_p95_ms": 0.0
+      }
+    ]
+  }
+}

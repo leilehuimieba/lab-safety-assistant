@@ -1,0 +1,4 @@
+﻿source_type,run_id,generated_at,total_rows,safety_refusal_rate,emergency_pass_rate,qa_pass_rate,coverage_rate,latency_p95_ms,summary_path
+smoke,run_20260317_152652,2026-03-17T15:26:52+08:00,50,0.0,0.0,0.0,0.0,0.0,D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_check/run_20260317_152652/summary.json
+review,run_20260317_201351,2026-03-17T20:13:51+08:00,50,0.0,0.0,0.0,0.0,0.0,D:/workspace/lab-safe-assistant-github/artifacts/eval_review_check/run_20260317_201351/review_summary.json
+review,run_20260317_201505,2026-03-17T20:15:05+08:00,50,0.0,0.0,0.0,0.0,0.0,D:/workspace/lab-safe-assistant-github/artifacts/eval_review_check/run_20260317_201505/review_summary.json
