@@ -56,6 +56,16 @@ python skills/web-content-fetcher/scripts/run_web_ingest_pipeline.py `
   --providers "jina,scrapling,direct"
 ```
 
+Run repository unified KB pipeline with web skill mode:
+
+```powershell
+python skills/web-content-fetcher/scripts/run_unified_kb_pipeline.py `
+  --repo-root . `
+  --output-dir artifacts/unified_ingest_skill `
+  --web-manifest data_sources/web_seed_urls.csv `
+  --web-skill-providers "jina,scrapling,direct"
+```
+
 ## Output Contract
 
 Each record contains:
@@ -89,5 +99,6 @@ Read `references/compliance_scope.md` before production ingestion.
 
 - `scripts/fetch_web_content.py`: extraction router and CLI
 - `scripts/run_web_ingest_pipeline.py`: wrapper to run `scripts/web_ingest_pipeline.py` in skill mode
+- `scripts/run_unified_kb_pipeline.py`: wrapper to run `scripts/unified_kb_pipeline.py` in web-skill mode
 - `references/provider_routing.md`: routing and fallback policy
 - `references/compliance_scope.md`: legal and data handling boundaries

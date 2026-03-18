@@ -34,12 +34,14 @@
 - Skill 目录：`skills/web-content-fetcher/`
 - 关键脚本：`skills/web-content-fetcher/scripts/fetch_web_content.py`
 - Pipeline 包装脚本：`skills/web-content-fetcher/scripts/run_web_ingest_pipeline.py`
+- Unified 包装脚本：`skills/web-content-fetcher/scripts/run_unified_kb_pipeline.py`
 - 路由策略：`skills/web-content-fetcher/references/provider_routing.md`
 - Skill 内合规文件：`skills/web-content-fetcher/references/compliance_scope.md`
 
 已接入主流水线：
 
 - `scripts/web_ingest_pipeline.py --fetcher-mode auto|skill|legacy`
+- `scripts/unified_kb_pipeline.py --web-fetcher-mode auto|skill|legacy`
 
 ## 5. 团队执行要求
 

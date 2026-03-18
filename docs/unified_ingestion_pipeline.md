@@ -28,6 +28,8 @@ cd D:\workspace\lab-safe-assistant-github
 .venv\Scripts\python scripts\unified_kb_pipeline.py
 ```
 
+默认 `--web-fetcher-mode auto`：网页子流程优先走 `web-content-fetcher` Skill，不可用时自动回退 legacy 抓取。
+
 ### 2. 指定文档目录
 
 ```powershell
@@ -55,10 +57,26 @@ cd D:\workspace\lab-safe-assistant-github
 .venv\Scripts\python scripts\unified_kb_pipeline.py --skip-documents
 ```
 
-### 6. 跑完直接并入已有知识库
+### 6. 控制网页抓取模式（统一入口）
+
+```powershell
+# 强制走 skill 路由（推荐）
+.venv\Scripts\python scripts\unified_kb_pipeline.py --web-fetcher-mode skill --web-skill-providers jina,scrapling,direct
+
+# 强制走 legacy 抓取器
+.venv\Scripts\python scripts\unified_kb_pipeline.py --web-fetcher-mode legacy
+```
+
+### 7. 跑完直接并入已有知识库
 
 ```powershell
 .venv\Scripts\python scripts\unified_kb_pipeline.py --merge-into knowledge_base_curated.csv
+```
+
+### 8. Skill 侧一键运行统一入口
+
+```powershell
+python skills/web-content-fetcher/scripts/run_unified_kb_pipeline.py --repo-root . --output-dir artifacts/unified_ingest_skill
 ```
 
 ## 输出结构

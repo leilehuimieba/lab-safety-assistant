@@ -154,7 +154,17 @@ def build_web_command(args: argparse.Namespace, output_dir: Path, repo_root: Pat
         str(args.web_max_chars),
         "--overlap",
         str(args.web_overlap),
+        "--fetcher-mode",
+        args.web_fetcher_mode,
+        "--skill-providers",
+        args.web_skill_providers,
+        "--fetch-timeout",
+        str(args.web_fetch_timeout),
+        "--fetch-max-chars",
+        str(args.web_fetch_max_chars),
     ]
+    if args.web_skill_script:
+        command.extend(["--skill-script", args.web_skill_script])
     return command
 
 
@@ -238,6 +248,34 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=120,
         help="Character overlap between web chunks.",
+    )
+    parser.add_argument(
+        "--web-fetcher-mode",
+        choices=["auto", "legacy", "skill"],
+        default="auto",
+        help="Web fetch mode passed to web_ingest_pipeline (default: auto, 优先skill).",
+    )
+    parser.add_argument(
+        "--web-skill-script",
+        default="",
+        help="Optional path to fetch_web_content.py passed to web_ingest_pipeline.",
+    )
+    parser.add_argument(
+        "--web-skill-providers",
+        default="jina,scrapling,direct",
+        help="Provider order for skill mode web fetch.",
+    )
+    parser.add_argument(
+        "--web-fetch-timeout",
+        type=int,
+        default=20,
+        help="Fetch timeout passed to web_ingest_pipeline skill fetch.",
+    )
+    parser.add_argument(
+        "--web-fetch-max-chars",
+        type=int,
+        default=30000,
+        help="Max chars for skill fetch result before web chunking.",
     )
     parser.add_argument(
         "--skip-documents",
@@ -324,6 +362,7 @@ def main() -> None:
             }
             for key, value in run_logs.items()
         },
+        "web_fetcher_mode": args.web_fetcher_mode if not args.skip_web else "skipped",
     }
     (output_dir / "run_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2),

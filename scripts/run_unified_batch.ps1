@@ -10,6 +10,12 @@ param(
   [int]$DocumentOverlap = 100,
   [int]$WebMaxChars = 1400,
   [int]$WebOverlap = 100,
+  [ValidateSet("auto", "legacy", "skill")]
+  [string]$WebFetcherMode = "auto",
+  [string]$WebSkillScript = "",
+  [string]$WebSkillProviders = "jina,scrapling,direct",
+  [int]$WebFetchTimeout = 20,
+  [int]$WebFetchMaxChars = 30000,
   [string]$WebManifest = "data_sources\web_seed_urls.csv",
   [string]$PythonExe = "python"
 )
@@ -40,8 +46,15 @@ else {
   $argsList += @(
     "--web-manifest", $WebManifest,
     "--web-max-chars", "$WebMaxChars",
-    "--web-overlap", "$WebOverlap"
+    "--web-overlap", "$WebOverlap",
+    "--web-fetcher-mode", $WebFetcherMode,
+    "--web-skill-providers", $WebSkillProviders,
+    "--web-fetch-timeout", "$WebFetchTimeout",
+    "--web-fetch-max-chars", "$WebFetchMaxChars"
   )
+  if ($WebSkillScript) {
+    $argsList += @("--web-skill-script", $WebSkillScript)
+  }
 }
 
 Write-Host "=== Unified KB Batch Start ===" -ForegroundColor Cyan

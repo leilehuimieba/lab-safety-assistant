@@ -108,6 +108,7 @@
 
 已新增可复用 Skill：`skills/web-content-fetcher`，用于“先提取正文，再总结/入库”的多通道网页抓取流程（`jina -> scrapling -> direct`）。
 并已接入主流水线：`scripts/web_ingest_pipeline.py --fetcher-mode auto|skill|legacy`。
+并已接入统一入口：`scripts/unified_kb_pipeline.py --web-fetcher-mode auto|skill|legacy`。
 
 ## 仓库结构
 
