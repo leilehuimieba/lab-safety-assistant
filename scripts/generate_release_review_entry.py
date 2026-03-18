@@ -109,7 +109,7 @@ def summarize_manual_review(path: Path) -> tuple[int, int, int]:
 
 
 def extract_counts(run_report: dict) -> tuple[int, int, int]:
-    doc_rows = int(run_report.get("document_rows", 0))
+    doc_rows = int(run_report.get("documents_rows", run_report.get("document_rows", 0)))
     web_rows = int(run_report.get("web_rows", 0))
     merged_rows = int(run_report.get("merged_rows", 0))
     return doc_rows, web_rows, merged_rows

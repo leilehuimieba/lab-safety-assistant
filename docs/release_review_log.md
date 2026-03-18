@@ -40,3 +40,22 @@ python scripts\generate_release_review_entry.py --help
 - 备注：
 ```
 
+
+## 发布批次：release-kb-20260318-v3
+
+- 审核日期：2026-03-18
+- 审核人A：blaze
+- 审核人B：codex
+- 使用评测集版本：eval_set_v1.csv
+- 人工审核题数：10
+- 通过题数：0
+- 高风险错误建议（0/1+）：0
+- 结论（允许发布 yes/no）：no
+- 自动统计：
+  - document_rows=146
+  - web_rows=37
+  - merged_rows=183
+  - manual_review_total=21
+  - manual_review_done=0
+  - manual_review_pending=21
+- 备注：自动生成：待人工问答审核后再放行
