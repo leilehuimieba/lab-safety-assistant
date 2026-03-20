@@ -69,11 +69,12 @@
 如果你希望快速理解项目并继续推进，建议优先阅读以下文档：
 
 - [云端协作快速入口](./docs/TEAM_CLOUD_WORKFLOW.md)
-- [角色1：信息收集员执行手册](./docs/角色1_信息收集员执行手册_v1.md)
-- [角色2：数据清洗与人工审核员执行手册](./docs/角色2_数据清洗与人工审核员执行手册_v1.md)
+- [项目目录结构与分工说明](./docs/PROJECT_STRUCTURE.md)
+- [角色1：信息收集员执行手册](./docs/角色1_信息收集员执行手册_v2.md)
+- [角色2：数据清洗与人工审核员执行手册](./docs/角色2_数据清洗员执行手册_v2.md)
 - [角色3：发布与验收负责人执行手册](./docs/角色3_发布与验收负责人执行手册_v1.md)
 - [发布前人工验收记录模板](./docs/release_review_log.md)
-- [项目申报书（Markdown 版）](./实验室安全小助手_项目申报立项书_可提交版.md)
+- [项目申报书（Markdown 版）](./docs/proposal/实验室安全小助手_项目申报立项书_可提交版.md)
 - [演示脚本](./docs/demo_script.md)
 - [运行手册](./docs/runbook.md)
 - [数据源建设方案](./docs/data_source_plan.md)
@@ -116,36 +117,25 @@
 lab-safety-assistant/
 ├─ README.md
 ├─ docs/
-│  ├─ demo_script.md
-│  ├─ runbook.md
-│  ├─ data_source_plan.md
-│  └─ embedding_setup.md        ← Embedding / 混合检索接入指南
-├─ scripts/
-│  ├─ web_ingest_pipeline.py    ← 网络知识爬取与结构化流水线
-│  ├─ _clean_web_entries.py     ← 清洗网络抓取条目（删除垃圾/修剪导航）
-│  ├─ _add_new_entries.py       ← 补充 KB-1026~1037（辐射/激光/液氮等）
-│  ├─ _add_msds_entries.py      ← 补充 KB-1038~1042（MSDS 专项）
-│  └─ _expand_eval_set.py       ← 扩充评测集至 50 条
-├─ data_sources/
-│  └─ web_seed_urls.csv         ← 18 个权威高校安全页面种子 URL
-├─ artifacts/                   ← 脚本运行产物（不纳入知识库主文件）
-│  └─ web_ingest_v2/
-├─ 实验室安全小助手_项目申报立项书_可提交版.docx
-├─ 实验室安全小助手_项目申报立项书_可提交版.md
-├─ 立项书优化稿_实验室安全小助手.md
+│  ├─ guides/                   ← 快速入门与规则指南
+│  ├─ proposal/                 ← 立项书（md/docx）
+│  ├─ reports/                  ← 阶段报告（构建/清洗/状态）
+│  ├─ word/                     ← 角色执行手册（Word）
+│  ├─ TEAM_CLOUD_WORKFLOW.md    ← 云端协作入口
+│  ├─ demo_script.md            ← 演示脚本
+│  ├─ runbook.md                ← 运行手册
+│  └─ data_source_plan.md       ← 数据源建设方案
+├─ templates/                   ← 模板与 schema（KB/Eval）
+├─ scripts/                     ← 数据入库、评测、门禁自动化脚本
+├─ data_sources/                ← URL 种子、manifest、预抓取状态
+├─ manual_sources/              ← 人工补录入口（inbox/approved/rejected）
+├─ artifacts/                   ← 脚本运行产物
+├─ web_demo/                    ← 演示页面与接口
 ├─ knowledge_base_curated.csv   ← 主知识库（81 条）
-├─ knowledge_base_template.csv
-├─ knowledge_entry_schema.json
-├─ knowledge_entry_template.json
 ├─ safety_rules.yaml            ← 规则库（24 条）
-├─ safety_rules_guide.md
 ├─ eval_set_v1.csv              ← 评测集（50 条）
-├─ eval_set_template.csv
-├─ eval_criteria.md
-├─ kb_build_report.md
-├─ kb_clean_report.md
-├─ retrieval_tuning_report.md
-└─ README_MVP_START.md
+├─ eval_criteria.md             ← 验收指标
+└─ retrieval_tuning_report.md   ← 检索调参记录
 ```
 
 ## 技术路线
