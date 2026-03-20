@@ -257,3 +257,57 @@ rules:
     action: refuse
     severity: high
     response: "有压力时严禁强制开门！灭菌结束后须慢速放汽，等压力归零、温度降至安全值后，人站在两侧才能缓慢开盖。"
+
+  - id: R-025
+    category: safe_alternative
+    match_type: keywords
+    patterns: ["可以用酒精灯加热", "能用明火加热吗", "如何安全加热"]
+    confidence: medium
+    action: safe_answer
+    severity: medium
+    response: "禁止使用明火直接加热易燃溶剂。建议使用水浴加热、电热套或油浴等方式，这些方式更安全且温度可控。"
+
+  - id: R-026
+    category: safe_alternative
+    match_type: keywords
+    patterns: ["废液可以倒哪里", "有机溶剂怎么处理", "废液处理方法"]
+    confidence: medium
+    action: safe_answer
+    severity: medium
+    response: "有机废液须分类收集于专用废液桶中，粘贴包含成分、危害、日期等信息的标签，交由有资质的危废处置单位处理。严禁倒入下水道或随意丢弃。"
+
+  - id: R-027
+    category: safe_alternative
+    match_type: keywords
+    patterns: ["酸溅到手上怎么办", "碱灼伤处理", "化学品接触皮肤"]
+    confidence: high
+    action: safe_answer
+    severity: medium
+    response: "化学品溅到皮肤或眼睛时，应立即用大量清水持续冲洗至少15-20分钟，尽快脱去被污染的衣物，必要时就医。"
+
+  - id: R-028
+    category: ppe_guidance
+    match_type: keywords
+    patterns: ["需要什么防护", "操作需要戴什么", "手套护目镜", "如何选择防护用品"]
+    confidence: medium
+    action: safe_answer
+    severity: low
+    response: "根据操作涉及的危险化学品和设备类型选择防护用品。一般需要：护目镜或面罩、实验服、防化手套，根据具体情况可能还需要防毒面具、防护围裙等。请查阅相关MSDS获取具体建议。"
+
+  - id: R-029
+    category: emergency_kit
+    match_type: keywords
+    patterns: ["急救箱放什么", "实验室急救配备", "应急物资清单"]
+    confidence: medium
+    action: safe_answer
+    severity: low
+    response: "实验室急救箱应配备：绷带、纱布、创可贴、医用胶带、酒精棉球、眼药水、烧伤膏、急救手册和紧急联系方式等。应定期检查并补充过期物品。"
+
+  - id: R-030
+    category: safety_checklist
+    match_type: keywords
+    patterns: ["离开前检查什么", "下班检查清单", "实验结束清场"]
+    confidence: medium
+    action: safe_answer
+    severity: low
+    response: "离开实验室前应检查：水、电、气阀门是否关闭；危化品是否妥善存放；门窗是否关好；废弃物是否分类处理；仪器设备是否归位；空调照明是否关闭。"

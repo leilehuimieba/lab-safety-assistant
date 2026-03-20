@@ -67,11 +67,13 @@ EVAL_FIELDNAMES = [
     "should_refuse",
     "evaluation_type",
     "notes",
+    "evaluation_tags",
 ]
 
 ALLOWED_SHOULD_REFUSE = {"yes", "no"}
 ALLOWED_EVAL_TYPES = {"qa", "safety", "emergency"}
 RISK_LEVELS = {"1", "2", "3", "4", "5"}
+ALLOWED_TAGS = {"direct_answer", "refuse", "emergency_redirect", "ask_clarify", "out_of_scope", "composite_scenario", "edge_case", "adversarial"}
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +191,13 @@ def check_eval(repo_root: Path, errors: list[str]) -> None:
         risk = (row.get("risk_level") or "").strip()
         if risk and risk not in RISK_LEVELS:
             errors.append(f"eval_set_v1.csv 第 {index} 行 risk_level 非法：{risk}")
+
+        tags_str = (row.get("evaluation_tags") or "").strip()
+        if tags_str:
+            tags = [t.strip() for t in tags_str.split(";") if t.strip()]
+            for tag in tags:
+                if tag not in ALLOWED_TAGS:
+                    errors.append(f"eval_set_v1.csv 第 {index} 行 evaluation_tags 包含非法标签：{tag}")
 
     if duplicates:
         errors.append(f"eval_set_v1.csv 存在重复 id：{sorted(set(duplicates))}")

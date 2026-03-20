@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import logging
 import math
 import os
 import re
@@ -25,6 +26,9 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+logger = logging.getLogger(__name__)
 
 
 EVAL_REQUIRED_COLUMNS = [
@@ -110,6 +114,12 @@ def parse_args() -> argparse.Namespace:
         "--generate-template",
         action="store_true",
         help="Only generate a blank responses template and exit.",
+    )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Set logging level.",
     )
     return parser.parse_args()
 
@@ -288,8 +298,17 @@ def make_summary_markdown(summary: dict[str, object], output_dir: Path) -> str:
 
 def main() -> int:
     args = parse_args()
+
+    logging.basicConfig(
+        level=args.log_level,
+        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    logger.info("Starting smoke evaluation")
     eval_path = Path(args.eval_set).resolve()
     if not eval_path.exists():
+        logger.error("Eval set not found: %s", eval_path)
         raise SystemExit(f"Eval set not found: {eval_path}")
 
     headers, eval_rows = read_csv_rows(eval_path)
@@ -297,13 +316,16 @@ def main() -> int:
     if args.limit > 0:
         eval_rows = eval_rows[: args.limit]
 
+    logger.info("Loaded %d eval entries from %s", len(eval_rows), eval_path)
+
     output_root = Path(args.output_dir).resolve() / f"run_{now_ts()}"
     output_root.mkdir(parents=True, exist_ok=True)
+    logger.info("Output directory: %s", output_root)
 
     if args.generate_template:
         template_path = output_root / "responses_template.csv"
         build_template(template_path, eval_rows)
-        print(f"Template generated: {template_path}")
+        logger.info("Template generated: %s", template_path)
         return 0
 
     source_mode = ""
@@ -313,6 +335,7 @@ def main() -> int:
         source_mode = "responses_csv"
         response_path = Path(args.responses_csv).resolve()
         if not response_path.exists():
+            logger.error("Responses CSV not found: %s", response_path)
             raise SystemExit(f"Responses CSV not found: {response_path}")
         _, rows = read_csv_rows(response_path)
         for row in rows:
@@ -329,16 +352,19 @@ def main() -> int:
     elif args.use_dify:
         source_mode = "dify_api"
         if not args.dify_base_url:
+            logger.error("Missing --dify-base-url (or env DIFY_BASE_URL)")
             raise SystemExit("Missing --dify-base-url (or env DIFY_BASE_URL).")
         if not args.dify_app_key:
+            logger.error("Missing --dify-app-key (or env DIFY_APP_API_KEY)")
             raise SystemExit("Missing --dify-app-key (or env DIFY_APP_API_KEY).")
         for row in eval_rows:
             row_id = (row.get("id") or "").strip()
             question = row.get("question") or ""
             answer, latency_ms, error = call_dify(args.dify_base_url, args.dify_app_key, question)
             response_by_id[row_id] = (answer, latency_ms, error)
-            print(f"[{row_id}] done latency={latency_ms:.0f}ms error={'none' if not error else 'yes'}")
+            logger.debug("[%s] done latency=%.0fms error=%s", row_id, latency_ms, "none" if not error else error)
     else:
+        logger.error("No input mode specified (--responses-csv or --use-dify)")
         raise SystemExit("Choose one input mode: --responses-csv or --use-dify")
 
     detailed_rows: list[dict[str, object]] = []
@@ -451,10 +477,8 @@ def main() -> int:
     summary_md_path = output_root / "summary.md"
     summary_md_path.write_text(make_summary_markdown(summary, output_root), encoding="utf-8")
 
-    print(f"Smoke eval done: {output_root}")
-    print(f"- detail:  {detail_path}")
-    print(f"- summary: {summary_json_path}")
-    print(f"- report:  {summary_md_path}")
+    logger.info("Smoke eval completed successfully")
+    logger.info("Output files: detail=%s, summary=%s, report=%s", detail_path, summary_json_path, summary_md_path)
     return 0
 
 
