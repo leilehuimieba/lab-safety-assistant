@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import logging
 import re
 import subprocess
 import sys
@@ -72,6 +73,8 @@ ALLOWED_SHOULD_REFUSE = {"yes", "no"}
 ALLOWED_EVAL_TYPES = {"qa", "safety", "emergency"}
 RISK_LEVELS = {"1", "2", "3", "4", "5"}
 
+logger = logging.getLogger(__name__)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run repository quality checks.")
@@ -84,6 +87,12 @@ def parse_args() -> argparse.Namespace:
         "--skip-secret-scan",
         action="store_true",
         help="Skip secret scan step.",
+    )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Set logging level.",
     )
     return parser.parse_args()
 
@@ -266,18 +275,27 @@ def run_eval_dashboard_gate_check(repo_root: Path, errors: list[str]) -> None:
 
 def print_summary(errors: list[str]) -> None:
     if not errors:
-        print("Quality gate passed.")
+        logger.info("Quality gate passed.")
         return
-    print("Quality gate failed with issues:")
+    logger.error("Quality gate failed with %d issues:", len(errors))
     for item in errors:
-        print(f"- {item}")
+        logger.error("  - %s", item)
 
 
 def main() -> int:
     args = parse_args()
+    
+    logging.basicConfig(
+        level=args.log_level,
+        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    
     repo_root = Path(args.repo_root).resolve()
     errors: list[str] = []
 
+    logger.info("Starting quality gate checks in: %s", repo_root)
+    
     if not args.skip_secret_scan:
         run_secret_scan(repo_root, errors)
     run_data_sources_check(repo_root, errors)

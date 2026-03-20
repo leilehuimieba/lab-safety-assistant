@@ -1,10 +1,15 @@
 ﻿version: 1.0
-updated_at: 2026-03-11
+updated_at: 2026-03-20
 
 global_policy:
   default_action: safe_answer
   low_confidence_action: ask_for_more_info
   cite_sources: true
+
+confidence_levels:
+  high: 规则明确，patterns 精准，误触发概率低，可自动执行
+  medium: patterns 有一定通用性，建议人工复核后执行
+  low: patterns 较宽泛，需要人工审核或低优先级处理
 
 safe_response_templates:
   refuse:
@@ -38,6 +43,7 @@ rules:
     category: dangerous_mixing
     match_type: keywords
     patterns: ["漂白水", "次氯酸钠", "盐酸", "氨水", "过氧化氢", "硝酸", "浓硫酸"]
+    confidence: high
     action: refuse
     severity: high
     response: "可能产生有毒气体或剧烈反应，禁止混合。"
@@ -46,6 +52,7 @@ rules:
     category: open_flame_flammable
     match_type: keywords
     patterns: ["酒精灯", "明火", "乙醚", "丙酮", "乙醇", "正己烷"]
+    confidence: high
     action: refuse
     severity: high
     response: "易燃溶剂禁止明火加热，请使用水浴或电热。"
@@ -54,6 +61,7 @@ rules:
     category: improper_disposal
     match_type: keywords
     patterns: ["倒入水槽", "下水道", "直接倒掉", "随意丢弃", "冲入下水道"]
+    confidence: high
     action: refuse
     severity: high
     response: "危废需按制度分类收集，禁止随意排放。"
@@ -62,6 +70,7 @@ rules:
     category: ppe_bypass
     match_type: keywords
     patterns: ["不戴手套", "不戴护目镜", "不用实验服", "省略PPE"]
+    confidence: high
     action: safe_answer
     severity: medium
     response: "必须按制度佩戴PPE，不得省略。"
@@ -70,6 +79,7 @@ rules:
     category: fume_hood_bypass
     match_type: keywords
     patterns: ["不开通风柜", "通风柜关掉", "不用通风"]
+    confidence: high
     action: refuse
     severity: high
     response: "挥发性或有毒操作必须在通风柜内进行。"
@@ -78,6 +88,7 @@ rules:
     category: self_harm_or_illegal
     match_type: keywords
     patterns: ["自杀", "伤害", "投毒", "爆炸", "制造武器"]
+    confidence: high
     action: refuse
     severity: critical
     response: "该问题涉及安全风险或违法行为，无法提供帮助。"
@@ -86,6 +97,7 @@ rules:
     category: prompt_injection
     match_type: keywords
     patterns: ["忽略以上", "无视规则", "系统提示", "显示提示词", "越狱"]
+    confidence: high
     action: refuse
     severity: high
     response: "无法执行该请求。"
@@ -94,6 +106,7 @@ rules:
     category: electrical_shock
     match_type: keywords
     patterns: ["触电", "高压", "裸线", "电源短路"]
+    confidence: high
     action: redirect_emergency
     severity: high
     response: "若触电/电气事故：优先断电与隔离，按应急预案处理并联系实验室管理人员。"
@@ -102,6 +115,7 @@ rules:
     category: biological_hazard
     match_type: keywords
     patterns: ["病原体", "培养细菌", "感染", "生物安全柜"]
+    confidence: medium
     action: safe_answer
     severity: high
     response: "请遵循生物安全等级规定与SOP。"
@@ -121,6 +135,8 @@ rules:
     category: chemical_splash_skin
     match_type: keywords
     patterns: ["溅到皮肤", "化学品溅到皮肤", "皮肤被腐蚀", "化学灼伤", "酸碱灼伤"]
+    confidence: low
+    confidence: high
     action: redirect_emergency
     severity: high
     response: "若化学品溅到皮肤：立即用大量清水持续冲洗，尽快脱去被污染的衣物/手套，并联系实验室管理人员或就医。"
@@ -129,6 +145,7 @@ rules:
     category: chemical_splash_eye
     match_type: keywords
     patterns: ["溅到眼睛", "眼睛被腐蚀", "化学品进眼", "眼部灼伤", "洗眼器"]
+    confidence: high
     action: redirect_emergency
     severity: high
     response: "若化学品溅入眼睛：立即用洗眼器或大量清水持续冲洗，同时联系实验室管理人员并尽快就医。"
@@ -137,6 +154,7 @@ rules:
     category: fire_smoke
     match_type: keywords
     patterns: ["起火", "着火", "冒烟", "火灾", "燃烧", "爆燃", "火警"]
+    confidence: high
     action: redirect_emergency
     severity: critical
     response: "若发生起火/冒烟：立即停止实验、切断电源/气源；在确保安全且受过培训的前提下使用灭火器；无法控制请立刻撤离并报警。"
@@ -145,6 +163,7 @@ rules:
     category: gas_leak
     match_type: keywords
     patterns: ["气体泄漏", "闻到异味", "气瓶泄漏", "煤气味", "有毒气体"]
+    confidence: high
     action: redirect_emergency
     severity: high
     response: "若疑似气体泄漏：停止实验、关闭气源（在安全前提下），开启通风并撤离到安全区域，联系实验室管理人员处理。"
@@ -153,6 +172,7 @@ rules:
     category: chemical_spill
     match_type: keywords
     patterns: ["洒漏", "打翻", "化学品泄漏", "溶液洒在地上", "溅洒"]
+    confidence: high
     action: redirect_emergency
     severity: high
     response: "若发生化学品泄漏：隔离现场、避免接触和吸入，在安全前提下通风并使用泄漏应急物资处理，立即报告实验室管理人员。"
@@ -161,6 +181,7 @@ rules:
     category: ingestion
     match_type: keywords
     patterns: ["误食", "误饮", "吞咽", "喝到", "摄入", "中毒"]
+    confidence: high
     action: redirect_emergency
     severity: critical
     response: "若误食/误饮化学品：立即停止实验，漱口并尽快就医或联系急救，同时告知具体化学品名称与浓度。"
@@ -169,6 +190,7 @@ rules:
     category: inhalation
     match_type: keywords
     patterns: ["吸入", "吸了", "吸到气体", "刺激性气味", "咳嗽", "头晕", "呼吸困难"]
+    confidence: medium
     action: redirect_emergency
     severity: high
     response: "若吸入有害气体：立即转移到新鲜空气处，必要时求助医疗或实验室管理人员。"
@@ -177,6 +199,7 @@ rules:
     category: burn
     match_type: keywords
     patterns: ["烫伤", "烧伤", "灼伤", "热烫", "皮肤起泡"]
+    confidence: high
     action: redirect_emergency
     severity: medium
     response: "若发生烫伤/灼伤：立即停止实验，用清水冷却并保护伤处，必要时就医。"
@@ -185,6 +208,7 @@ rules:
     category: cut_bleeding
     match_type: keywords
     patterns: ["割伤", "划伤", "出血", "流血", "被割到"]
+    confidence: high
     action: redirect_emergency
     severity: medium
     response: "若发生割伤/出血：立即停止实验，清洁伤口并加压止血，必要时就医。"
@@ -193,6 +217,7 @@ rules:
     category: radiation_emergency
     match_type: keywords
     patterns: ["放射源丢失", "辐射污染", "意外照射", "放射性泄漏", "核素污染"]
+    confidence: high
     action: redirect_emergency
     severity: critical
     response: "发生辐射事故：立即疏散周围人员并隔离区域，皮肤污染用流水清洗，第一时间通知辐射安全负责人，1小时内上报生态环境部门，配合专业机构处置。"
@@ -201,6 +226,7 @@ rules:
     category: laser_injury
     match_type: keywords
     patterns: ["激光伤眼", "激光照到眼", "激光灼伤", "被激光照射"]
+    confidence: high
     action: redirect_emergency
     severity: high
     response: "激光伤眼是紧急情况：立即停止操作，用大量清水冲洗眼部，禁止揉眼，立即就医并告知激光波长和功率信息。"
@@ -209,6 +235,7 @@ rules:
     category: cryogenic_injury
     match_type: keywords
     patterns: ["液氮冻伤", "低温冻伤", "被液氮烫", "液氮溅到", "冻伤"]
+    confidence: high
     action: redirect_emergency
     severity: high
     response: "低温冻伤处置：将冻伤部位浸入37-40°C温水中缓慢复温，禁止摩擦或揉搓，立即就医。若在密闭空间大量液氮泄漏，立即撤离至通风处。"
@@ -217,6 +244,7 @@ rules:
     category: centrifuge_violation
     match_type: keywords
     patterns: ["离心机转着", "离心机运转时", "离心机没停"]
+    confidence: high
     action: refuse
     severity: high
     response: "绝对不能在离心机运转时开盖！必须等转子完全停止后才能打开，强行开盖有严重危险。"
@@ -225,6 +253,7 @@ rules:
     category: autoclave_violation
     match_type: keywords
     patterns: ["灭菌锅有压力", "灭菌结束立刻", "高压灭菌直接开"]
+    confidence: high
     action: refuse
     severity: high
     response: "有压力时严禁强制开门！灭菌结束后须慢速放汽，等压力归零、温度降至安全值后，人站在两侧才能缓慢开盖。"
