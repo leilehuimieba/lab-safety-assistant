@@ -60,17 +60,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output",
-        default="docs/release_review_log.md",
+        default="docs/eval/release_review_log.md",
         help="Output markdown file to append entry.",
     )
     parser.add_argument(
         "--csv-output",
-        default="docs/release_review_log.csv",
+        default="docs/eval/release_review_log.csv",
         help="CSV log output file for structured release review statistics.",
     )
     parser.add_argument(
         "--gate-flag",
-        default="docs/release_review_gate_enabled.flag",
+        default="docs/eval/release_review_gate_enabled.flag",
         help="Gate flag file path. Created/updated after first entry is appended.",
     )
     parser.add_argument(
@@ -308,3 +308,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

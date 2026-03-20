@@ -7,9 +7,9 @@ Inputs:
 - artifacts/eval_review*/run_*/review_summary.json
 
 Outputs:
-- docs/eval_dashboard.md
-- docs/eval_dashboard_data.json
-- docs/eval_dashboard_runs.csv
+- docs/eval/eval_dashboard.md
+- docs/eval/eval_dashboard_data.json
+- docs/eval/eval_dashboard_runs.csv
 """
 
 from __future__ import annotations
@@ -89,17 +89,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", default=".", help="Repository root path.")
     parser.add_argument(
         "--output-markdown",
-        default="docs/eval_dashboard.md",
+        default="docs/eval/eval_dashboard.md",
         help="Output markdown path (relative to repo root by default).",
     )
     parser.add_argument(
         "--output-json",
-        default="docs/eval_dashboard_data.json",
+        default="docs/eval/eval_dashboard_data.json",
         help="Output JSON data path.",
     )
     parser.add_argument(
         "--output-csv",
-        default="docs/eval_dashboard_runs.csv",
+        default="docs/eval/eval_dashboard_runs.csv",
         help="Output CSV data path.",
     )
     parser.add_argument(
@@ -519,4 +519,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 

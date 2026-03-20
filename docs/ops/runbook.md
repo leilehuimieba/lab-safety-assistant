@@ -1,4 +1,4 @@
-# 实验室安全小助手运行手册
+﻿# 实验室安全小助手运行手册
 
 ## 文档目的
 
@@ -229,7 +229,7 @@ LLM 节点负责：
 
 建议配套使用：
 
-- `docs/demo_script.md`
+- `docs/ops/demo_script.md`
 
 演示前建议确认：
 
@@ -332,9 +332,9 @@ python scripts/generate_eval_dashboard.py --repo-root .
 
 生成产物：
 
-- `docs/eval_dashboard.md`
-- `docs/eval_dashboard_data.json`
-- `docs/eval_dashboard_runs.csv`
+- `docs/eval/eval_dashboard.md`
+- `docs/eval/eval_dashboard_data.json`
+- `docs/eval/eval_dashboard_runs.csv`
 
 真实回归流水线（自动 smoke + 自动复核汇总 + 刷新看板）：
 
@@ -346,7 +346,7 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
 
 门禁规则（已启用）：
 
-- 标记文件：`docs/eval_dashboard_gate_enabled.flag`
+- 标记文件：`docs/eval/eval_dashboard_gate_enabled.flag`
 - 检查脚本：`scripts/validate_eval_dashboard_gate.py`
 - 触发条件：关键指标连续两周低于阈值时，`quality_gate` 失败并阻止发布。
 
@@ -372,7 +372,7 @@ python skills/web-content-fetcher/scripts/fetch_web_content.py `
 
 合规要求请先阅读：
 
-- `docs/web_content_fetch_skill_合规说明_v1.md`
+- `docs/ops/web_content_fetch_skill_合规说明_v1.md`
 - `skills/web-content-fetcher/references/compliance_scope.md`
 
 ## 后续建议
@@ -387,8 +387,9 @@ python skills/web-content-fetcher/scripts/fetch_web_content.py `
 
 ## 相关文档
 
-- `docs/demo_script.md`
-- `docs/data_source_plan.md`
+- `docs/ops/demo_script.md`
+- `docs/pipeline/data_source_plan.md`
 - `eval_set_v1.csv`
 - `eval_criteria.md`
 - `retrieval_tuning_report.md`
+

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Validate docs/release_review_log.md entry completeness and value constraints.
+Validate docs/eval/release_review_log.md entry completeness and value constraints.
 """
 
 from __future__ import annotations
@@ -29,12 +29,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", default=".", help="Repository root.")
     parser.add_argument(
         "--file",
-        default="docs/release_review_log.md",
+        default="docs/eval/release_review_log.md",
         help="Release review markdown path (relative to repo root).",
     )
     parser.add_argument(
         "--csv-file",
-        default="docs/release_review_log.csv",
+        default="docs/eval/release_review_log.csv",
         help="Release review csv path (relative to repo root).",
     )
     parser.add_argument(
@@ -44,7 +44,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--gate-flag",
-        default="docs/release_review_gate_enabled.flag",
+        default="docs/eval/release_review_gate_enabled.flag",
         help="Gate flag file path (relative to repo root by default). If exists, require-entry is enforced.",
     )
     parser.add_argument("--quiet", action="store_true", help="Concise output.")
@@ -228,3 +228,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

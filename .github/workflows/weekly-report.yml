@@ -51,9 +51,10 @@ jobs:
 
             - Triggered eval regression pipeline (live run when Dify secrets are configured)
             - Generated weekly report under `docs/weekly_reports/`
-            - Refreshed eval dashboard under `docs/eval_dashboard.md`
+            - Refreshed eval dashboard under `docs/eval/eval_dashboard.md`
             - Please review and merge if content looks correct
           labels: |
             documentation
             weekly-report
           author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+

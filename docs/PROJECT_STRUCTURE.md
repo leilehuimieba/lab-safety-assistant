@@ -8,10 +8,13 @@
 lab-safe-assistant-github/
 ├─ docs/                    # 文档中心（手册、流程、报告）
 │  ├─ guides/               # 快速入门与规则说明
+│  ├─ ops/                  # 协作流程、SOP、运行与部署
+│  ├─ pipeline/             # 数据入库、抓取、清洗流水线文档
+│  ├─ eval/                 # 评测看板、发布验收与门禁
 │  ├─ proposal/             # 立项书与申报材料
 │  ├─ reports/              # 阶段报告与过程复盘
 │  ├─ word/                 # 面向成员分发的 Word 手册
-│  └─ *.md                  # 运行、流程、SOP 等主文档
+│  └─ PROJECT_STRUCTURE.md  # 本文档（目录规范）
 ├─ templates/               # 结构模板（KB、Eval、Schema）
 ├─ scripts/                 # 自动化脚本（采集、清洗、评测、门禁）
 ├─ data_sources/            # 种子链接、manifest、预抓取状态
@@ -34,10 +37,10 @@ lab-safe-assistant-github/
 
 ## 3. 角色协作入口
 
-1. 信息收集员：`docs/角色1_信息收集员执行手册_v2.md`
-2. 数据清洗员：`docs/角色2_数据清洗员执行手册_v2.md`
-3. 发布负责人：`docs/角色3_发布与验收负责人执行手册_v1.md`
-4. 云端协作总入口：`docs/TEAM_CLOUD_WORKFLOW.md`
+1. 信息收集员：`docs/ops/角色1_信息收集员执行手册_v2.md`
+2. 数据清洗员：`docs/ops/角色2_数据清洗员执行手册_v2.md`
+3. 发布负责人：`docs/ops/角色3_发布与验收负责人执行手册_v1.md`
+4. 云端协作总入口：`docs/ops/TEAM_CLOUD_WORKFLOW.md`
 
 ## 4. 提交流程建议
 
@@ -52,6 +55,7 @@ lab-safe-assistant-github/
 
 ## 5. 后续可选优化
 
-1. 将 `docs` 根目录继续细分为 `docs/ops`、`docs/pipeline`、`docs/eval`（第二阶段再做）。
-2. 将 `scripts` 按功能拆为子目录（`scripts/ingest`、`scripts/eval`、`scripts/governance`）。
-3. 增加一个自动检查：阻止把新文件直接丢到仓库根目录（除白名单外）。
+1. 将 `scripts` 按功能拆为子目录（`scripts/ingest`、`scripts/eval`、`scripts/governance`）。
+2. 增加一个自动检查：阻止把新文件直接丢到仓库根目录（除白名单外）。
+3. 增加一个自动检查：阻止把新文档直接丢到 `docs/` 根目录（除白名单外）。
+

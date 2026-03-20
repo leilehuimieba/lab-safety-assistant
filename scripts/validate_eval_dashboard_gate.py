@@ -55,12 +55,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", default=".", help="Repository root path.")
     parser.add_argument(
         "--dashboard-data",
-        default="docs/eval_dashboard_data.json",
+        default="docs/eval/eval_dashboard_data.json",
         help="Path to eval dashboard data json.",
     )
     parser.add_argument(
         "--gate-flag",
-        default="docs/eval_dashboard_gate_enabled.flag",
+        default="docs/eval/eval_dashboard_gate_enabled.flag",
         help="Only enforce when this file exists.",
     )
     parser.add_argument(
@@ -218,4 +218,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 

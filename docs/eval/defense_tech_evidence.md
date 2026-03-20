@@ -1,4 +1,4 @@
-# 实验室安全小助手：技术路线与迭代证据页（答辩版）
+﻿# 实验室安全小助手：技术路线与迭代证据页（答辩版）
 
 > 更新时间：2026-03-17  
 > 适用场景：大创中期/结题答辩、课程项目技术汇报、导师评审
@@ -34,7 +34,7 @@ flowchart LR
 | 迭代阶段 | 关键动作 | 证据文件 | 结果 |
 |---|---|---|---|
 | v1 原型 | 经济模式检索 + 基础 KB 构建 | `retrieval_tuning_report.md` | 能命中核心问题，但噪声偏高 |
-| v2 检索升级 | 接入 bge-m3，切换高质量+混合检索 | `docs/embedding_setup.md`、`retrieval_tuning_report.md` | 召回相关性明显提升，噪声下降 |
+| v2 检索升级 | 接入 bge-m3，切换高质量+混合检索 | `docs/pipeline/embedding_setup.md`、`retrieval_tuning_report.md` | 召回相关性明显提升，噪声下降 |
 | v3 数据扩展 | 补充 MSDS 与细分场景条目 | `knowledge_base_curated.csv`、`scripts/_add_msds_entries.py`、`scripts/_add_new_entries.py` | 覆盖更完整，演示可用性增强 |
 | v4 评测体系 | 50 条评测集 + 指标体系 | `eval_set_v1.csv`、`eval_criteria.md` | 具备可重复评估能力 |
 | v5 工程治理 | 提交前安全扫描、CI 质量门、单测接入 | `.pre-commit-config.yaml`、`.github/workflows/quality-gate.yml`、`tests/` | 降低泄露与回归风险 |
@@ -61,4 +61,5 @@ flowchart LR
 - 检索侧：在混合检索稳定后评估 rerank 模型收益。  
 - 评测侧：人工复核完成率提升到 100%，形成版本对比基线。  
 - 产品侧：按场景拆分节点（常规问答 / 危险纠偏 / 应急流程）提升可解释性。  
+
 

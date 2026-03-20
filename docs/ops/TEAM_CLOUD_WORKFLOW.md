@@ -1,13 +1,13 @@
-# GitHub 云端协作快速入口
+﻿# GitHub 云端协作快速入口
 
 本页用于给队友“5分钟上手”。
 
 ## 1. 我是新同学，先看哪份文档
 按角色直接进入：
 
-1. 信息收集员：`docs/角色1_信息收集员执行手册_v2.md`
-2. 清洗与人工审核员：`docs/角色2_数据清洗员执行手册_v2.md`
-3. 发布与验收负责人：`docs/角色3_发布与验收负责人执行手册_v1.md`
+1. 信息收集员：`docs/ops/角色1_信息收集员执行手册_v2.md`
+2. 清洗与人工审核员：`docs/ops/角色2_数据清洗员执行手册_v2.md`
+3. 发布与验收负责人：`docs/ops/角色3_发布与验收负责人执行手册_v1.md`
 
 Word 版下载：
 
@@ -70,3 +70,4 @@ python scripts\generate_weekly_team_report.py --repo-root . --since "7 days ago"
 2. 收集/清洗/发布相关提交数量
 3. 数据规模快照（manifest/web_seed/rules）
 4. 最新发布验收状态
+

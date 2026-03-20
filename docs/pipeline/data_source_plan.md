@@ -1,4 +1,4 @@
-# 实验室安全小助手数据源建设方案
+﻿# 实验室安全小助手数据源建设方案
 
 ## 文档目的
 
@@ -376,8 +376,9 @@ data_sources/
 
 ## 相关文档
 
-- `docs/runbook.md`
-- `docs/demo_script.md`
+- `docs/ops/runbook.md`
+- `docs/ops/demo_script.md`
 - `knowledge_base_curated.csv`
 - `eval_set_v1.csv`
 - `eval_criteria.md`
+

@@ -1,4 +1,4 @@
-# Web Seed V3 预抓取报告
+﻿# Web Seed V3 预抓取报告
 
 - 执行时间：2026-03-20
 - 输入文件：`data_sources/web_seed_urls_v3_candidates.csv`
@@ -39,5 +39,6 @@
 
 ## 输出文件
 - 状态表：`data_sources/web_seed_urls_v3_prefetch_status.csv`
-- 报告：`docs/web_seed_v3_prefetch_report.md`
+- 报告：`docs/pipeline/web_seed_v3_prefetch_report.md`
 - 原始结果：`artifacts/web_seed_v3_prefetch.json`（本地保留，不入库）
+

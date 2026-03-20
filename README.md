@@ -40,7 +40,7 @@
 | `eval_set_v1.csv` | 评测集，**50 条**测试问题 |
 | `eval_criteria.md` | 验收指标 |
 | `retrieval_tuning_report.md` | 检索调参记录 |
-| `docs/embedding_setup.md` | Embedding 接入指南（Ollama / 云端方案） |
+| `docs/pipeline/embedding_setup.md` | Embedding 接入指南（Ollama / 云端方案） |
 | 项目申报书 | 包含可提交版 `docx` 和 `md` 文档 |
 
 知识库覆盖场景：
@@ -68,24 +68,24 @@
 
 如果你希望快速理解项目并继续推进，建议优先阅读以下文档：
 
-- [云端协作快速入口](./docs/TEAM_CLOUD_WORKFLOW.md)
+- [云端协作快速入口](./docs/ops/TEAM_CLOUD_WORKFLOW.md)
 - [项目目录结构与分工说明](./docs/PROJECT_STRUCTURE.md)
-- [角色1：信息收集员执行手册](./docs/角色1_信息收集员执行手册_v2.md)
-- [角色2：数据清洗与人工审核员执行手册](./docs/角色2_数据清洗员执行手册_v2.md)
-- [角色3：发布与验收负责人执行手册](./docs/角色3_发布与验收负责人执行手册_v1.md)
-- [发布前人工验收记录模板](./docs/release_review_log.md)
+- [角色1：信息收集员执行手册](./docs/ops/角色1_信息收集员执行手册_v2.md)
+- [角色2：数据清洗与人工审核员执行手册](./docs/ops/角色2_数据清洗员执行手册_v2.md)
+- [角色3：发布与验收负责人执行手册](./docs/ops/角色3_发布与验收负责人执行手册_v1.md)
+- [发布前人工验收记录模板](./docs/eval/release_review_log.md)
 - [项目申报书（Markdown 版）](./docs/proposal/实验室安全小助手_项目申报立项书_可提交版.md)
-- [演示脚本](./docs/demo_script.md)
-- [运行手册](./docs/runbook.md)
-- [数据源建设方案](./docs/data_source_plan.md)
-- [低置信度待补任务处理SOP](./docs/low_confidence_followup_sop_v1.md)
-- [网页提取 Skill 合规说明](./docs/web_content_fetch_skill_合规说明_v1.md)
-- [Embedding 接入指南](./docs/embedding_setup.md)（如何配置向量检索，替代纯关键词模式）
-- [评测结果看板](./docs/eval_dashboard.md)
+- [演示脚本](./docs/ops/demo_script.md)
+- [运行手册](./docs/ops/runbook.md)
+- [数据源建设方案](./docs/pipeline/data_source_plan.md)
+- [低置信度待补任务处理SOP](./docs/ops/low_confidence_followup_sop_v1.md)
+- [网页提取 Skill 合规说明](./docs/ops/web_content_fetch_skill_合规说明_v1.md)
+- [Embedding 接入指南](./docs/pipeline/embedding_setup.md)（如何配置向量检索，替代纯关键词模式）
+- [评测结果看板](./docs/eval/eval_dashboard.md)
 - [评测集](./eval_set_v1.csv)
 - [验收指标](./eval_criteria.md)
 - [检索调参记录](./retrieval_tuning_report.md)
-- [答辩技术证据页](./docs/defense_tech_evidence.md)
+- [答辩技术证据页](./docs/eval/defense_tech_evidence.md)
 
 ## 核心能力设计
 
@@ -118,13 +118,13 @@ lab-safety-assistant/
 ├─ README.md
 ├─ docs/
 │  ├─ guides/                   ← 快速入门与规则指南
+│  ├─ ops/                      ← 协作流程、SOP、运行与部署
+│  ├─ pipeline/                 ← 数据入库、抓取、清洗流水线文档
+│  ├─ eval/                     ← 评测看板、发布验收与门禁记录
 │  ├─ proposal/                 ← 立项书（md/docx）
 │  ├─ reports/                  ← 阶段报告（构建/清洗/状态）
 │  ├─ word/                     ← 角色执行手册（Word）
-│  ├─ TEAM_CLOUD_WORKFLOW.md    ← 云端协作入口
-│  ├─ demo_script.md            ← 演示脚本
-│  ├─ runbook.md                ← 运行手册
-│  └─ data_source_plan.md       ← 数据源建设方案
+│  └─ PROJECT_STRUCTURE.md      ← 目录规范与分工说明
 ├─ templates/                   ← 模板与 schema（KB/Eval）
 ├─ scripts/                     ← 数据入库、评测、门禁自动化脚本
 ├─ data_sources/                ← URL 种子、manifest、预抓取状态
@@ -156,7 +156,7 @@ flowchart LR
 
 当前原型以 `Dify + RAG + 规则约束` 为主，后续可进一步接入：
 
-- **Embedding 模型**（已有接入指南，见 `docs/embedding_setup.md`；推荐 Ollama + bge-m3）
+- **Embedding 模型**（已有接入指南，见 `docs/pipeline/embedding_setup.md`；推荐 Ollama + bge-m3）
 - **混合检索与重排序**（配置 Embedding 后可在 Dify 工作流一键启用）
 - 本地模型部署
 - 更多正式制度文件与 `MSDS` 数据源
@@ -172,7 +172,7 @@ flowchart LR
 - 将 `safety_rules.yaml` 作为规则设计参考
 - 使用 `eval_set_v1.csv` 对问答系统进行抽样测试
 - 参考 `retrieval_tuning_report.md` 继续做召回调参
-- 参考 `docs/runbook.md` 和 `docs/demo_script.md` 完成复现与演示准备
+- 参考 `docs/ops/runbook.md` 和 `docs/ops/demo_script.md` 完成复现与演示准备
 
 ## 质量与安全门禁
 
@@ -224,7 +224,7 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
 
 看板门禁说明：
 
-- 已启用 `docs/eval_dashboard_gate_enabled.flag`
+- 已启用 `docs/eval/eval_dashboard_gate_enabled.flag`
 - 质量门会执行 `scripts/validate_eval_dashboard_gate.py`
 - 当关键指标连续两周低于阈值时，质量门失败（阻止发布）
 
@@ -245,7 +245,7 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
 - ✅ 补充 MSDS 专项知识（丙酮/甲醇/NaOH/浓硫酸/氯仿）
 - ✅ 增加辐射、激光、低温、离心机、灭菌锅等细分场景样本
 - ✅ 完善规则库，修复 R-010 过触发，新增 R-020~R-024
-- ✅ 已验证 Embedding 模型接入（参考 `docs/embedding_setup.md` 与 `retrieval_tuning_report.md`）
+- ✅ 已验证 Embedding 模型接入（参考 `docs/pipeline/embedding_setup.md` 与 `retrieval_tuning_report.md`）
 - 补充更权威的制度文件 `SOP` 原文作为正式知识源
 - 在原型稳定后推进本地模型部署与回答质量对比评测
 
@@ -256,3 +256,4 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
 - 一个面向高校实验室安全场景的智能问答项目样例
 - 一套用于大创申报和阶段展示的结构化项目资料
 - 一个可继续扩展为正式系统的原型基础
+

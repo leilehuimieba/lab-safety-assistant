@@ -137,7 +137,7 @@ def collect_commit_data(repo_root: Path, since: str, until: str) -> dict:
         ):
             category_hits["cleaning_commits"] += 1
         if any(
-            f.startswith("docs/release_review_log")
+            f.startswith("docs/eval/release_review_log")
             or f.startswith("scripts/generate_release_review_entry")
             for f in files
         ):
@@ -246,7 +246,7 @@ def main() -> int:
     manifest_rows = count_csv_rows(repo_root / "data_sources" / "document_manifest.csv")
     web_rows = count_csv_rows(repo_root / "data_sources" / "web_seed_urls.csv")
     pdf_rules_rows = count_csv_rows(repo_root / "data_sources" / "pdf_special_rules.csv")
-    release_entries = parse_release_entries(repo_root / "docs" / "release_review_log.md")
+    release_entries = parse_release_entries(repo_root / "docs" / "eval" / "release_review_log.md")
     latest_release = release_entries[-1] if release_entries else None
     commit_data = collect_commit_data(repo_root, args.since, args.until)
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -270,4 +270,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
