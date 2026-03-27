@@ -98,3 +98,21 @@ python scripts\validate_ai_pipeline_report.py `
 
 这样人工工作量最小，但仍可保证最终上线质量。
 
+## 8. 故障排查（中转站/API）
+
+如果一键脚本显示“审核全部失败”，先看 `ai_oneclick_report.json` 里的：
+
+1. `call_error_rate`：高于 0.2 通常表示上游 API 异常（如 502/超时/网关错误）
+2. `parse_error_rate`：高于 0.2 表示模型输出格式不稳定（非JSON）
+
+建议先执行：
+
+```powershell
+python scripts\validate_ai_pipeline_report.py --report <report_json_path>
+```
+
+若是 `call_error_rate` 异常，不是数据质量问题，优先检查：
+
+1. `OPENAI_BASE_URL` 是否可访问
+2. `OPENAI_API_KEY` 是否有效
+3. 中转站是否临时不可用（502/网关错误）

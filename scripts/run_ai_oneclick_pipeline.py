@@ -245,9 +245,25 @@ def run_cmd(cmd: list[str], cwd: Path) -> dict:
     }
 
 
+def sanitize_command(cmd: list[str]) -> list[str]:
+    sanitized: list[str] = []
+    i = 0
+    while i < len(cmd):
+        token = cmd[i]
+        if token == "--openai-api-key":
+            sanitized.append(token)
+            if i + 1 < len(cmd):
+                sanitized.append("***REDACTED***")
+                i += 2
+                continue
+        sanitized.append(token)
+        i += 1
+    return sanitized
+
+
 def summarize_run(step: dict) -> dict:
     return {
-        "command": step["command"],
+        "command": sanitize_command(step["command"]),
         "returncode": step["returncode"],
         "stdout_tail": step["stdout"][-3000:],
         "stderr_tail": step["stderr"][-3000:],
@@ -391,8 +407,6 @@ def main() -> int:
         str(args.audit_min_score),
         "--openai-base-url",
         args.openai_base_url,
-        "--openai-api-key",
-        args.openai_api_key,
         "--openai-model",
         args.openai_model,
         "--openai-fallback-models",
@@ -432,8 +446,6 @@ def main() -> int:
         str(args.recheck_min_score),
         "--openai-base-url",
         args.openai_base_url,
-        "--openai-api-key",
-        args.openai_api_key,
         "--openai-model",
         args.openai_model,
         "--openai-fallback-models",
@@ -567,4 +579,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

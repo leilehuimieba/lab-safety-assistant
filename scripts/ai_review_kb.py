@@ -479,6 +479,7 @@ def main() -> int:
 
     decision_stat = {"pass": 0, "needs_fix": 0, "reject": 0}
     parse_errors = 0
+    call_errors = 0
     post_rule_hits = 0
 
     for index, row in enumerate(rows, start=1):
@@ -497,7 +498,9 @@ def main() -> int:
         parse_error = ""
         if not call_error:
             parsed, parse_error = parse_review_json(raw_text)
-        if call_error or parse_error:
+        if call_error:
+            call_errors += 1
+        if parse_error:
             parse_errors += 1
 
         decision = normalize_decision(parsed.get("decision"))
@@ -586,6 +589,8 @@ def main() -> int:
         "pass_rows": pass_count,
         "blocked_rows": len(blocked_rows),
         "pass_rate": round((pass_count / total), 4) if total else 0.0,
+        "call_error_count": call_errors,
+        "call_error_rate": round((call_errors / total), 4) if total else 0.0,
         "parse_error_count": parse_errors,
         "parse_error_rate": round((parse_errors / total), 4) if total else 0.0,
         "post_rule_hits": post_rule_hits,
@@ -606,4 +611,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

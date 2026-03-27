@@ -8,6 +8,5 @@ WEB4-006,OSHA Laboratory Safety Guidance PDF,P0,标准,https://www.osha.gov/site
 WEB4-007,CDC BMBL overview page,P0,生物,https://www.cdc.gov/labs/BMBL.html,ok,jina,0.9520,false,200,,false,auto_ingest_candidate,cleaner
 WEB4-008,CDC BMBL PDF,P0,生物,https://www.cdc.gov/labs/pdf/CDC-BiosafetyMicrobiologicalBiomedicalLaboratories-2020-P.pdf,ok,jina,0.9485,false,200,,false,auto_ingest_candidate,cleaner
 WEB4-009,WHO Laboratory biosafety manual 4th edition,P0,生物,https://www.who.int/publications/i/item/9789240011311,ok,jina,0.9463,false,200,,false,auto_ingest_candidate,cleaner
-WEB4-010,WHO Laboratory biosafety manual PDF,P0,生物,https://iris.who.int/bitstream/handle/10665/338380/9789240011311-eng.pdf,blocked,jina,0.2068,true,200,jina_status_200,false,manual_capture_with_access,collector
 WEB4-011,NIOSH Chemical Safety topic page,P1,化学,https://www.cdc.gov/niosh/topics/chemical-safety/default.html,ok,jina,0.9472,false,200,,false,auto_ingest_candidate,cleaner
 WEB4-012,Hazardous waste management guide,P0,化学,https://www.epa.gov/hwgenerators/managing-your-hazardous-waste-guide-small-businesses,ok,jina,0.9501,false,200,,false,auto_ingest_candidate,cleaner

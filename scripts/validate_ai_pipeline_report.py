@@ -36,6 +36,12 @@ def parse_args() -> argparse.Namespace:
         help="Maximum acceptable audit parse error rate.",
     )
     parser.add_argument(
+        "--max-audit-call-error-rate",
+        type=float,
+        default=0.2,
+        help="Maximum acceptable audit upstream call error rate.",
+    )
+    parser.add_argument(
         "--require-merge-appended",
         action="store_true",
         help="Require merge appended_rows >= 1.",
@@ -79,9 +85,14 @@ def main() -> int:
     ai = report.get("ai", {}) if isinstance(report.get("ai"), dict) else {}
     audit = ai.get("audit", {}) if isinstance(ai.get("audit"), dict) else {}
     parse_error_rate = float(audit.get("parse_error_rate", 0.0) or 0.0)
+    call_error_rate = float(audit.get("call_error_rate", 0.0) or 0.0)
     if parse_error_rate > args.max_audit_parse_error_rate:
         errors.append(
             f"audit parse error rate too high: {parse_error_rate:.3f} > {args.max_audit_parse_error_rate:.3f}"
+        )
+    if call_error_rate > args.max_audit_call_error_rate:
+        errors.append(
+            f"audit call error rate too high: {call_error_rate:.3f} > {args.max_audit_call_error_rate:.3f}"
         )
 
     if args.require_merge_appended:
@@ -102,10 +113,10 @@ def main() -> int:
     print(f"- candidate_rows={candidate_rows}")
     print(f"- audit_pass_rows={audit_pass_rows} (rate={audit_pass_rate:.3f})")
     print(f"- recheck_pass_rows={recheck_pass_rows} (rate={recheck_pass_rate:.3f})")
+    print(f"- audit_call_error_rate={call_error_rate:.3f}")
     print(f"- audit_parse_error_rate={parse_error_rate:.3f}")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -26,7 +26,7 @@ def test_validate_ai_pipeline_report_pass(tmp_path: Path) -> None:
             "recheck_pass_rows": 6,
         },
         "ai": {
-            "audit": {"parse_error_rate": 0.05},
+            "audit": {"parse_error_rate": 0.05, "call_error_rate": 0.0},
         },
         "merge_stat": {"appended_rows": 3},
     }
@@ -47,7 +47,7 @@ def test_validate_ai_pipeline_report_fail_on_low_rate(tmp_path: Path) -> None:
             "recheck_pass_rows": 1,
         },
         "ai": {
-            "audit": {"parse_error_rate": 0.35},
+            "audit": {"parse_error_rate": 0.35, "call_error_rate": 0.9},
         },
         "merge_stat": {"appended_rows": 0},
     }
@@ -62,8 +62,9 @@ def test_validate_ai_pipeline_report_fail_on_low_rate(tmp_path: Path) -> None:
         "0.2",
         "--max-audit-parse-error-rate",
         "0.2",
+        "--max-audit-call-error-rate",
+        "0.2",
         "--require-merge-appended",
     )
     assert completed.returncode == 1
     assert "failed" in completed.stdout.lower()
-
