@@ -1,0 +1,117 @@
+{
+  "generated_at": "2026-03-27T20:45:42+08:00",
+  "output_csv": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\import_bundle_v12342\\knowledge_base_import_ready.csv",
+  "total_rows": 303,
+  "empty_id_skipped": 0,
+  "sources": [
+    {
+      "name": "curated",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\knowledge_base_curated.csv",
+      "input_rows": 81
+    },
+    {
+      "name": "v4_2_recheck",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\v4_2_repair_round\\run_20260327_204354\\second_recheck\\knowledge_base_recheck_pass.csv",
+      "input_rows": 0
+    },
+    {
+      "name": "v4_1_recheck",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\v4_1_repair_round\\run_20260327_201226\\second_recheck\\knowledge_base_recheck_pass.csv",
+      "input_rows": 5
+    },
+    {
+      "name": "v4_pass",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\v4_repair_round\\run_20260327_190336\\second_recheck\\knowledge_base_recheck_pass.csv",
+      "input_rows": 5
+    },
+    {
+      "name": "v3_2_web",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\web_seed_v3_2_prefetch\\knowledge_base_web.csv",
+      "input_rows": 14
+    },
+    {
+      "name": "v2_2_web",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\web_seed_v2_2_prefetch\\knowledge_base_web.csv",
+      "input_rows": 16
+    },
+    {
+      "name": "v1_2_web",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\web_seed_v1_2_prefetch\\knowledge_base_web.csv",
+      "input_rows": 18
+    },
+    {
+      "name": "v3_unified",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\dify_kb_batch_v3\\knowledge_base_unified.csv",
+      "input_rows": 183
+    },
+    {
+      "name": "v2_unified",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\dify_kb_batch_v2\\knowledge_base_unified.csv",
+      "input_rows": 140
+    },
+    {
+      "name": "v1_unified",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\dify_kb_batch_v1\\knowledge_base_unified.csv",
+      "input_rows": 180
+    }
+  ],
+  "selected_rows_by_source": {
+    "curated": 81,
+    "v4_1_recheck": 5,
+    "v4_pass": 5,
+    "v3_2_web": 13,
+    "v2_2_web": 14,
+    "v1_2_web": 8,
+    "v3_unified": 146,
+    "v1_unified": 31
+  },
+  "duplicate_skips_by_source": {
+    "v3_2_web": 1,
+    "v2_2_web": 2,
+    "v1_2_web": 10,
+    "v3_unified": 37,
+    "v2_unified": 140,
+    "v1_unified": 149
+  },
+  "distribution": {
+    "category": {
+      "化学": 48,
+      "危化品": 7,
+      "电气": 6,
+      "生物": 8,
+      "通用": 29,
+      "辐射": 2,
+      "制度": 14,
+      "标准": 10,
+      "SDS": 2,
+      "实验设备": 12,
+      "电气安全": 11,
+      "专项安全": 4,
+      "设备安全": 52,
+      "实验室管理": 26,
+      "实验室设备安全": 29,
+      "危险源管理": 5,
+      "检测方法": 38
+    },
+    "source_type": {
+      "SOP": 11,
+      "MSDS": 8,
+      "制度": 16,
+      "应急预案": 8,
+      "网页": 83,
+      "PDF": 177
+    },
+    "language": {
+      "zh-CN": 298,
+      "en": 4,
+      "en-US": 1
+    },
+    "risk_level": {
+      "2": 22,
+      "3": 135,
+      "5": 16,
+      "4": 128,
+      "1": 2
+    }
+  }
+}

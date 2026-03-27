@@ -34,6 +34,13 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
+def default_tag_from_map_path(map_csv: str) -> str:
+    stem = Path(map_csv).stem
+    if stem.startswith("relink_official_map_"):
+        return stem[len("relink_official_map_") :]
+    return stem
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Apply official relink map to web seed manifests.")
     parser.add_argument(
@@ -46,6 +53,17 @@ def parse_args() -> argparse.Namespace:
         default="artifacts/relink_v4_1",
         help="Directory for relink report outputs.",
     )
+    parser.add_argument(
+        "--tag-token",
+        default="",
+        help="Tag token to append into tags/suggested_tags (default inferred from map filename).",
+    )
+    parser.add_argument("--v1-input", default=str(DEFAULT_JOBS[0].input_csv), help="V1 input manifest.")
+    parser.add_argument("--v1-output", default=str(DEFAULT_JOBS[0].output_csv), help="V1 output manifest.")
+    parser.add_argument("--v2-input", default=str(DEFAULT_JOBS[1].input_csv), help="V2 input manifest.")
+    parser.add_argument("--v2-output", default=str(DEFAULT_JOBS[1].output_csv), help="V2 output manifest.")
+    parser.add_argument("--v3-input", default=str(DEFAULT_JOBS[2].input_csv), help="V3 input manifest.")
+    parser.add_argument("--v3-output", default=str(DEFAULT_JOBS[2].output_csv), help="V3 output manifest.")
     return parser.parse_args()
 
 
@@ -82,7 +100,7 @@ def append_tag(raw: str, token: str) -> str:
     return ";".join(parts)
 
 
-def apply_job(job: ManifestJob, mapping: dict[str, dict[str, str]]) -> tuple[int, int, list[dict[str, str]]]:
+def apply_job(job: ManifestJob, mapping: dict[str, dict[str, str]], tag_token: str) -> tuple[int, int, list[dict[str, str]]]:
     fieldnames, rows = read_rows(job.input_csv)
     missing = 0
     changed = 0
@@ -112,10 +130,11 @@ def apply_job(job: ManifestJob, mapping: dict[str, dict[str, str]]) -> tuple[int
         if new_title:
             row["title"] = new_title
 
-        if "tags" in row:
-            row["tags"] = append_tag(row.get("tags", ""), "official_relink_v4_1")
-        if "suggested_tags" in row:
-            row["suggested_tags"] = append_tag(row.get("suggested_tags", ""), "official_relink_v4_1")
+        if tag_token:
+            if "tags" in row:
+                row["tags"] = append_tag(row.get("tags", ""), tag_token)
+            if "suggested_tags" in row:
+                row["suggested_tags"] = append_tag(row.get("suggested_tags", ""), tag_token)
 
         changed += 1
         detail_rows.append(
@@ -142,6 +161,7 @@ def main() -> int:
     map_csv = Path(args.map_csv).resolve()
     report_dir = Path(args.report_dir).resolve()
     report_dir.mkdir(parents=True, exist_ok=True)
+    tag_token = args.tag_token.strip() or default_tag_from_map_path(args.map_csv)
 
     if not map_csv.exists():
         raise SystemExit(f"Map CSV not found: {map_csv}")
@@ -153,10 +173,16 @@ def main() -> int:
     detail_rows: list[dict[str, str]] = []
     summary_rows: list[dict[str, str]] = []
 
-    for job in DEFAULT_JOBS:
+    jobs = [
+        ManifestJob("v1", Path(args.v1_input), Path(args.v1_output)),
+        ManifestJob("v2", Path(args.v2_input), Path(args.v2_output)),
+        ManifestJob("v3", Path(args.v3_input), Path(args.v3_output)),
+    ]
+
+    for job in jobs:
         if not job.input_csv.exists():
             raise SystemExit(f"Manifest not found: {job.input_csv}")
-        changed, missing, rows = apply_job(job, mapping)
+        changed, missing, rows = apply_job(job, mapping, tag_token)
         detail_rows.extend(rows)
         summary_rows.append(
             {
@@ -210,7 +236,7 @@ def main() -> int:
     write_rows(summary_csv, ["manifest", "input_csv", "output_csv", "changed_rows", "missing_replacement_url"], summary_rows)
 
     lines: list[str] = []
-    lines.append("# Official Relink Summary (V4.1)")
+    lines.append(f"# Official Relink Summary ({tag_token})")
     lines.append("")
     lines.append(f"- generated_at: `{now_iso()}`")
     lines.append(f"- mapping_file: `{map_csv}`")
@@ -235,6 +261,7 @@ def main() -> int:
     print("Relink manifests generated:")
     for row in summary_rows:
         print(f"- {row['manifest']}: {row['output_csv']} (changed={row['changed_rows']})")
+    print(f"- tag_token: {tag_token}")
     print(f"- detail: {detail_csv}")
     print(f"- summary: {summary_md}")
     return 0
@@ -242,4 +269,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
