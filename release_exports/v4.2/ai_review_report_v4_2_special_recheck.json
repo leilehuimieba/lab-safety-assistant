@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-03-27T21:23:41+08:00",
+  "stage": "recheck",
+  "input_csv": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\v4_2_template_gate_v4\\audit\\knowledge_base_audit_pass.csv",
+  "reviewed_csv": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\v4_2_template_gate_v4\\recheck\\ai_review_recheck.csv",
+  "pass_csv": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\v4_2_template_gate_v4\\recheck\\knowledge_base_recheck_pass.csv",
+  "blocked_csv": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\v4_2_template_gate_v4\\recheck\\knowledge_base_recheck_blocked.csv",
+  "total_rows": 3,
+  "pass_rows": 3,
+  "blocked_rows": 0,
+  "pass_rate": 1.0,
+  "call_error_count": 0,
+  "call_error_rate": 0.0,
+  "parse_error_count": 0,
+  "parse_error_rate": 0.0,
+  "post_rule_hits": 0,
+  "decision_stat": {
+    "pass": 3,
+    "needs_fix": 0,
+    "reject": 0
+  },
+  "min_score": 82,
+  "strict_high_risk": false,
+  "openai_insecure_tls": true,
+  "openai_api": "openai-responses",
+  "models": [
+    "gpt-5.2-codex",
+    "grok-3-mini",
+    "grok-4",
+    "grok-3"
+  ]
+}
