@@ -185,6 +185,11 @@ def parse_args() -> argparse.Namespace:
         help="Primary model for AI review.",
     )
     parser.add_argument(
+        "--openai-api",
+        default=os.environ.get("OPENAI_API", "auto"),
+        help="API mode: auto | chat-completions | responses | openai-responses.",
+    )
+    parser.add_argument(
         "--openai-fallback-models",
         default=os.environ.get("OPENAI_FALLBACK_MODELS", "grok-3-mini,grok-4,grok-3"),
         help="Fallback models for AI review.",
@@ -194,6 +199,12 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=float(os.environ.get("OPENAI_TIMEOUT", "60")),
         help="Timeout seconds for AI review calls.",
+    )
+    parser.add_argument(
+        "--openai-insecure-tls",
+        action="store_true",
+        default=(os.environ.get("OPENAI_INSECURE_TLS", "").strip().lower() in {"1", "true", "yes"}),
+        help="Disable TLS certificate verification for AI review endpoint (temporary fallback).",
     )
     parser.add_argument(
         "--merge-into",
@@ -409,15 +420,21 @@ def main() -> int:
         args.openai_base_url,
         "--openai-model",
         args.openai_model,
+        "--openai-api",
+        args.openai_api,
         "--openai-fallback-models",
         args.openai_fallback_models,
         "--openai-timeout",
         str(args.openai_timeout),
     ]
+    if args.openai_api_key.strip():
+        audit_cmd.extend(["--openai-api-key", args.openai_api_key.strip()])
     if args.review_limit > 0:
         audit_cmd.extend(["--limit", str(args.review_limit)])
     if args.strict_high_risk:
         audit_cmd.append("--strict-high-risk")
+    if args.openai_insecure_tls:
+        audit_cmd.append("--openai-insecure-tls")
 
     audit_run = run_cmd(audit_cmd, cwd=repo_root)
     pipeline_steps["audit"] = summarize_run(audit_run)
@@ -448,13 +465,19 @@ def main() -> int:
         args.openai_base_url,
         "--openai-model",
         args.openai_model,
+        "--openai-api",
+        args.openai_api,
         "--openai-fallback-models",
         args.openai_fallback_models,
         "--openai-timeout",
         str(args.openai_timeout),
     ]
+    if args.openai_api_key.strip():
+        recheck_cmd.extend(["--openai-api-key", args.openai_api_key.strip()])
     if args.strict_high_risk:
         recheck_cmd.append("--strict-high-risk")
+    if args.openai_insecure_tls:
+        recheck_cmd.append("--openai-insecure-tls")
 
     recheck_run = run_cmd(recheck_cmd, cwd=repo_root)
     pipeline_steps["recheck"] = summarize_run(recheck_run)

@@ -15,6 +15,7 @@ import csv
 import json
 import os
 import re
+import ssl
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -126,6 +127,11 @@ def parse_args() -> argparse.Namespace:
         help="Primary review model.",
     )
     parser.add_argument(
+        "--openai-api",
+        default=os.environ.get("OPENAI_API", "auto"),
+        help="API mode: auto | chat-completions | responses | openai-responses",
+    )
+    parser.add_argument(
         "--openai-fallback-models",
         default=os.environ.get("OPENAI_FALLBACK_MODELS", DEFAULT_FALLBACK_MODELS),
         help="Comma-separated fallback models.",
@@ -135,6 +141,12 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=float(os.environ.get("OPENAI_TIMEOUT", "60")),
         help="HTTP timeout seconds for model calls.",
+    )
+    parser.add_argument(
+        "--openai-insecure-tls",
+        action="store_true",
+        default=(os.environ.get("OPENAI_INSECURE_TLS", "").strip().lower() in {"1", "true", "yes"}),
+        help="Disable TLS certificate verification for model endpoint (temporary fallback only).",
     )
     parser.add_argument(
         "--temperature",
@@ -155,6 +167,24 @@ def resolve_endpoint(base_url: str) -> str:
     if normalized.endswith("/v1"):
         return f"{normalized}/chat/completions"
     return f"{normalized}/v1/chat/completions"
+
+
+def resolve_responses_endpoints(base_url: str) -> list[str]:
+    normalized = base_url.rstrip("/")
+    if normalized.endswith("/chat/completions"):
+        normalized = normalized[: -len("/chat/completions")]
+
+    candidates = [f"{normalized}/responses"]
+    if normalized.endswith("/v1"):
+        candidates.append(f"{normalized[:-3]}/responses")
+    else:
+        candidates.append(f"{normalized}/v1/responses")
+
+    dedup: list[str] = []
+    for item in candidates:
+        if item and item not in dedup:
+            dedup.append(item)
+    return dedup
 
 
 def split_csv_tokens(raw: str) -> list[str]:
@@ -352,6 +382,8 @@ def call_model(
     user_prompt: str,
     temperature: float,
     timeout: float,
+    insecure_tls: bool,
+    api_mode: str,
 ) -> tuple[str, str, str]:
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -359,7 +391,17 @@ def call_model(
     }
 
     last_error = "unknown_error"
-    for model in models:
+    ssl_context = ssl._create_unverified_context() if insecure_tls else None
+
+    mode = (api_mode or "auto").strip().lower()
+    if mode in {"openai-responses", "responses"}:
+        mode_list = ["responses"]
+    elif mode in {"chat", "chat-completions", "chat_completions"}:
+        mode_list = ["chat"]
+    else:
+        mode_list = ["chat", "responses"]
+
+    def call_chat(model: str) -> tuple[str, str]:
         body = {
             "model": model,
             "messages": [
@@ -375,29 +417,92 @@ def call_model(
             headers=headers,
             method="POST",
         )
-        try:
-            with urllib.request.urlopen(request, timeout=timeout) as response:
-                raw = response.read().decode("utf-8", errors="ignore")
-        except urllib.error.HTTPError as exc:
-            msg = exc.read().decode("utf-8", errors="ignore")[:500]
-            last_error = f"http_{exc.code}:{msg}"
-            if "model_not_found" in msg:
+        with urllib.request.urlopen(request, timeout=timeout, context=ssl_context) as response:
+            raw = response.read().decode("utf-8", errors="ignore")
+        payload = json.loads(raw)
+        return extract_text_content(payload), ""
+
+    def call_responses(model: str) -> tuple[str, str]:
+        body = {
+            "model": model,
+            "input": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "stream": True,
+        }
+        data = json.dumps(body, ensure_ascii=False).encode("utf-8")
+        last_mode_error = ""
+        for responses_endpoint in resolve_responses_endpoints(endpoint):
+            request = urllib.request.Request(
+                responses_endpoint,
+                data=data,
+                headers=headers,
+                method="POST",
+            )
+            try:
+                text_parts: list[str] = []
+                with urllib.request.urlopen(request, timeout=timeout, context=ssl_context) as response:
+                    for raw_line in response:
+                        line = raw_line.decode("utf-8", errors="ignore").strip()
+                        if not line.startswith("data:"):
+                            continue
+                        payload = line[5:].strip()
+                        if not payload:
+                            continue
+                        try:
+                            event = json.loads(payload)
+                        except json.JSONDecodeError:
+                            continue
+                        etype = str(event.get("type") or "")
+                        if etype == "response.output_text.delta":
+                            delta = event.get("delta")
+                            if isinstance(delta, str) and delta:
+                                text_parts.append(delta)
+                        elif etype == "response.output_text.done":
+                            text_done = event.get("text")
+                            if isinstance(text_done, str) and text_done and not text_parts:
+                                text_parts.append(text_done)
+                        elif etype == "response.completed":
+                            break
+                text = "".join(text_parts).strip()
+                if text:
+                    return text, ""
+                last_mode_error = f"empty_response_text:{responses_endpoint}"
+            except urllib.error.HTTPError as exc:
+                msg = exc.read().decode("utf-8", errors="ignore")[:500]
+                last_mode_error = f"http_{exc.code}:{msg}"
+                if exc.code in {404, 405}:
+                    continue
+                return "", last_mode_error
+            except Exception as exc:  # noqa: BLE001
+                last_mode_error = f"request_error:{exc}"
                 continue
-            continue
-        except Exception as exc:  # noqa: BLE001
-            last_error = f"request_error:{exc}"
-            continue
+        return "", last_mode_error or "responses_request_failed"
 
-        try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError:
-            last_error = "invalid_response_json"
-            continue
+    for model in models:
+        for mode_item in mode_list:
+            try:
+                if mode_item == "chat":
+                    text, _ = call_chat(model)
+                else:
+                    text, mode_error = call_responses(model)
+                    if mode_error:
+                        last_error = mode_error
+                        continue
+            except urllib.error.HTTPError as exc:
+                msg = exc.read().decode("utf-8", errors="ignore")[:500]
+                last_error = f"http_{exc.code}:{msg}"
+                if "model_not_found" in msg or "No available OpenAI account supports the requested model" in msg:
+                    break
+                continue
+            except Exception as exc:  # noqa: BLE001
+                last_error = f"request_error:{exc}"
+                continue
 
-        text = extract_text_content(payload)
-        if text:
-            return text, model, ""
-        last_error = "empty_response_text"
+            if text:
+                return text, model, ""
+            last_error = f"empty_response_text:{mode_item}"
     return "", "", last_error
 
 
@@ -492,6 +597,8 @@ def main() -> int:
             user_prompt=user_prompt,
             temperature=args.temperature,
             timeout=args.openai_timeout,
+            insecure_tls=args.openai_insecure_tls,
+            api_mode=args.openai_api,
         )
 
         parsed: dict[str, Any] = {}
@@ -597,6 +704,8 @@ def main() -> int:
         "decision_stat": decision_stat,
         "min_score": args.min_score,
         "strict_high_risk": bool(args.strict_high_risk),
+        "openai_insecure_tls": bool(args.openai_insecure_tls),
+        "openai_api": args.openai_api,
         "models": unique_models,
     }
     report_json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

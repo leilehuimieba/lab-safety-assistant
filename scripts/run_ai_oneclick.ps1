@@ -17,6 +17,8 @@ param(
   [int]$RecheckMinScore = 82,
   [int]$ReviewLimit = 0,
   [switch]$StrictHighRisk,
+  [string]$OpenaiApi = "",
+  [switch]$OpenaiInsecureTls,
   [string]$MergeInto = "knowledge_base_curated.csv",
   [switch]$SkipMerge,
   [switch]$SkipQualityGate,
@@ -50,6 +52,8 @@ if ($InputCsv) { $argsList += @("--input-csv", $InputCsv) }
 if ($SkipWeb) { $argsList += "--skip-web" }
 if ($WebSkillScript) { $argsList += @("--web-skill-script", $WebSkillScript) }
 if ($StrictHighRisk) { $argsList += "--strict-high-risk" }
+if ($OpenaiApi) { $argsList += @("--openai-api", $OpenaiApi) }
+if ($OpenaiInsecureTls) { $argsList += "--openai-insecure-tls" }
 if ($SkipMerge) { $argsList += "--skip-merge" }
 if ($SkipQualityGate) { $argsList += "--skip-quality-gate" }
 if ($SkipEvalRegression) { $argsList += "--skip-eval-regression" }
@@ -75,4 +79,3 @@ finally {
 
 Write-Host ""
 Write-Host "=== AI One-Click Pipeline Done ===" -ForegroundColor Green
-

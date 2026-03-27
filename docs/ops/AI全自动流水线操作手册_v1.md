@@ -116,3 +116,6 @@ python scripts\validate_ai_pipeline_report.py --report <report_json_path>
 1. `OPENAI_BASE_URL` 是否可访问
 2. `OPENAI_API_KEY` 是否有效
 3. 中转站是否临时不可用（502/网关错误）
+4. 若明确是证书过期且你接受临时风险，可启用：
+   - `run_ai_oneclick.ps1` 增加 `-OpenaiInsecureTls`
+   - 或环境变量：`OPENAI_INSECURE_TLS=true`
