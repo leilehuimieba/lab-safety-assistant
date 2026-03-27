@@ -1,0 +1,11 @@
+manifest,source_id,old_url,new_url,new_source_org,new_title,replacement_reason,confidence
+v1,WEB-006,https://scce.sjtu.edu.cn/sysgl/2811.html,https://www.mee.gov.cn/xxgk2018/xxgk/xxgk02/202011/t20201127_810202.html,生态环境部,,高校页面拦截后切换到部委官方危废法规页面,0.90
+v1,WEB-012,https://life.sjtu.edu.cn/Data/View/6077,https://life.sjtu.edu.cn/En/Data/View/6077,上海交通大学生命科学技术学院,,同源英文页面可直接访问且主题一致,0.85
+v1,WEB-017,https://examsafety.nuist.edu.cn/redir.php?catalog_id=12103&object_id=18233,https://wh.bjtu.edu.cn/docs/2025-09/aeaffe16c0fc470dabc9cdd9a24db963.pdf,北京交通大学后勤保障处,,原链接为跳转壳页，替换为高校官网直链PDF,0.82
+v2,WEBV2-001,https://www.moe.gov.cn/srcsite/A16/moe_784/202302/t20230220_1045998.html,https://www.gov.cn/zhengce/zhengceku/2023-02/21/content_5742498.htm,中国政府网,,教育部页面被拦截时切换国务院政策库同文链接,0.96
+v2,WEBV2-002,https://www.moe.gov.cn/srcsite/A16/s7062/202404/t20240419_1126415.html,https://www.gov.cn/zhengce/zhengceku/202404/content_6946788.htm,中国政府网,,教育部页面被拦截时切换国务院政策库同文链接,0.96
+v2,WEBV2-012,https://www.thermofisher.com/us/en/home/support/documents-certificates.html,https://www.thermofisher.com/cn/zh/home/support/documents-certificates.html,Thermo Fisher Scientific,,切换到厂商中国站同路径页面以降低区域拦截,0.80
+v2,WEBV2-014,https://jw.nju.edu.cn/f2/7e/c24683a586366/page.htm,https://ieh.nju.edu.cn/__local/8/A5/B8/D150DB61E991AD05DC6DF77B2FB_C72C9B97_47135.pdf,南京大学环境学院,南京大学实验室安全手册（PDF）,原页面异常，替换为南京大学官网直链PDF,0.88
+v3,WEBV3-002,https://www.nhc.gov.cn/wjw/s9492/202404/589f2e3d20494d99abd6bebc293d77a7/files/1739781668101_79991.pdf,https://www.nhc.gov.cn/wjw/s9492/202404/589f2e3d20494d99abd6bebc293d77a7.shtml,国家卫生健康委员会,,PDF直链被拦截，回退到卫健委官方正文页,0.92
+v3,WEBV3-012,https://www.moe.gov.cn/srcsite/A16/s3336/201904/t20190404_376670.html,https://www.gov.cn/zhengce/zhengceku/2019-10/23/content_5444020.htm,中国政府网,,教育部页面被拦截时切换国务院政策库同文链接,0.95
+v3,WEBV3-018,https://oalm.swjtu.edu.cn/info/1201/23921.htm,https://ybxy.xaut.edu.cn/info/1091/4799.htm,西安理工大学印刷包装与数字媒体学院,,原高校线索页被拦截，替换为同主题高校官网公开页,0.75
