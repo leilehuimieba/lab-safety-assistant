@@ -77,6 +77,7 @@
 - [项目申报书（Markdown 版）](./docs/proposal/实验室安全小助手_项目申报立项书_可提交版.md)
 - [演示脚本](./docs/ops/demo_script.md)
 - [运行手册](./docs/ops/runbook.md)
+- [全AI流水线操作手册](./docs/ops/AI全自动流水线操作手册_v1.md)
 - [数据源建设方案](./docs/pipeline/data_source_plan.md)
 - [低置信度待补任务处理SOP](./docs/ops/low_confidence_followup_sop_v1.md)
 - [网页提取 Skill 合规说明](./docs/ops/web_content_fetch_skill_合规说明_v1.md)

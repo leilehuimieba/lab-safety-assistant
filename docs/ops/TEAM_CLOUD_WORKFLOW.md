@@ -71,3 +71,10 @@ python scripts\generate_weekly_team_report.py --repo-root . --since "7 days ago"
 3. 数据规模快照（manifest/web_seed/rules）
 4. 最新发布验收状态
 
+## 7. 全AI流水线（当前阶段推荐）
+如果当前阶段希望“先全AI闭环，后期再人工抽检”，可直接执行：
+
+1. 操作手册：`docs/ops/AI全自动流水线操作手册_v1.md`
+2. 一键脚本：`scripts/run_ai_oneclick.ps1`
+3. 结果门禁：`scripts/validate_ai_pipeline_report.py`
+
