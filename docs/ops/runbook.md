@@ -401,6 +401,17 @@ python scripts/generate_release_risk_note.py --repo-root .
 - 明细：`docs/eval/release_risk_note_auto.json`
 - 当执行 `run_eval_regression_pipeline.py --update-dashboard` 时，会自动生成这两份文件（可加 `--skip-risk-note` 跳过）
 
+GitHub 自动监控（每日）：
+
+- 工作流：`.github/workflows/daily-eval-gate-monitor.yml`
+- 触发：每天 UTC 01:30（可手动 `workflow_dispatch`）
+- 行为：
+- 运行回归流水线并刷新看板
+- 生成自动风险说明（md/json）
+- 执行 gate 检查
+- 若 gate 失败，自动创建或更新 `eval-gate-alert` Issue
+- 配套模板：`.github/ISSUE_TEMPLATE/04-eval-gate-alert.yml`
+
 ## 第十步：使用网页提取 Skill（可选）
 
 当需要从链接提取正文并做实验入库时，可使用仓库内置 Skill：

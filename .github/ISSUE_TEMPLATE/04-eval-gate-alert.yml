@@ -1,0 +1,70 @@
+name: "Eval Gate Alert (Manual)"
+description: "手动登记一次 Eval 门禁失败事件（通常由自动工作流创建）"
+title: "[Eval Gate] <YYYY-MM-DD> gate failed"
+labels:
+  - eval-gate-alert
+body:
+  - type: markdown
+    attributes:
+      value: |
+        用于记录一次 Eval 门禁失败事件。
+        如果已由自动工作流创建 Issue，优先在自动 Issue 下更新，不要重复创建。
+
+  - type: input
+    id: run_url
+    attributes:
+      label: Workflow Run URL
+      description: GitHub Actions 运行链接
+      placeholder: https://github.com/<owner>/<repo>/actions/runs/<id>
+    validations:
+      required: true
+
+  - type: dropdown
+    id: gate_decision
+    attributes:
+      label: Gate Decision
+      options:
+        - BLOCK
+        - WARN_ONLY
+        - PASS
+    validations:
+      required: true
+
+  - type: textarea
+    id: violations
+    attributes:
+      label: Violations
+      description: 门禁违规项列表（逐条粘贴）
+      placeholder: |
+        - route_success_rate failed for 2 consecutive weeks (...)
+        - route_timeout_rate failed for 2 consecutive weeks (...)
+    validations:
+      required: true
+
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: Root Cause
+      description: 失败原因分析（链路问题/数据问题/配置问题）
+      placeholder: 简要描述根因
+    validations:
+      required: true
+
+  - type: textarea
+    id: action_plan
+    attributes:
+      label: Action Plan
+      description: 本次修复计划（负责人 + 时间）
+      placeholder: |
+        - [ ] 修复动作 A（Owner @xxx，DDL）
+        - [ ] 修复动作 B（Owner @yyy，DDL）
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: release_check
+    attributes:
+      label: Release Check
+      options:
+        - label: 已确认在 gate 未恢复 PASS 前不执行正式发布
+          required: true

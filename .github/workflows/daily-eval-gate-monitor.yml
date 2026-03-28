@@ -1,0 +1,168 @@
+name: Daily Eval Gate Monitor
+
+on:
+  schedule:
+    # Every day 01:30 UTC
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Eval Regression Pipeline
+        env:
+          DIFY_BASE_URL: ${{ secrets.DIFY_BASE_URL }}
+          DIFY_APP_API_KEY: ${{ secrets.DIFY_APP_API_KEY }}
+          DIFY_FALLBACK_BASE_URL: ${{ secrets.DIFY_FALLBACK_BASE_URL }}
+          DIFY_FALLBACK_APP_API_KEY: ${{ secrets.DIFY_FALLBACK_APP_API_KEY }}
+        run: |
+          python scripts/run_eval_regression_pipeline.py \
+            --repo-root . \
+            --allow-skip-live \
+            --update-dashboard
+
+      - name: Generate Release Risk Note
+        run: |
+          python scripts/generate_release_risk_note.py --repo-root .
+
+      - name: Validate Eval Dashboard Gate
+        id: gate
+        shell: bash
+        run: |
+          set +e
+          python scripts/validate_eval_dashboard_gate.py --repo-root . > gate_output.txt 2>&1
+          code=$?
+          cat gate_output.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 0 ]; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Upload Gate Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-gate-${{ github.run_id }}
+          path: |
+            gate_output.txt
+            docs/eval/release_risk_note_auto.md
+            docs/eval/release_risk_note_auto.json
+            docs/eval/eval_dashboard_data.json
+
+      - name: Create or Update Gate Alert Issue
+        if: steps.gate.outputs.status == 'fail'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const today = new Date().toISOString().slice(0, 10);
+            const title = `[Eval Gate] ${today} gate failed`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const gateOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'gate_output.txt');
+            const riskJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_risk_note_auto.json');
+            const riskJsonRepoPath = 'docs/eval/release_risk_note_auto.json';
+            const riskMdRepoPath = 'docs/eval/release_risk_note_auto.md';
+
+            let gateOutput = '';
+            let gateDecision = 'BLOCK';
+            let violations = [];
+            try {
+              gateOutput = fs.readFileSync(gateOutputPath, 'utf8').trim();
+            } catch (e) {
+              gateOutput = '(gate output not found)';
+            }
+            try {
+              const payload = JSON.parse(fs.readFileSync(riskJsonPath, 'utf8'));
+              gateDecision = String(payload.gate_decision || 'BLOCK');
+              violations = Array.isArray(payload.violations) ? payload.violations : [];
+            } catch (e) {}
+
+            const violationLines = violations.length > 0
+              ? violations.map(v => `- ${v}`).join('\n')
+              : '- (no violation list in json)';
+
+            const body = [
+              'Auto monitor detected eval gate failure. This issue was created by workflow.',
+              '',
+              `- Workflow Run: ${runUrl}`,
+              `- Gate Decision: \`${gateDecision}\``,
+              `- Risk Note JSON: \`${riskJsonRepoPath}\``,
+              `- Risk Note MD: \`${riskMdRepoPath}\``,
+              '',
+              '## Violations',
+              violationLines,
+              '',
+              '## Gate Output',
+              '```text',
+              gateOutput.slice(0, 12000),
+              '```',
+              '',
+              '## Suggested Next Actions',
+              '- Check Dify primary route health and timeout behavior',
+              '- If this is a temporary external issue, apply a short warn_only override with approval fields',
+              '- Re-run regression after fix and confirm gate returns PASS'
+            ].join('\n');
+
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'eval-gate-alert',
+                color: 'B60205',
+                description: 'Auto-created alert issue when eval gate fails'
+              });
+            } catch (e) {
+              // label may already exist
+            }
+
+            const openIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'eval-gate-alert',
+              per_page: 100
+            });
+            const existing = openIssues.data.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body
+              });
+              core.info(`Updated existing issue #${existing.number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['eval-gate-alert']
+              });
+              core.info(`Created issue #${created.data.number}`);
+            }
+
+      - name: Fail Workflow On Gate Failure
+        if: steps.gate.outputs.status == 'fail'
+        run: |
+          echo "Eval gate failed. Failing workflow after alert issue creation."
+          exit 1
