@@ -413,8 +413,10 @@ GitHub 自动监控（每日）：
 - 自动检查告警 SLA 字段：`Owner` + `DDL(YYYY-MM-DD)`
 - SLA 缺失自动加红色标签 `sla-missing` 并评论提醒
 - 若连续失败达到 3 天（含当天），自动加 `p1-gate` 标签并 @升级负责人
+- 对 open 的 `p1-gate` 告警，超过 24h 仍未恢复时每天自动追加一次复盘提醒评论（按天去重）
 - 若 gate 恢复 PASS，自动回写恢复评论并关闭所有 open `eval-gate-alert` Issue
 - 配套模板：`.github/ISSUE_TEMPLATE/04-eval-gate-alert.yml`
+- 复盘模板：`docs/eval/p1_postmortem_template.md`
 
 告警升级负责人配置：
 
@@ -429,6 +431,7 @@ GitHub 自动监控（每日）：
 | P3 | 当天首次 gate fail | 创建/更新同日告警单 | 填写 Owner/DDL，开始排障 |
 | P2 | gate fail 且 SLA 缺失 | 打 `sla-missing` 红标并提醒评论 | 当日补齐 SLA 字段 |
 | P1 | 连续 3 天 gate fail | 打 `p1-gate`，自动 @升级负责人 | 进入优先修复通道，修复后立即回归 |
+| P1+24h | P1 告警超过 24h 未恢复 | 每日自动复盘提醒评论 | 提交/更新复盘文档并同步进展 |
 | Recovery | gate 恢复 PASS | 自动评论并关闭 open 告警 | 复盘原因，更新预防项 |
 
 ## 第十步：使用网页提取 Skill（可选）

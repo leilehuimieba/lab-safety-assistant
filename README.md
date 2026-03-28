@@ -286,6 +286,7 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 - Daily monitor workflow: `.github/workflows/daily-eval-gate-monitor.yml` (auto runs pipeline + gate, and opens/updates `eval-gate-alert` issue on failure)
 - Same-day dedup + SLA check: daily monitor keeps one issue per day and enforces `Owner`/`DDL` fields; missing SLA is marked with red `sla-missing` label.
 - Escalation policy: if gate fails for 3 consecutive days, workflow adds `p1-gate` label and @mentions escalation owners from repo variable `EVAL_GATE_ESCALATION_MENTIONS`.
+- Postmortem reminder: for open `p1-gate` issues older than 24h, workflow posts one reminder per day until recovery; template at `docs/eval/p1_postmortem_template.md`.
 
 ### Alert-to-Recovery Flow
 
