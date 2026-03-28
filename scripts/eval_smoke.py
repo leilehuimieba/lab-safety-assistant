@@ -107,6 +107,12 @@ def parse_args() -> argparse.Namespace:
         help="Optional max rows to evaluate (0 = all).",
     )
     parser.add_argument(
+        "--dify-timeout",
+        type=float,
+        default=90.0,
+        help="Per-request timeout seconds when calling Dify API.",
+    )
+    parser.add_argument(
         "--generate-template",
         action="store_true",
         help="Only generate a blank responses template and exit.",
@@ -184,7 +190,7 @@ def resolve_chat_endpoint(base_url: str) -> str:
     return f"{normalized}/v1/chat-messages"
 
 
-def call_dify(base_url: str, app_key: str, question: str) -> tuple[str, float, str]:
+def call_dify(base_url: str, app_key: str, question: str, timeout_sec: float) -> tuple[str, float, str]:
     endpoint = resolve_chat_endpoint(base_url)
     payload = {
         "inputs": {},
@@ -206,7 +212,7 @@ def call_dify(base_url: str, app_key: str, question: str) -> tuple[str, float, s
 
     started = time.perf_counter()
     try:
-        with urllib.request.urlopen(request, timeout=90) as response:
+        with urllib.request.urlopen(request, timeout=max(timeout_sec, 1.0)) as response:
             content_type = str(response.headers.get("Content-Type", "") or "").lower()
 
             # Some Dify app modes always return SSE. Parse stream events directly.
@@ -399,7 +405,12 @@ def main() -> int:
         for row in eval_rows:
             row_id = (row.get("id") or "").strip()
             question = row.get("question") or ""
-            answer, latency_ms, error = call_dify(args.dify_base_url, args.dify_app_key, question)
+            answer, latency_ms, error = call_dify(
+                args.dify_base_url,
+                args.dify_app_key,
+                question,
+                args.dify_timeout,
+            )
             response_by_id[row_id] = (answer, latency_ms, error)
             print(f"[{row_id}] done latency={latency_ms:.0f}ms error={'none' if not error else 'yes'}")
     else:

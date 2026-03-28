@@ -49,6 +49,12 @@ def parse_args() -> argparse.Namespace:
         help="Optional eval row limit (0 = full eval set).",
     )
     parser.add_argument(
+        "--dify-timeout",
+        type=float,
+        default=90.0,
+        help="Per-request timeout seconds for eval_smoke Dify calls.",
+    )
+    parser.add_argument(
         "--allow-skip-live",
         action="store_true",
         help="Allow skip when Dify credentials are missing.",
@@ -163,6 +169,8 @@ def main() -> int:
         dify_base_url,
         "--dify-app-key",
         dify_app_key,
+        "--dify-timeout",
+        str(args.dify_timeout),
         "--output-dir",
         str(smoke_output),
     ]

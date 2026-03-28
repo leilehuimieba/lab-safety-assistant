@@ -221,7 +221,7 @@ python scripts/eval_review.py --detailed-results <detailed_results.csv> --manual
 # 9) 触发一轮真实回归并自动刷新评测看板（需配置 Dify 凭据）
 set DIFY_BASE_URL=http://localhost
 set DIFY_APP_API_KEY=<app-xxxx>
-python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
+python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard --dify-timeout 30
 ```
 
 回归完成后会额外生成失败修复清单，方便你直接按题修：

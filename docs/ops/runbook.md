@@ -341,7 +341,7 @@ python scripts/generate_eval_dashboard.py --repo-root .
 ```powershell
 set DIFY_BASE_URL=http://localhost
 set DIFY_APP_API_KEY=<app-xxxx>
-python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
+python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard --dify-timeout 30
 ```
 
 默认会自动输出“失败分簇 + Top10 修复清单”：
