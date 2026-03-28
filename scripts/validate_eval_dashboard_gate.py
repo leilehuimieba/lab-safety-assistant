@@ -27,12 +27,19 @@ DEFAULT_TARGETS = {
     "latency_p95_ms": 5000.0,
 }
 
+ROUTE_TARGETS = {
+    "route_success_rate": 0.70,
+    "route_timeout_rate": 0.30,
+}
+
 HIGHER_BETTER = {
     "safety_refusal_rate": True,
     "emergency_pass_rate": True,
     "qa_pass_rate": True,
     "coverage_rate": True,
     "latency_p95_ms": False,
+    "route_success_rate": True,
+    "route_timeout_rate": False,
 }
 
 DEFAULT_METRICS = [
@@ -40,6 +47,11 @@ DEFAULT_METRICS = [
     "emergency_pass_rate",
     "qa_pass_rate",
     "coverage_rate",
+]
+
+DEFAULT_ROUTE_METRICS = [
+    "route_success_rate",
+    "route_timeout_rate",
 ]
 
 
@@ -73,6 +85,17 @@ def parse_args() -> argparse.Namespace:
         "--metrics",
         default=",".join(DEFAULT_METRICS),
         help="Comma-separated metric keys to enforce.",
+    )
+    parser.add_argument(
+        "--route-metrics",
+        default=",".join(DEFAULT_ROUTE_METRICS),
+        help="Comma-separated route health metric keys to enforce.",
+    )
+    parser.add_argument(
+        "--route-success-threshold-for-quality",
+        type=float,
+        default=0.70,
+        help="Only enforce quality metrics on weeks where route_success_rate >= threshold.",
     )
     parser.add_argument(
         "--quiet",
@@ -148,6 +171,7 @@ def load_dashboard_weekly(path: Path) -> tuple[list[WeeklyRow], dict[str, float]
 
     smoke_runs = data.get("smoke_runs", [])
     targets = DEFAULT_TARGETS.copy()
+    targets.update(ROUTE_TARGETS)
     if isinstance(smoke_runs, list) and smoke_runs:
         latest = smoke_runs[-1]
         if isinstance(latest, dict):
@@ -198,13 +222,26 @@ def main() -> int:
         return 1
 
     metrics = [m.strip() for m in args.metrics.split(",") if m.strip()]
+    route_metrics = [m.strip() for m in args.route_metrics.split(",") if m.strip()]
     weekly_rows, targets = load_dashboard_weekly(data_path)
-    violations = evaluate_consecutive_week_violations(
+    route_violations = evaluate_consecutive_week_violations(
         weekly_rows,
+        targets=targets,
+        metrics=route_metrics,
+        weeks=max(2, args.weeks),
+    )
+
+    quality_rows = [
+        row for row in weekly_rows if row.metrics.get("route_success_rate", 0.0) >= args.route_success_threshold_for_quality
+    ]
+    quality_violations = evaluate_consecutive_week_violations(
+        quality_rows,
         targets=targets,
         metrics=metrics,
         weeks=max(2, args.weeks),
     )
+
+    violations = [*route_violations, *quality_violations]
     if violations:
         print("eval dashboard gate failed:")
         for item in violations:
@@ -212,7 +249,12 @@ def main() -> int:
         return 1
 
     if not args.quiet:
-        print("eval dashboard gate passed.")
+        if len(quality_rows) < max(2, args.weeks):
+            print(
+                "eval dashboard gate passed (quality metrics skipped due to insufficient route-healthy weeks)."
+            )
+        else:
+            print("eval dashboard gate passed.")
     return 0
 
 

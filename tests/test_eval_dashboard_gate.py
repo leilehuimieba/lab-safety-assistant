@@ -10,6 +10,8 @@ def make_row(week: str, **metrics: float) -> veg.WeeklyRow:
         "qa_pass_rate": 0.85,
         "coverage_rate": 0.80,
         "latency_p95_ms": 3000.0,
+        "route_success_rate": 0.95,
+        "route_timeout_rate": 0.05,
     }
     base.update(metrics)
     return veg.WeeklyRow(week=week, run_count=1, metrics=base)
@@ -53,3 +55,19 @@ def test_gate_passes_if_second_week_recovers() -> None:
         weeks=2,
     )
     assert violations == []
+
+
+def test_route_gate_detects_consecutive_route_failure() -> None:
+    rows = [
+        make_row("2026-W11", route_success_rate=0.30, route_timeout_rate=0.60),
+        make_row("2026-W12", route_success_rate=0.20, route_timeout_rate=0.70),
+    ]
+    violations = veg.evaluate_consecutive_week_violations(
+        rows,
+        targets={**veg.DEFAULT_TARGETS, **veg.ROUTE_TARGETS},
+        metrics=["route_success_rate", "route_timeout_rate"],
+        weeks=2,
+    )
+    assert len(violations) == 2
+    assert any("route_success_rate" in item for item in violations)
+    assert any("route_timeout_rate" in item for item in violations)

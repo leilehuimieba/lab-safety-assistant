@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-28T12:38:35+08:00",
+  "generated_at": "2026-03-28T12:49:02+08:00",
   "smoke_runs": [
     {
       "run_id": "run_20260317_152652",
@@ -11,6 +11,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
         "latency_p95_ms": 0.0
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -32,6 +39,13 @@
         "coverage_rate": 0.0,
         "latency_p95_ms": 60052.68678500134
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 1.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -51,6 +65,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.45,
         "latency_p95_ms": 43090.04327000314
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.55,
+        "route_timeout_rate": 0.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -72,6 +93,13 @@
         "coverage_rate": 0.0,
         "latency_p95_ms": 3073.2107850006305
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 0.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -91,6 +119,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
         "latency_p95_ms": 1909.96324000007
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 0.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -112,6 +147,13 @@
         "coverage_rate": 1.0,
         "latency_p95_ms": 27434.24675000208
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -131,6 +173,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 1.0,
         "latency_p95_ms": 104851.1868099984
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -152,6 +201,13 @@
         "coverage_rate": 0.0,
         "latency_p95_ms": 30150.507875005133
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 1.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -171,6 +227,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
         "latency_p95_ms": 120263.9005999954
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 1.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -192,6 +255,13 @@
         "coverage_rate": 0.0,
         "latency_p95_ms": 30372.103624999
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 1.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -211,6 +281,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
         "latency_p95_ms": 30492.469024993625
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 1.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -232,6 +309,13 @@
         "coverage_rate": 0.0,
         "latency_p95_ms": 30362.140049997834
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 1.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -251,6 +335,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
         "latency_p95_ms": 30331.346230000054
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 1.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -274,6 +365,13 @@
         "coverage_rate": 0.0,
         "latency_p95_ms": 0.0
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -293,6 +391,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
         "latency_p95_ms": 0.0
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -314,6 +419,13 @@
         "coverage_rate": 0.0,
         "latency_p95_ms": 3073.213000000002
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -333,6 +445,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 1.0,
         "latency_p95_ms": 27434.242500000022
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -354,6 +473,13 @@
         "coverage_rate": 1.0,
         "latency_p95_ms": 104851.18400000001
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -373,6 +499,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
         "latency_p95_ms": 30150.5125
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -394,6 +527,13 @@
         "coverage_rate": 0.0,
         "latency_p95_ms": 30372.105
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -413,6 +553,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
         "latency_p95_ms": 30492.4675
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -434,6 +581,13 @@
         "coverage_rate": 0.0,
         "latency_p95_ms": 30362.1425
       },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
       "targets": {
         "safety_refusal_rate": 0.95,
         "emergency_pass_rate": 0.9,
@@ -453,6 +607,13 @@
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
         "latency_p95_ms": 30331.3425
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
       },
       "targets": {
         "safety_refusal_rate": 0.95,
@@ -474,7 +635,12 @@
         "emergency_pass_rate": 0.0,
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
-        "latency_p95_ms": 0.0
+        "latency_p95_ms": 0.0,
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
       },
       {
         "week": "2026-W13",
@@ -484,7 +650,12 @@
         "emergency_pass_rate": 0.0,
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.204167,
-        "latency_p95_ms": 42698.65042
+        "latency_p95_ms": 42698.65042,
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.795833,
+        "route_timeout_rate": 0.583333
       }
     ],
     "review": [
@@ -496,7 +667,12 @@
         "emergency_pass_rate": 0.0,
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.0,
-        "latency_p95_ms": 0.0
+        "latency_p95_ms": 0.0,
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
       },
       {
         "week": "2026-W13",
@@ -506,7 +682,12 @@
         "emergency_pass_rate": 0.0,
         "qa_pass_rate": 0.0,
         "coverage_rate": 0.25,
-        "latency_p95_ms": 35883.401188
+        "latency_p95_ms": 35883.401188,
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
       }
     ]
   }

@@ -17,7 +17,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from statistics import mean
@@ -72,6 +72,22 @@ DEFAULT_TARGETS = {
     "latency_p95_ms": 5000.0,
 }
 
+ROUTE_STAT_KEYS = [
+    "route_success_rate",
+    "route_fallback_rate",
+    "route_primary_rate",
+    "route_failure_rate",
+    "route_timeout_rate",
+]
+
+ROUTE_STAT_LABELS = {
+    "route_success_rate": "链路可用率",
+    "route_fallback_rate": "降级命中率",
+    "route_primary_rate": "主通道命中率",
+    "route_failure_rate": "链路失败率",
+    "route_timeout_rate": "超时率",
+}
+
 
 @dataclass
 class RunRecord:
@@ -82,6 +98,7 @@ class RunRecord:
     total_rows: int
     metrics: dict[str, float]
     targets: dict[str, float]
+    route_stats: dict[str, float] = field(default_factory=dict)
 
 
 def parse_args() -> argparse.Namespace:
@@ -141,6 +158,62 @@ def safe_float(value: object, default: float = 0.0) -> float:
         return default
 
 
+def empty_route_stats() -> dict[str, float]:
+    return {key: 0.0 for key in ROUTE_STAT_KEYS}
+
+
+def parse_route_stats(summary_path: Path) -> dict[str, float]:
+    detailed_path = summary_path.parent / "detailed_results.csv"
+    if not detailed_path.exists():
+        return empty_route_stats()
+
+    try:
+        with detailed_path.open("r", encoding="utf-8-sig", newline="") as f:
+            rows = list(csv.DictReader(f))
+    except OSError:
+        return empty_route_stats()
+
+    if not rows:
+        return empty_route_stats()
+
+    total = len(rows)
+    success_count = 0
+    fallback_count = 0
+    primary_count = 0
+    failure_count = 0
+    timeout_count = 0
+
+    for row in rows:
+        route = (row.get("response_route") or "").strip().lower()
+        fetch_error = (row.get("fetch_error") or "").strip().lower()
+        response = (row.get("response") or "").strip()
+
+        if route == "primary":
+            primary_count += 1
+        elif route == "fallback":
+            fallback_count += 1
+        elif route in {"primary_failed", "fallback_failed", "internal_error", "none"}:
+            failure_count += 1
+
+        if fetch_error and ("timeout" in fetch_error or "timed out" in fetch_error):
+            timeout_count += 1
+
+        is_success = route in {"primary", "fallback"} and bool(response) and not fetch_error
+        if is_success:
+            success_count += 1
+        elif fetch_error and route not in {"primary_failed", "fallback_failed", "internal_error", "none"}:
+            # Backward compatibility: older detailed_results.csv may not contain response_route.
+            failure_count += 1
+
+    return {
+        "route_success_rate": round(success_count / total, 6),
+        "route_fallback_rate": round(fallback_count / total, 6),
+        "route_primary_rate": round(primary_count / total, 6),
+        "route_failure_rate": round(failure_count / total, 6),
+        "route_timeout_rate": round(timeout_count / total, 6),
+    }
+
+
 def parse_summary_record(path: Path, source_type: str) -> RunRecord | None:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -171,6 +244,7 @@ def parse_summary_record(path: Path, source_type: str) -> RunRecord | None:
         total_rows=int(safe_float(data.get("total_rows", 0), 0.0)),
         metrics=metrics,
         targets=targets,
+        route_stats=parse_route_stats(path) if source_type == "smoke" else empty_route_stats(),
     )
 
 
@@ -237,6 +311,8 @@ def aggregate_weekly(records: list[RunRecord]) -> list[dict[str, object]]:
         for spec in METRIC_SPECS:
             metric_key = spec["key"]
             row[metric_key] = round(mean([item.metrics[metric_key] for item in group]), 6)
+        for key in ROUTE_STAT_KEYS:
+            row[key] = round(mean([item.route_stats.get(key, 0.0) for item in group]), 6)
         rows.append(row)
     return rows
 
@@ -275,6 +351,25 @@ def render_metric_table(latest: RunRecord | None, previous: RunRecord | None) ->
     return lines
 
 
+def render_route_table(latest: RunRecord | None, previous: RunRecord | None) -> list[str]:
+    if latest is None:
+        return ["- 暂无数据。"]
+
+    lines = [
+        "| 链路指标 | 当前值 | 周期变化 |",
+        "| --- | ---: | ---: |",
+    ]
+    for key in ROUTE_STAT_KEYS:
+        current = latest.route_stats.get(key, 0.0)
+        prev = previous.route_stats.get(key, current) if previous else current
+        lines.append(
+            "| "
+            f"{ROUTE_STAT_LABELS.get(key, key)} | {fmt_metric(current, True)} | "
+            f"{delta_str(current, prev, True)} |"
+        )
+    return lines
+
+
 def render_recent_runs_table(records: list[RunRecord], title: str, max_rows: int = 10) -> list[str]:
     lines = [f"### {title}", ""]
     if not records:
@@ -297,6 +392,32 @@ def render_recent_runs_table(records: list[RunRecord], title: str, max_rows: int
             f"{fmt_metric(item.metrics['qa_pass_rate'], True)} | "
             f"{fmt_metric(item.metrics['coverage_rate'], True)} | "
             f"{fmt_metric(item.metrics['latency_p95_ms'], False)} |"
+        )
+    return lines
+
+
+def render_route_runs_table(records: list[RunRecord], title: str, max_rows: int = 10) -> list[str]:
+    lines = [f"### {title}", ""]
+    if not records:
+        lines.append("- 暂无数据。")
+        return lines
+
+    tail = records[-max_rows:]
+    lines.extend(
+        [
+            "| 时间 | run_id | 样本数 | 链路可用率 | 降级命中率 | 主通道命中率 | 链路失败率 | 超时率 |",
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for item in tail:
+        lines.append(
+            "| "
+            f"{item.generated_at.strftime('%Y-%m-%d')} | `{item.run_id}` | {item.total_rows} | "
+            f"{fmt_metric(item.route_stats.get('route_success_rate', 0.0), True)} | "
+            f"{fmt_metric(item.route_stats.get('route_fallback_rate', 0.0), True)} | "
+            f"{fmt_metric(item.route_stats.get('route_primary_rate', 0.0), True)} | "
+            f"{fmt_metric(item.route_stats.get('route_failure_rate', 0.0), True)} | "
+            f"{fmt_metric(item.route_stats.get('route_timeout_rate', 0.0), True)} |"
         )
     return lines
 
@@ -327,6 +448,32 @@ def render_weekly_table(weekly: list[dict[str, object]], title: str, max_rows: i
     return lines
 
 
+def render_route_weekly_table(weekly: list[dict[str, object]], title: str, max_rows: int = 8) -> list[str]:
+    lines = [f"### {title}", ""]
+    if not weekly:
+        lines.append("- 暂无数据。")
+        return lines
+
+    tail = weekly[-max_rows:]
+    lines.extend(
+        [
+            "| 周次 | 运行次数 | 链路可用率 | 降级命中率 | 主通道命中率 | 链路失败率 | 超时率 |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for row in tail:
+        lines.append(
+            "| "
+            f"{row['week']} | {row['run_count']} | "
+            f"{fmt_metric(float(row.get('route_success_rate', 0.0)), True)} | "
+            f"{fmt_metric(float(row.get('route_fallback_rate', 0.0)), True)} | "
+            f"{fmt_metric(float(row.get('route_primary_rate', 0.0)), True)} | "
+            f"{fmt_metric(float(row.get('route_failure_rate', 0.0)), True)} | "
+            f"{fmt_metric(float(row.get('route_timeout_rate', 0.0)), True)} |"
+        )
+    return lines
+
+
 def render_auto_actions(smoke_latest: RunRecord | None, review_latest: RunRecord | None) -> list[str]:
     lines = ["## 4. 自动诊断与下周动作", ""]
     actions: list[str] = []
@@ -338,16 +485,24 @@ def render_auto_actions(smoke_latest: RunRecord | None, review_latest: RunRecord
         age = now - smoke_latest.generated_at.astimezone(timezone.utc)
         if age > timedelta(days=7):
             actions.append("最近一次 smoke 评测超过 7 天，建议本周至少跑一次自动回归。")
-        for spec in METRIC_SPECS:
-            key = spec["key"]
-            current = smoke_latest.metrics[key]
-            target = smoke_latest.targets.get(key, DEFAULT_TARGETS[key])
-            passed = status_for_metric(current, target, higher_better=bool(spec["higher_better"])) == "PASS"
-            if not passed:
-                actions.append(
-                    f"Smoke 指标未达标：{spec['label']} 当前 `{fmt_metric(current, bool(spec['as_percent']))}`，"
-                    f"目标 `{fmt_metric(target, bool(spec['as_percent']))}`。"
-                )
+        route_success = smoke_latest.route_stats.get("route_success_rate", 0.0)
+        route_timeout = smoke_latest.route_stats.get("route_timeout_rate", 0.0)
+        if route_success < 0.7 or route_timeout > 0.3:
+            actions.append(
+                "链路健康不足：请先排查上游模型/网关可用性（可用率<70% 或 超时率>30%），"
+                "暂缓以质量指标判定发布。"
+            )
+        else:
+            for spec in METRIC_SPECS:
+                key = spec["key"]
+                current = smoke_latest.metrics[key]
+                target = smoke_latest.targets.get(key, DEFAULT_TARGETS[key])
+                passed = status_for_metric(current, target, higher_better=bool(spec["higher_better"])) == "PASS"
+                if not passed:
+                    actions.append(
+                        f"Smoke 指标未达标：{spec['label']} 当前 `{fmt_metric(current, bool(spec['as_percent']))}`，"
+                        f"目标 `{fmt_metric(target, bool(spec['as_percent']))}`。"
+                    )
 
     if review_latest is None:
         actions.append("暂无人工复核趋势，建议对本周 smoke 结果至少抽样 10 题进行人工复核。")
@@ -392,19 +547,27 @@ def render_dashboard_md(
     lines.append("")
     lines.extend(render_metric_table(smoke_latest, smoke_previous))
     lines.append("")
-    lines.append("## 2. 最新快照：人工复核")
+    lines.append("## 2. 最新快照：链路健康（按 response_route）")
+    lines.append("")
+    lines.extend(render_route_table(smoke_latest, smoke_previous))
+    lines.append("")
+    lines.append("## 3. 最新快照：人工复核")
     lines.append("")
     lines.extend(render_metric_table(review_latest, review_previous))
     lines.append("")
-    lines.append("## 3. 趋势明细")
+    lines.append("## 4. 趋势明细")
     lines.append("")
-    lines.extend(render_recent_runs_table(smoke_recent, "3.1 Smoke 最近运行"))
+    lines.extend(render_recent_runs_table(smoke_recent, "4.1 Smoke 最近运行"))
     lines.append("")
-    lines.extend(render_recent_runs_table(review_recent, "3.2 人工复核最近运行"))
+    lines.extend(render_route_runs_table(smoke_recent, "4.2 链路路由最近运行"))
     lines.append("")
-    lines.extend(render_weekly_table(smoke_weekly, "3.3 Smoke 周趋势"))
+    lines.extend(render_recent_runs_table(review_recent, "4.3 人工复核最近运行"))
     lines.append("")
-    lines.extend(render_weekly_table(review_weekly, "3.4 人工复核周趋势"))
+    lines.extend(render_weekly_table(smoke_weekly, "4.4 Smoke 周趋势"))
+    lines.append("")
+    lines.extend(render_route_weekly_table(smoke_weekly, "4.5 链路路由周趋势"))
+    lines.append("")
+    lines.extend(render_weekly_table(review_weekly, "4.6 人工复核周趋势"))
     lines.append("")
     lines.extend(render_auto_actions(smoke_latest, review_latest))
     lines.append("")
@@ -423,6 +586,11 @@ def export_runs_csv(path: Path, smoke_records: list[RunRecord], review_records: 
         "qa_pass_rate",
         "coverage_rate",
         "latency_p95_ms",
+        "route_success_rate",
+        "route_fallback_rate",
+        "route_primary_rate",
+        "route_failure_rate",
+        "route_timeout_rate",
         "summary_path",
     ]
     rows: list[dict[str, object]] = []
@@ -438,6 +606,11 @@ def export_runs_csv(path: Path, smoke_records: list[RunRecord], review_records: 
                 "qa_pass_rate": item.metrics["qa_pass_rate"],
                 "coverage_rate": item.metrics["coverage_rate"],
                 "latency_p95_ms": item.metrics["latency_p95_ms"],
+                "route_success_rate": item.route_stats.get("route_success_rate", 0.0),
+                "route_fallback_rate": item.route_stats.get("route_fallback_rate", 0.0),
+                "route_primary_rate": item.route_stats.get("route_primary_rate", 0.0),
+                "route_failure_rate": item.route_stats.get("route_failure_rate", 0.0),
+                "route_timeout_rate": item.route_stats.get("route_timeout_rate", 0.0),
                 "summary_path": item.summary_path.as_posix(),
             }
         )
@@ -458,6 +631,7 @@ def export_data_json(path: Path, smoke_records: list[RunRecord], review_records:
                 "generated_at": item.generated_at.isoformat(),
                 "total_rows": item.total_rows,
                 "metrics": item.metrics,
+                "route_stats": item.route_stats,
                 "targets": item.targets,
                 "summary_path": item.summary_path.as_posix(),
             }
@@ -469,6 +643,7 @@ def export_data_json(path: Path, smoke_records: list[RunRecord], review_records:
                 "generated_at": item.generated_at.isoformat(),
                 "total_rows": item.total_rows,
                 "metrics": item.metrics,
+                "route_stats": item.route_stats,
                 "targets": item.targets,
                 "summary_path": item.summary_path.as_posix(),
             }

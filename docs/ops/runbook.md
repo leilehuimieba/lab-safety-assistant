@@ -379,7 +379,10 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --skip-failure-anal
 
 - 标记文件：`docs/eval/eval_dashboard_gate_enabled.flag`
 - 检查脚本：`scripts/validate_eval_dashboard_gate.py`
-- 触发条件：关键指标连续两周低于阈值时，`quality_gate` 失败并阻止发布。
+- 触发条件（新版）：
+- 先看链路健康（`route_success_rate`、`route_timeout_rate`）连续两周是否达标；
+- 链路健康达标后，才对质量指标（拒答/应急/常规/覆盖）做连续周门禁；
+- 这样可避免“上游超时导致质量门误判”。
 
 ## 第十步：使用网页提取 Skill（可选）
 

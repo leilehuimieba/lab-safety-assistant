@@ -86,6 +86,7 @@
 - [V4.2 绑定与 Top10 修复手册](./docs/eval/v4_2_dify绑定与Top10修复手册_20260328.md)
 - [模型通道A/B实测总结（2026-03-28）](./docs/eval/model_ab_eval_20260328_summary.md)
 - [评测链路自动降级说明（2026-03-28）](./docs/eval/failover_eval_pipeline_20260328.md)
+- [response_route 分桶门禁说明（2026-03-28）](./docs/eval/route_bucket_gate_20260328.md)
 - [评测集](./eval_set_v1.csv)
 - [验收指标](./eval_criteria.md)
 - [检索调参记录](./retrieval_tuning_report.md)
