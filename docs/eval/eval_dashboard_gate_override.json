@@ -1,0 +1,9 @@
+{
+  "enabled": false,
+  "mode": "warn_only",
+  "starts_on": "",
+  "ends_on": "",
+  "reason": "",
+  "ticket": "",
+  "approver": ""
+}

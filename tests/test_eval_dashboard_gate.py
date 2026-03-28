@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import json
+import sys
+from datetime import date
+from pathlib import Path
+
 import validate_eval_dashboard_gate as veg
 
 
@@ -71,3 +76,124 @@ def test_route_gate_detects_consecutive_route_failure() -> None:
     assert len(violations) == 2
     assert any("route_success_rate" in item for item in violations)
     assert any("route_timeout_rate" in item for item in violations)
+
+
+def test_override_warn_only_turns_gate_fail_into_pass(tmp_path: Path, monkeypatch) -> None:
+    docs_eval = tmp_path / "docs" / "eval"
+    docs_eval.mkdir(parents=True, exist_ok=True)
+    (docs_eval / "eval_dashboard_gate_enabled.flag").write_text("", encoding="utf-8")
+    (docs_eval / "eval_dashboard_data.json").write_text(
+        json.dumps(
+            {
+                "weekly": {
+                    "smoke": [
+                        {
+                            "week": "2026-W11",
+                            "run_count": 1,
+                            "safety_refusal_rate": 0.99,
+                            "emergency_pass_rate": 0.95,
+                            "qa_pass_rate": 0.90,
+                            "coverage_rate": 0.95,
+                            "latency_p95_ms": 1200.0,
+                            "route_success_rate": 0.20,
+                            "route_timeout_rate": 0.70,
+                        },
+                        {
+                            "week": "2026-W12",
+                            "run_count": 1,
+                            "safety_refusal_rate": 0.99,
+                            "emergency_pass_rate": 0.95,
+                            "qa_pass_rate": 0.90,
+                            "coverage_rate": 0.95,
+                            "latency_p95_ms": 1200.0,
+                            "route_success_rate": 0.10,
+                            "route_timeout_rate": 0.80,
+                        },
+                    ]
+                },
+                "smoke_runs": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    (docs_eval / "eval_dashboard_gate_override.json").write_text(
+        json.dumps(
+            {
+                "enabled": True,
+                "mode": "warn_only",
+                "starts_on": date.today().isoformat(),
+                "ends_on": date.today().isoformat(),
+                "reason": "temporary route instability",
+                "ticket": "OPS-TEST",
+                "approver": "tester",
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "validate_eval_dashboard_gate.py",
+            "--repo-root",
+            str(tmp_path),
+            "--quiet",
+        ],
+    )
+    assert veg.main() == 0
+
+
+def test_override_absent_keeps_gate_failure(tmp_path: Path, monkeypatch) -> None:
+    docs_eval = tmp_path / "docs" / "eval"
+    docs_eval.mkdir(parents=True, exist_ok=True)
+    (docs_eval / "eval_dashboard_gate_enabled.flag").write_text("", encoding="utf-8")
+    (docs_eval / "eval_dashboard_data.json").write_text(
+        json.dumps(
+            {
+                "weekly": {
+                    "smoke": [
+                        {
+                            "week": "2026-W11",
+                            "run_count": 1,
+                            "safety_refusal_rate": 0.99,
+                            "emergency_pass_rate": 0.95,
+                            "qa_pass_rate": 0.90,
+                            "coverage_rate": 0.95,
+                            "latency_p95_ms": 1200.0,
+                            "route_success_rate": 0.20,
+                            "route_timeout_rate": 0.70,
+                        },
+                        {
+                            "week": "2026-W12",
+                            "run_count": 1,
+                            "safety_refusal_rate": 0.99,
+                            "emergency_pass_rate": 0.95,
+                            "qa_pass_rate": 0.90,
+                            "coverage_rate": 0.95,
+                            "latency_p95_ms": 1200.0,
+                            "route_success_rate": 0.10,
+                            "route_timeout_rate": 0.80,
+                        },
+                    ]
+                },
+                "smoke_runs": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "validate_eval_dashboard_gate.py",
+            "--repo-root",
+            str(tmp_path),
+            "--quiet",
+        ],
+    )
+    assert veg.main() == 1

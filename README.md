@@ -276,3 +276,11 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 - 一套用于大创申报和阶段展示的结构化项目资料
 - 一个可继续扩展为正式系统的原型基础
 
+## Release Gate Override & Risk Note
+
+- Gate script: `scripts/validate_eval_dashboard_gate.py`
+- Override config: `docs/eval/eval_dashboard_gate_override.json`
+- Override template: `docs/eval/eval_dashboard_gate_override.example.json`
+- Auto risk note: `python scripts/generate_release_risk_note.py --repo-root .`
+- Pipeline behavior: when running `scripts/run_eval_regression_pipeline.py --update-dashboard`, risk note files are refreshed automatically (use `--skip-risk-note` to disable).
+

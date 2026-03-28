@@ -62,6 +62,17 @@ class WeeklyRow:
     metrics: dict[str, float]
 
 
+@dataclass
+class GateOverride:
+    enabled: bool
+    mode: str
+    starts_on: date | None
+    ends_on: date | None
+    reason: str
+    ticket: str
+    approver: str
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate eval dashboard gate.")
     parser.add_argument("--repo-root", default=".", help="Repository root path.")
@@ -98,6 +109,11 @@ def parse_args() -> argparse.Namespace:
         help="Only enforce quality metrics on weeks where route_success_rate >= threshold.",
     )
     parser.add_argument(
+        "--override-config",
+        default="docs/eval/eval_dashboard_gate_override.json",
+        help="Optional override json. Supports temporary warn_only mode.",
+    )
+    parser.add_argument(
         "--quiet",
         action="store_true",
         help="Print concise output.",
@@ -115,6 +131,48 @@ def week_to_monday(week_label: str) -> date | None:
         return date.fromisocalendar(year, week, 1)
     except ValueError:
         return None
+
+
+def parse_date(raw: str) -> date | None:
+    value = (raw or "").strip()
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def load_override_config(path: Path) -> GateOverride | None:
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    return GateOverride(
+        enabled=bool(payload.get("enabled", False)),
+        mode=str(payload.get("mode", "warn_only") or "warn_only").strip().lower(),
+        starts_on=parse_date(str(payload.get("starts_on", "") or "")),
+        ends_on=parse_date(str(payload.get("ends_on", "") or "")),
+        reason=str(payload.get("reason", "") or "").strip(),
+        ticket=str(payload.get("ticket", "") or "").strip(),
+        approver=str(payload.get("approver", "") or "").strip(),
+    )
+
+
+def is_override_active(override: GateOverride | None, today: date) -> bool:
+    if override is None or not override.enabled:
+        return False
+    if override.mode not in {"warn_only", "enforce"}:
+        return False
+    if override.starts_on is not None and today < override.starts_on:
+        return False
+    if override.ends_on is not None and today > override.ends_on:
+        return False
+    return True
 
 
 def metric_failed(metric_key: str, value: float, target: float) -> bool:
@@ -156,7 +214,7 @@ def evaluate_consecutive_week_violations(
                 break
         if all_failed:
             violations.append(
-                f"{metric} 连续{weeks}周未达标（target={target}, "
+                f"{metric} failed for {weeks} consecutive weeks (target={target}, "
                 + ", ".join([f"{row.week}:{row.metrics.get(metric, 0.0):.4f}" for row in tail])
                 + ")"
             )
@@ -211,6 +269,9 @@ def main() -> int:
     gate_flag = Path(args.gate_flag)
     if not gate_flag.is_absolute():
         gate_flag = repo_root / gate_flag
+    override_path = Path(args.override_config)
+    if not override_path.is_absolute():
+        override_path = repo_root / override_path
 
     if not gate_flag.exists():
         if not args.quiet:
@@ -242,7 +303,22 @@ def main() -> int:
     )
 
     violations = [*route_violations, *quality_violations]
+    override = load_override_config(override_path)
+    override_active = is_override_active(override, today=date.today())
+
     if violations:
+        if override_active and override is not None and override.mode == "warn_only":
+            if not args.quiet:
+                print("eval dashboard gate WARN-ONLY override active:")
+                for item in violations:
+                    print(f"- {item}")
+                if override.reason:
+                    print(f"- override_reason: {override.reason}")
+                if override.ticket:
+                    print(f"- override_ticket: {override.ticket}")
+                if override.approver:
+                    print(f"- override_approver: {override.approver}")
+            return 0
         print("eval dashboard gate failed:")
         for item in violations:
             print(f"- {item}")
@@ -253,6 +329,8 @@ def main() -> int:
             print(
                 "eval dashboard gate passed (quality metrics skipped due to insufficient route-healthy weeks)."
             )
+        elif override_active and override is not None:
+            print("eval dashboard gate passed (override active but no violations).")
         else:
             print("eval dashboard gate passed.")
     return 0

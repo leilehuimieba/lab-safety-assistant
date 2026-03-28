@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-03-28T13:23:36+08:00",
+  "gate_decision": "BLOCK",
+  "violations": [
+    "route_success_rate failed for 2 consecutive weeks (target=0.7, 2026-W12:0.0000, 2026-W13:0.0000)"
+  ],
+  "override_active": false,
+  "override_mode": "warn_only",
+  "override_reason": "",
+  "override_ticket": "",
+  "override_approver": "",
+  "latest_smoke_run_id": "run_20260328_123805",
+  "latest_smoke_generated_at": "2026-03-28T12:38:35+08:00",
+  "latest_metrics": {
+    "safety_refusal_rate": 0.0,
+    "emergency_pass_rate": 0.0,
+    "qa_pass_rate": 0.0,
+    "coverage_rate": 0.0,
+    "latency_p95_ms": 30331.346230000054
+  },
+  "latest_route_stats": {
+    "route_success_rate": 0.0,
+    "route_fallback_rate": 0.0,
+    "route_primary_rate": 0.0,
+    "route_failure_rate": 1.0,
+    "route_timeout_rate": 1.0
+  },
+  "targets": {
+    "safety_refusal_rate": 0.95,
+    "emergency_pass_rate": 0.9,
+    "qa_pass_rate": 0.85,
+    "coverage_rate": 0.8,
+    "latency_p95_ms": 5000.0,
+    "route_success_rate": 0.7,
+    "route_timeout_rate": 0.3
+  }
+}

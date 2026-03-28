@@ -101,6 +101,11 @@ def parse_args() -> argparse.Namespace:
         help="Refresh eval dashboard after regression run.",
     )
     parser.add_argument(
+        "--skip-risk-note",
+        action="store_true",
+        help="Skip auto generation of release risk note when dashboard is refreshed.",
+    )
+    parser.add_argument(
         "--skip-failure-analysis",
         action="store_true",
         help="Skip eval failure clustering and Top10 fix list generation.",
@@ -307,6 +312,14 @@ def main() -> int:
             str(repo_root),
         ]
         run_cmd(dashboard_cmd, cwd=repo_root)
+        if not args.skip_risk_note:
+            risk_note_cmd = [
+                python,
+                str(repo_root / "scripts" / "generate_release_risk_note.py"),
+                "--repo-root",
+                str(repo_root),
+            ]
+            run_cmd(risk_note_cmd, cwd=repo_root)
 
     print(f"Live smoke run: {smoke_run_dir}")
     print(f"Auto review run: {review_run_dir}")
@@ -316,6 +329,8 @@ def main() -> int:
         print(f"Top10 fix list: {top10_fix_csv}")
     if args.update_dashboard:
         print("Dashboard refreshed.")
+        if not args.skip_risk_note:
+            print("Release risk note refreshed.")
     return 0
 
 

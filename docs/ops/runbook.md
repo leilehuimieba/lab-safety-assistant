@@ -384,6 +384,23 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --skip-failure-anal
 - 链路健康达标后，才对质量指标（拒答/应急/常规/覆盖）做连续周门禁；
 - 这样可避免“上游超时导致质量门误判”。
 
+临时豁免（仅限短窗口）：
+
+- 配置文件：`docs/eval/eval_dashboard_gate_override.json`
+- 示例模板：`docs/eval/eval_dashboard_gate_override.example.json`
+- 推荐模式：`warn_only`（保留告警、允许临时放行）
+- 建议填写：`reason`、`ticket`、`approver`，并设置 `starts_on`/`ends_on`
+
+自动发布风险说明：
+
+```powershell
+python scripts/generate_release_risk_note.py --repo-root .
+```
+
+- 输出：`docs/eval/release_risk_note_auto.md`
+- 明细：`docs/eval/release_risk_note_auto.json`
+- 当执行 `run_eval_regression_pipeline.py --update-dashboard` 时，会自动生成这两份文件（可加 `--skip-risk-note` 跳过）
+
 ## 第十步：使用网页提取 Skill（可选）
 
 当需要从链接提取正文并做实验入库时，可使用仓库内置 Skill：
