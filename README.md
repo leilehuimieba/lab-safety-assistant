@@ -285,6 +285,7 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 - Pipeline behavior: when running `scripts/run_eval_regression_pipeline.py --update-dashboard`, risk note files are refreshed automatically (use `--skip-risk-note` to disable).
 - Daily monitor workflow: `.github/workflows/daily-eval-gate-monitor.yml` (auto runs pipeline + gate, and opens/updates `eval-gate-alert` issue on failure)
 - Same-day dedup + SLA check: daily monitor keeps one issue per day and enforces `Owner`/`DDL` fields; missing SLA is marked with red `sla-missing` label.
+- Escalation policy: if gate fails for 3 consecutive days, workflow adds `p1-gate` label and @mentions escalation owners from repo variable `EVAL_GATE_ESCALATION_MENTIONS`.
 
 ### Alert-to-Recovery Flow
 

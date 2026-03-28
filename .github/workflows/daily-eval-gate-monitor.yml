@@ -68,6 +68,8 @@ jobs:
       - name: Create or Update Same-Day Gate Alert Issue
         if: steps.gate.outputs.status == 'fail'
         uses: actions/github-script@v7
+        env:
+          EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
         with:
           script: |
             const fs = require('fs');
@@ -141,6 +143,7 @@ jobs:
             };
             await ensureLabel('eval-gate-alert', 'B60205', 'Auto-created alert issue when eval gate fails');
             await ensureLabel('sla-missing', 'FF0000', 'Alert issue missing SLA owner or ddl');
+            await ensureLabel('p1-gate', 'D93F0B', 'Escalated P1 alert for consecutive daily gate failures');
 
             const allIssues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -150,6 +153,7 @@ jobs:
               per_page: 100
             });
             const sameDayIssue = allIssues.data.find(i => i.title === title);
+            let issueNumber = 0;
 
             if (sameDayIssue) {
               if (sameDayIssue.state === 'closed') {
@@ -166,7 +170,8 @@ jobs:
                 issue_number: sameDayIssue.number,
                 body
               });
-              core.setOutput('issue_number', String(sameDayIssue.number));
+              issueNumber = sameDayIssue.number;
+              core.setOutput('issue_number', String(issueNumber));
               core.info(`Reused same-day issue #${sameDayIssue.number}`);
             } else {
               const created = await github.rest.issues.create({
@@ -176,8 +181,65 @@ jobs:
                 body,
                 labels: ['eval-gate-alert', 'sla-missing']
               });
-              core.setOutput('issue_number', String(created.data.number));
+              issueNumber = created.data.number;
+              core.setOutput('issue_number', String(issueNumber));
               core.info(`Created issue #${created.data.number}`);
+            }
+
+            // Consecutive-failure escalation: when >= 3 calendar days including today.
+            const titleDatePattern = /^\[Eval Gate\] (\d{4}-\d{2}-\d{2}) gate failed$/;
+            const dateSet = new Set(
+              allIssues.data
+                .map(i => {
+                  const m = String(i.title || '').match(titleDatePattern);
+                  return m ? m[1] : '';
+                })
+                .filter(Boolean)
+            );
+            let streak = 0;
+            const d = new Date(`${today}T00:00:00Z`);
+            for (let i = 0; i < 14; i += 1) {
+              const key = d.toISOString().slice(0, 10);
+              if (dateSet.has(key)) {
+                streak += 1;
+                d.setUTCDate(d.getUTCDate() - 1);
+                continue;
+              }
+              break;
+            }
+            core.info(`Consecutive failure streak: ${streak} day(s)`);
+
+            if (streak >= 3 && issueNumber > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                labels: ['p1-gate']
+              });
+              const marker = `<!-- P1-ESCALATE:${today} -->`;
+              const mentions = String(process.env.EVAL_GATE_ESCALATION_MENTIONS || '').trim();
+              const mentionText = mentions || `@${context.repo.owner}`;
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                per_page: 50
+              });
+              const alreadyCommented = comments.data.some(c => String(c.body || '').includes(marker));
+              if (!alreadyCommented) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  body: [
+                    marker,
+                    `**P1 Escalation Triggered**: gate failure streak reached **${streak}** consecutive day(s).`,
+                    '',
+                    `- Notified: ${mentionText}`,
+                    '- Requirement: prioritize route-health recovery and rerun regression.'
+                  ].join('\n')
+                });
+              }
             }
 
       - name: Check Alert SLA Metadata
