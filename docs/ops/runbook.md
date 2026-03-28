@@ -424,6 +424,12 @@ GitHub 自动监控（每日）：
 - 示例值：`@leilehuimieba @teammate1`
 - 若未配置，默认 @仓库 owner
 
+升级阈值配置（可选）：
+
+- `EVAL_GATE_ESCALATION_STREAK_DAYS`：连续失败触发 P1 的天数阈值（默认 `3`）
+- `EVAL_GATE_REMINDER_HOURS_LIST`：P1 提醒阶段列表（默认 `24,48`，按小时）
+- 示例：`24,48,72`（会在达到对应阶段后按天提醒）
+
 故障分级表（Daily Monitor）：
 
 | 等级 | 触发条件 | 系统动作 | 人工要求 |
@@ -433,6 +439,12 @@ GitHub 自动监控（每日）：
 | P1 | 连续 3 天 gate fail | 打 `p1-gate`，自动 @升级负责人 | 进入优先修复通道，修复后立即回归 |
 | P1+24h | P1 告警超过 24h 未恢复 | 每日自动复盘提醒评论 | 提交/更新复盘文档并同步进展 |
 | Recovery | gate 恢复 PASS | 自动评论并关闭 open 告警 | 复盘原因，更新预防项 |
+
+周度运行统计：
+
+- 输出文件：`docs/eval/weekly_gate_ops.md`
+- 生成脚本：`scripts/generate_weekly_gate_ops.py`
+- 自动触发：`.github/workflows/weekly-report.yml`（每周自动 PR）
 
 ## 第十步：使用网页提取 Skill（可选）
 

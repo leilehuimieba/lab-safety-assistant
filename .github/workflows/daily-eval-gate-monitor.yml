@@ -70,6 +70,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
+          EVAL_GATE_ESCALATION_STREAK_DAYS: ${{ vars.EVAL_GATE_ESCALATION_STREAK_DAYS }}
         with:
           script: |
             const fs = require('fs');
@@ -198,6 +199,7 @@ jobs:
             );
             let streak = 0;
             const d = new Date(`${today}T00:00:00Z`);
+            dateSet.add(today);
             for (let i = 0; i < 14; i += 1) {
               const key = d.toISOString().slice(0, 10);
               if (dateSet.has(key)) {
@@ -208,8 +210,10 @@ jobs:
               break;
             }
             core.info(`Consecutive failure streak: ${streak} day(s)`);
+            const streakThreshold = Number.parseInt(String(process.env.EVAL_GATE_ESCALATION_STREAK_DAYS || '3'), 10);
+            const safeStreakThreshold = Number.isFinite(streakThreshold) && streakThreshold > 0 ? streakThreshold : 3;
 
-            if (streak >= 3 && issueNumber > 0) {
+            if (streak >= safeStreakThreshold && issueNumber > 0) {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -233,7 +237,7 @@ jobs:
                   issue_number: issueNumber,
                   body: [
                     marker,
-                    `**P1 Escalation Triggered**: gate failure streak reached **${streak}** consecutive day(s).`,
+                    `**P1 Escalation Triggered**: gate failure streak reached **${streak}** consecutive day(s) (threshold=${safeStreakThreshold}).`,
                     '',
                     `- Notified: ${mentionText}`,
                     '- Requirement: prioritize route-health recovery and rerun regression.'
@@ -362,15 +366,20 @@ jobs:
         uses: actions/github-script@v7
         env:
           EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
+          EVAL_GATE_REMINDER_HOURS_LIST: ${{ vars.EVAL_GATE_REMINDER_HOURS_LIST }}
         with:
           script: |
             const now = Date.now();
-            const dayMs = 24 * 60 * 60 * 1000;
             const today = new Date().toISOString().slice(0, 10);
-            const marker = `<!-- P1-REMINDER:${today} -->`;
             const mentions = String(process.env.EVAL_GATE_ESCALATION_MENTIONS || '').trim();
             const mentionText = mentions || `@${context.repo.owner}`;
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const parsedThresholds = String(process.env.EVAL_GATE_REMINDER_HOURS_LIST || '24,48')
+              .split(',')
+              .map(v => Number.parseInt(v.trim(), 10))
+              .filter(v => Number.isFinite(v) && v > 0)
+              .sort((a, b) => a - b);
+            const thresholds = parsedThresholds.length > 0 ? parsedThresholds : [24, 48];
 
             const openIssues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -388,10 +397,13 @@ jobs:
             for (const issue of openIssues.data) {
               const createdAt = new Date(issue.created_at).getTime();
               const ageMs = now - createdAt;
-              if (ageMs < dayMs) {
-                core.info(`Skip issue #${issue.number}: age < 24h`);
+              const ageHours = Math.floor(ageMs / (60 * 60 * 1000));
+              const stage = thresholds.reduce((acc, h) => (ageHours >= h ? h : acc), 0);
+              if (stage <= 0) {
+                core.info(`Skip issue #${issue.number}: age < min threshold ${thresholds[0]}h`);
                 continue;
               }
+              const marker = `<!-- P1-REMINDER:${today}:H${stage} -->`;
 
               const comments = await github.rest.issues.listComments({
                 owner: context.repo.owner,
@@ -405,14 +417,13 @@ jobs:
                 continue;
               }
 
-              const ageHours = Math.floor(ageMs / (60 * 60 * 1000));
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
                 body: [
                   marker,
-                  `**P1 24h Reminder**: issue open for about **${ageHours}h** and not recovered yet.`,
+                  `**P1 Reminder (${stage}h stage)**: issue open for about **${ageHours}h** and not recovered yet.`,
                   '',
                   `- Notified: ${mentionText}`,
                   `- Workflow Run: ${runUrl}`,
