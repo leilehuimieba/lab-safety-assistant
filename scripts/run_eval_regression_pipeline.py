@@ -15,6 +15,9 @@ import os
 import re
 import subprocess
 import sys
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 
@@ -53,6 +56,23 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=90.0,
         help="Per-request timeout seconds for eval_smoke Dify calls.",
+    )
+    parser.add_argument(
+        "--eval-concurrency",
+        type=int,
+        default=4,
+        help="Parallel workers for eval_smoke in Dify mode.",
+    )
+    parser.add_argument(
+        "--skip-preflight",
+        action="store_true",
+        help="Skip Dify /v1/parameters preflight check before smoke run.",
+    )
+    parser.add_argument(
+        "--preflight-timeout",
+        type=float,
+        default=8.0,
+        help="Timeout seconds for Dify preflight check.",
     )
     parser.add_argument(
         "--allow-skip-live",
@@ -100,6 +120,33 @@ def parse_run_dir(stdout: str, prefix: str) -> Path:
         if match:
             return Path(match.group(1).strip())
     raise RuntimeError(f"Cannot parse run directory from output by prefix: {prefix}")
+
+
+def resolve_parameters_endpoint(base_url: str) -> str:
+    normalized = base_url.rstrip("/")
+    if normalized.endswith("/v1"):
+        return f"{normalized}/parameters"
+    return f"{normalized}/v1/parameters"
+
+
+def preflight_dify(base_url: str, app_key: str, timeout_sec: float) -> tuple[bool, str]:
+    endpoint = resolve_parameters_endpoint(base_url)
+    request = urllib.request.Request(
+        endpoint,
+        headers={"Authorization": f"Bearer {app_key}"},
+        method="GET",
+    )
+    started = time.perf_counter()
+    try:
+        with urllib.request.urlopen(request, timeout=max(timeout_sec, 1.0)) as response:
+            _ = response.read(200)
+        latency_ms = (time.perf_counter() - started) * 1000
+        return True, f"ok latency={latency_ms:.0f}ms"
+    except urllib.error.HTTPError as exc:
+        payload = exc.read().decode("utf-8", errors="ignore")
+        return False, f"http_{exc.code}: {payload[:200]}"
+    except Exception as exc:  # pragma: no cover
+        return False, f"request_error: {exc}"
 
 
 def build_auto_manual_review(detailed_results_path: Path, manual_csv_path: Path) -> None:
@@ -155,6 +202,16 @@ def main() -> int:
             return 0
         raise SystemExit("Missing DIFY_BASE_URL or DIFY_APP_API_KEY for live regression.")
 
+    if not args.skip_preflight:
+        ok, detail = preflight_dify(dify_base_url, dify_app_key, args.preflight_timeout)
+        if not ok:
+            raise RuntimeError(
+                "Dify preflight failed. "
+                f"base_url={dify_base_url} detail={detail}. "
+                "You can use --skip-preflight to bypass temporarily."
+            )
+        print(f"Dify preflight passed: {detail}")
+
     eval_set = resolve_path(repo_root, args.eval_set)
     smoke_output = resolve_path(repo_root, args.smoke_output_dir)
     review_output = resolve_path(repo_root, args.review_output_dir)
@@ -171,6 +228,8 @@ def main() -> int:
         dify_app_key,
         "--dify-timeout",
         str(args.dify_timeout),
+        "--concurrency",
+        str(max(1, args.eval_concurrency)),
         "--output-dir",
         str(smoke_output),
     ]

@@ -15,6 +15,7 @@ Outputs:
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import csv
 import json
 import math
@@ -111,6 +112,12 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=90.0,
         help="Per-request timeout seconds when calling Dify API.",
+    )
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=1,
+        help="Parallel request workers for Dify mode. 1 = sequential.",
     )
     parser.add_argument(
         "--generate-template",
@@ -291,6 +298,53 @@ def call_dify(base_url: str, app_key: str, question: str, timeout_sec: float) ->
         return "", latency_ms, f"request_error: {exc}"
 
 
+def fetch_dify_responses(
+    eval_rows: list[dict[str, str]],
+    base_url: str,
+    app_key: str,
+    timeout_sec: float,
+    concurrency: int,
+    caller=call_dify,
+) -> dict[str, tuple[str, float, str]]:
+    response_by_id: dict[str, tuple[str, float, str]] = {}
+    items: list[tuple[str, str]] = []
+    for row in eval_rows:
+        row_id = (row.get("id") or "").strip()
+        if not row_id:
+            continue
+        question = row.get("question") or ""
+        items.append((row_id, question))
+
+    worker_count = max(1, int(concurrency))
+    if worker_count <= 1:
+        for row_id, question in items:
+            answer, latency_ms, error = caller(base_url, app_key, question, timeout_sec)
+            response_by_id[row_id] = (answer, latency_ms, error)
+            print(f"[{row_id}] done latency={latency_ms:.0f}ms error={'none' if not error else 'yes'}")
+        return response_by_id
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as executor:
+        future_map = {
+            executor.submit(caller, base_url, app_key, question, timeout_sec): row_id
+            for row_id, question in items
+        }
+        total = len(future_map)
+        done = 0
+        for future in concurrent.futures.as_completed(future_map):
+            row_id = future_map[future]
+            try:
+                answer, latency_ms, error = future.result()
+            except Exception as exc:  # pragma: no cover
+                answer, latency_ms, error = "", 0.0, f"request_error: {exc}"
+            response_by_id[row_id] = (answer, latency_ms, error)
+            done += 1
+            print(
+                f"[{row_id}] done latency={latency_ms:.0f}ms error={'none' if not error else 'yes'} "
+                f"({done}/{total})"
+            )
+    return response_by_id
+
+
 def build_template(path: Path, rows: list[dict[str, str]]) -> None:
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
         fieldnames = ["id", "question", "response", "latency_ms"]
@@ -402,17 +456,13 @@ def main() -> int:
             raise SystemExit("Missing --dify-base-url (or env DIFY_BASE_URL).")
         if not args.dify_app_key:
             raise SystemExit("Missing --dify-app-key (or env DIFY_APP_API_KEY).")
-        for row in eval_rows:
-            row_id = (row.get("id") or "").strip()
-            question = row.get("question") or ""
-            answer, latency_ms, error = call_dify(
-                args.dify_base_url,
-                args.dify_app_key,
-                question,
-                args.dify_timeout,
-            )
-            response_by_id[row_id] = (answer, latency_ms, error)
-            print(f"[{row_id}] done latency={latency_ms:.0f}ms error={'none' if not error else 'yes'}")
+        response_by_id = fetch_dify_responses(
+            eval_rows=eval_rows,
+            base_url=args.dify_base_url,
+            app_key=args.dify_app_key,
+            timeout_sec=args.dify_timeout,
+            concurrency=args.concurrency,
+        )
     else:
         raise SystemExit("Choose one input mode: --responses-csv or --use-dify")
 

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import threading
+import time
+
 import eval_smoke as es
 
 
@@ -30,3 +33,27 @@ def test_resolve_chat_endpoint_variants() -> None:
     assert es.resolve_chat_endpoint("http://localhost") == "http://localhost/v1/chat-messages"
     assert es.resolve_chat_endpoint("http://localhost/v1") == "http://localhost/v1/chat-messages"
 
+
+def test_fetch_dify_responses_parallel_basic() -> None:
+    rows = [
+        {"id": "EVAL-0001", "question": "Q1"},
+        {"id": "EVAL-0002", "question": "Q2"},
+        {"id": "EVAL-0003", "question": "Q3"},
+        {"id": "EVAL-0004", "question": "Q4"},
+    ]
+    thread_ids: set[int] = set()
+    lock = threading.Lock()
+
+    def fake_caller(_base: str, _key: str, question: str, _timeout: float) -> tuple[str, float, str]:
+        time.sleep(0.01)
+        with lock:
+            thread_ids.add(threading.get_ident())
+        return f"answer:{question}", 12.3, ""
+
+    result = es.fetch_dify_responses(
+        eval_rows=rows, base_url="http://x", app_key="app-k", timeout_sec=5.0, concurrency=4, caller=fake_caller
+    )
+    assert len(result) == 4
+    assert result["EVAL-0001"][0] == "answer:Q1"
+    assert result["EVAL-0004"][2] == ""
+    assert len(thread_ids) >= 1

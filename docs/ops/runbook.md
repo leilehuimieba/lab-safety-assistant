@@ -341,8 +341,12 @@ python scripts/generate_eval_dashboard.py --repo-root .
 ```powershell
 set DIFY_BASE_URL=http://localhost
 set DIFY_APP_API_KEY=<app-xxxx>
-python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard --dify-timeout 30
+python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard --dify-timeout 30 --eval-concurrency 4
 ```
+
+说明：
+- 默认会先调用 `GET /v1/parameters` 做连通性预检，失败会提前退出，避免整轮长时间等待。
+- 如需临时跳过预检，可加 `--skip-preflight`（仅建议排障时使用）。
 
 默认会自动输出“失败分簇 + Top10 修复清单”：
 
