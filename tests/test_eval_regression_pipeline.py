@@ -36,6 +36,11 @@ def test_resolve_parameters_endpoint_variants() -> None:
     assert rep.resolve_parameters_endpoint("http://localhost/v1") == "http://localhost/v1/parameters"
 
 
+def test_resolve_chat_endpoint_variants() -> None:
+    assert rep.resolve_chat_endpoint("http://localhost") == "http://localhost/v1/chat-messages"
+    assert rep.resolve_chat_endpoint("http://localhost/v1") == "http://localhost/v1/chat-messages"
+
+
 def test_preflight_dify_success_mocked() -> None:
     class _Resp:
         def __enter__(self):
@@ -51,3 +56,25 @@ def test_preflight_dify_success_mocked() -> None:
         ok, detail = rep.preflight_dify("http://localhost", "app-xxx", 2.0)
     assert ok is True
     assert "ok latency=" in detail
+
+
+def test_preflight_dify_chat_timeout_hint() -> None:
+    with patch(
+        "run_eval_regression_pipeline.urllib.request.urlopen",
+        side_effect=TimeoutError("timed out"),
+    ):
+        ok, detail = rep.preflight_dify_chat("http://localhost", "app-xxx", 2.0)
+    assert ok is False
+    assert "chat timeout" in detail
+
+
+def test_parse_worker_log_hints_embedding_unreachable() -> None:
+    log_text = (
+        "InvokeServerUnavailableError ... host.docker.internal', port=11434 ... "
+        "Request to Plugin Daemon Service failed-500"
+    )
+    hints = rep.parse_worker_log_hints(log_text)
+    merged = " ".join(hints)
+    assert "11434" in merged
+    assert "Plugin Daemon 500" in merged
+    assert "InvokeServerUnavailableError" in merged

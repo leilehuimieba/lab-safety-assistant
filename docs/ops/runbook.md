@@ -346,8 +346,11 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 
 说明：
 - 默认会先调用 `GET /v1/parameters` 做连通性预检，失败会提前退出，避免整轮长时间等待。
+- 默认还会做一次 `POST /v1/chat-messages` 的快速预检（`blocking` 模式），用于提前识别模型或检索链路异常。
 - 如需临时跳过预检，可加 `--skip-preflight`（仅建议排障时使用）。
+- 如需临时跳过 chat 预检，可加 `--skip-chat-preflight`（仅建议排障时使用）。
 - 可开启“主通道超时后自动降级到备用通道”：设置 `DIFY_FALLBACK_BASE_URL`、`DIFY_FALLBACK_APP_API_KEY`，并加 `--retry-on-timeout 1`。
+- 若报错包含 `host.docker.internal:11434 unreachable`，通常是嵌入模型通道不可达。优先检查 `docker-worker-1` 日志，并修复 embedding 配置后再重跑。
 
 模型通道 A/B 对比（自动切模型、自动恢复配置）：
 

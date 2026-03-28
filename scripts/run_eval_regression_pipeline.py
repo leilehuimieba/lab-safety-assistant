@@ -18,6 +18,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import json
 from pathlib import Path
 
 
@@ -85,10 +86,26 @@ def parse_args() -> argparse.Namespace:
         help="Skip Dify /v1/parameters preflight check before smoke run.",
     )
     parser.add_argument(
+        "--skip-chat-preflight",
+        action="store_true",
+        help="Skip Dify /v1/chat-messages quick preflight check before smoke run.",
+    )
+    parser.add_argument(
         "--preflight-timeout",
         type=float,
         default=8.0,
         help="Timeout seconds for Dify preflight check.",
+    )
+    parser.add_argument(
+        "--chat-preflight-timeout",
+        type=float,
+        default=20.0,
+        help="Timeout seconds for Dify chat preflight check.",
+    )
+    parser.add_argument(
+        "--worker-log-container",
+        default="docker-worker-1",
+        help="Docker worker container name for auto diagnosis when chat preflight fails.",
     )
     parser.add_argument(
         "--allow-skip-live",
@@ -150,6 +167,13 @@ def resolve_parameters_endpoint(base_url: str) -> str:
     return f"{normalized}/v1/parameters"
 
 
+def resolve_chat_endpoint(base_url: str) -> str:
+    normalized = base_url.rstrip("/")
+    if normalized.endswith("/v1"):
+        return f"{normalized}/chat-messages"
+    return f"{normalized}/v1/chat-messages"
+
+
 def preflight_dify(base_url: str, app_key: str, timeout_sec: float) -> tuple[bool, str]:
     endpoint = resolve_parameters_endpoint(base_url)
     request = urllib.request.Request(
@@ -168,6 +192,80 @@ def preflight_dify(base_url: str, app_key: str, timeout_sec: float) -> tuple[boo
         return False, f"http_{exc.code}: {payload[:200]}"
     except Exception as exc:  # pragma: no cover
         return False, f"request_error: {exc}"
+
+
+def preflight_dify_chat(base_url: str, app_key: str, timeout_sec: float) -> tuple[bool, str]:
+    endpoint = resolve_chat_endpoint(base_url)
+    payload = {
+        "inputs": {},
+        "query": "你好，请只回复“ok”。",
+        "response_mode": "blocking",
+        "conversation_id": "",
+        "user": "eval-preflight",
+    }
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    request = urllib.request.Request(
+        endpoint,
+        data=body,
+        headers={
+            "Authorization": f"Bearer {app_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    started = time.perf_counter()
+    try:
+        with urllib.request.urlopen(request, timeout=max(timeout_sec, 1.0)) as response:
+            raw = response.read().decode("utf-8", errors="ignore")
+        latency_ms = (time.perf_counter() - started) * 1000
+        answer = ""
+        try:
+            obj = json.loads(raw)
+            answer = str(obj.get("answer", "") or "").strip()
+        except Exception:  # pragma: no cover
+            answer = ""
+        if not answer:
+            return False, f"empty_answer latency={latency_ms:.0f}ms"
+        return True, f"ok latency={latency_ms:.0f}ms"
+    except urllib.error.HTTPError as exc:
+        payload = exc.read().decode("utf-8", errors="ignore")
+        return False, f"http_{exc.code}: {payload[:200]}"
+    except Exception as exc:  # pragma: no cover
+        text = str(exc)
+        if "timed out" in text.lower():
+            hint = "chat timeout"
+            return False, f"request_error: {text}; {hint}"
+        return False, f"request_error: {text}"
+
+
+def parse_worker_log_hints(log_text: str) -> list[str]:
+    hints: list[str] = []
+    lowered = (log_text or "").lower()
+    if "host.docker.internal" in lowered and "11434" in lowered:
+        hints.append(
+            "发现 embedding 通道疑似不可达：host.docker.internal:11434。请检查 Ollama/embedding 服务网络映射。"
+        )
+    if "request to plugin daemon service failed-500" in lowered:
+        hints.append("发现 Plugin Daemon 500 错误。请检查模型插件配置与上游连接。")
+    if "invokeserverunavailableerror" in lowered:
+        hints.append("发现模型服务不可用异常（InvokeServerUnavailableError）。")
+    return hints
+
+
+def collect_worker_log_hints(container_name: str) -> list[str]:
+    if not container_name.strip():
+        return []
+    cmd = ["docker", "logs", "--tail", "220", container_name.strip()]
+    completed = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="ignore",
+        check=False,
+    )
+    merged = (completed.stdout or "") + "\n" + (completed.stderr or "")
+    return parse_worker_log_hints(merged)
 
 
 def build_auto_manual_review(detailed_results_path: Path, manual_csv_path: Path) -> None:
@@ -232,6 +330,21 @@ def main() -> int:
                 "You can use --skip-preflight to bypass temporarily."
             )
         print(f"Dify preflight passed: {detail}")
+
+    if not args.skip_chat_preflight:
+        ok, detail = preflight_dify_chat(dify_base_url, dify_app_key, args.chat_preflight_timeout)
+        if not ok:
+            auto_hints = collect_worker_log_hints(args.worker_log_container)
+            hint_block = ""
+            if auto_hints:
+                hint_block = " Auto diagnosis: " + " | ".join(auto_hints)
+            raise RuntimeError(
+                "Dify chat preflight failed. "
+                f"base_url={dify_base_url} detail={detail}. "
+                "You can use --skip-chat-preflight temporarily, but live regression may time out."
+                f"{hint_block}"
+            )
+        print(f"Dify chat preflight passed: {detail}")
 
     eval_set = resolve_path(repo_root, args.eval_set)
     smoke_output = resolve_path(repo_root, args.smoke_output_dir)

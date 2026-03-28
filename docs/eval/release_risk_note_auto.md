@@ -1,8 +1,8 @@
 # 发布风险说明（自动）
 
-- 生成时间：`2026-03-28T17:27:28+08:00`
+- 生成时间：`2026-03-28T17:49:31+08:00`
 - 门禁判定：`BLOCK`
-- 最新 Smoke 运行：`run_20260328_123805`
+- 最新 Smoke 运行：`run_20260328_174845`
 
 ## 1) 最新链路与质量快照
 
@@ -17,7 +17,7 @@
 
 ## 2) 门禁违规项
 
-- route_success_rate failed for 2 consecutive weeks (target=0.7, 2026-W12:0.0000, 2026-W13:0.0000)
+- route_success_rate failed for 2 consecutive weeks (target=0.7, 2026-W12:0.0000, 2026-W13:0.0036)
 
 ## 3) 临时豁免信息
 

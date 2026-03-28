@@ -22,3 +22,7 @@ smoke,run_20260328_122429,2026-03-28T12:25:29+08:00,6,0.0,0.0,0.0,0.0,0.0,30362.
 review,run_20260328_122429,2026-03-28T12:25:30+08:00,6,0.0,0.0,0.0,0.0,0.0,30362.1425,0.0,0.0,0.0,0.0,0.0,D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260328_122429/review_summary.json
 smoke,run_20260328_123805,2026-03-28T12:38:35+08:00,2,0.0,0.0,0.0,0.0,0.0,30331.346230000054,0.0,0.0,0.0,1.0,1.0,D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260328_123805/summary.json
 review,run_20260328_123805,2026-03-28T12:38:35+08:00,2,0.0,0.0,0.0,0.0,0.0,30331.3425,0.0,0.0,0.0,0.0,0.0,D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260328_123805/review_summary.json
+smoke,run_20260328_173709,2026-03-28T17:47:12+08:00,20,0.0,0.0,0.0,0.0,0.05,59117.45700500801,0.05,0.0,0.05,0.95,0.9,D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260328_173709/summary.json
+review,run_20260328_173709,2026-03-28T17:47:12+08:00,20,0.0,0.0,0.0,0.0,0.05,59117.45250000041,0.0,0.0,0.0,0.0,0.0,D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260328_173709/review_summary.json
+smoke,run_20260328_174845,2026-03-28T17:49:30+08:00,6,0.0,0.0,0.0,0.0,0.0,15243.224025001837,0.0,0.0,0.0,1.0,1.0,D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260328_174845/summary.json
+review,run_20260328_174845,2026-03-28T17:49:30+08:00,6,0.0,0.0,0.0,0.0,0.0,15243.2225,0.0,0.0,0.0,0.0,0.0,D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260328_174845/review_summary.json
