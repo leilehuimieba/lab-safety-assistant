@@ -247,6 +247,7 @@ def call_dify(
     )
 
     started = time.perf_counter()
+    hard_deadline = started + max(timeout_sec, 1.0)
     try:
         with urllib.request.urlopen(request, timeout=max(timeout_sec, 1.0)) as response:
             content_type = str(response.headers.get("Content-Type", "") or "").lower()
@@ -258,6 +259,9 @@ def call_dify(
                 workflow_error = ""
 
                 while True:
+                    if time.perf_counter() >= hard_deadline:
+                        latency_ms = (time.perf_counter() - started) * 1000
+                        return "", latency_ms, f"request_error: timed out ({timeout_sec:.1f}s hard deadline)"
                     raw_line = response.readline()
                     if not raw_line:
                         break

@@ -341,7 +341,7 @@ python scripts/generate_eval_dashboard.py --repo-root .
 ```powershell
 set DIFY_BASE_URL=http://localhost
 set DIFY_APP_API_KEY=<app-xxxx>
-python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard --dify-timeout 30 --eval-concurrency 4
+python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard --dify-response-mode streaming --dify-timeout 60 --eval-concurrency 1
 ```
 
 说明：
@@ -354,7 +354,7 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 - 可参考专项排障记录：`docs/ops/live_regression_blocker_20260328.md`
 
 附加参数（2026-03 更新）：
-- `--dify-response-mode blocking|streaming`：评测链路调用 Dify 的响应模式，默认 `blocking`（更稳，便于排障）。
+- `--dify-response-mode blocking|streaming`：评测链路调用 Dify 的响应模式，默认 `streaming`（当前环境下更稳定）。
 - `--skip-chat-preflight`：仅跳过 chat 预检，保留 `/parameters` 预检。
 
 工作流应急脚本（可回滚）：

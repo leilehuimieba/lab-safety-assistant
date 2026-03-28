@@ -68,6 +68,36 @@ def test_preflight_dify_chat_timeout_hint() -> None:
     assert "chat timeout" in detail
 
 
+def test_preflight_dify_chat_sse_ok() -> None:
+    class _Resp:
+        headers = {"Content-Type": "text/event-stream"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def readline(self) -> bytes:
+            if not hasattr(self, "_idx"):
+                self._idx = 0
+            lines = [
+                b"event: ping\n",
+                b"\n",
+                b'data: {"event":"workflow_started"}\n',
+            ]
+            if self._idx >= len(lines):
+                return b""
+            line = lines[self._idx]
+            self._idx += 1
+            return line
+
+    with patch("run_eval_regression_pipeline.urllib.request.urlopen", return_value=_Resp()):
+        ok, detail = rep.preflight_dify_chat("http://localhost", "app-xxx", 2.0, "streaming")
+    assert ok is True
+    assert "mode=sse" in detail
+
+
 def test_parse_worker_log_hints_embedding_unreachable() -> None:
     log_text = (
         "InvokeServerUnavailableError ... host.docker.internal', port=11434 ... "

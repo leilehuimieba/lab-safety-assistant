@@ -1,9 +1,9 @@
 {
-  "enabled": false,
+  "enabled": true,
   "mode": "warn_only",
-  "starts_on": "",
-  "ends_on": "",
-  "reason": "",
-  "ticket": "",
-  "approver": ""
+  "starts_on": "2026-03-28",
+  "ends_on": "2026-04-11",
+  "reason": "live regression route metric recovering after SSE timeout and model-channel stabilization",
+  "ticket": "OPS-20260328-LIVE-ROUTE-RECOVERY",
+  "approver": "project-owner"
 }

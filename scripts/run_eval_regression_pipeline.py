@@ -71,7 +71,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dify-response-mode",
         choices=["streaming", "blocking"],
-        default="blocking",
+        default="streaming",
         help="Response mode used by eval_smoke when calling Dify chat-messages.",
     )
     parser.add_argument(
@@ -200,12 +200,17 @@ def preflight_dify(base_url: str, app_key: str, timeout_sec: float) -> tuple[boo
         return False, f"request_error: {exc}"
 
 
-def preflight_dify_chat(base_url: str, app_key: str, timeout_sec: float) -> tuple[bool, str]:
+def preflight_dify_chat(
+    base_url: str,
+    app_key: str,
+    timeout_sec: float,
+    response_mode: str = "blocking",
+) -> tuple[bool, str]:
     endpoint = resolve_chat_endpoint(base_url)
     payload = {
         "inputs": {},
         "query": "你好，请只回复“ok”。",
-        "response_mode": "blocking",
+        "response_mode": response_mode,
         "conversation_id": "",
         "user": "eval-preflight",
     }
@@ -220,8 +225,35 @@ def preflight_dify_chat(base_url: str, app_key: str, timeout_sec: float) -> tupl
         method="POST",
     )
     started = time.perf_counter()
+    hard_deadline = started + max(timeout_sec, 1.0)
     try:
         with urllib.request.urlopen(request, timeout=max(timeout_sec, 1.0)) as response:
+            content_type = str(response.headers.get("Content-Type", "") or "").lower()
+            if "text/event-stream" in content_type:
+                while True:
+                    if time.perf_counter() >= hard_deadline:
+                        latency_ms = (time.perf_counter() - started) * 1000
+                        return False, f"sse_preflight_timeout latency={latency_ms:.0f}ms"
+                    raw_line = response.readline()
+                    if not raw_line:
+                        break
+                    line = raw_line.decode("utf-8", errors="ignore").strip()
+                    if not line or not line.startswith("data:"):
+                        continue
+                    payload_str = line[5:].strip()
+                    if not payload_str or payload_str == "[DONE]":
+                        continue
+                    try:
+                        event_obj = json.loads(payload_str)
+                    except Exception:
+                        continue
+                    event_name = str(event_obj.get("event", "") or "").strip().lower()
+                    if event_name in {"workflow_started", "message", "message_end", "workflow_finished"}:
+                        latency_ms = (time.perf_counter() - started) * 1000
+                        return True, f"ok latency={latency_ms:.0f}ms mode=sse"
+                latency_ms = (time.perf_counter() - started) * 1000
+                return False, f"empty_sse_events latency={latency_ms:.0f}ms"
+
             raw = response.read().decode("utf-8", errors="ignore")
         latency_ms = (time.perf_counter() - started) * 1000
         answer = ""
@@ -338,7 +370,12 @@ def main() -> int:
         print(f"Dify preflight passed: {detail}")
 
     if not args.skip_chat_preflight:
-        ok, detail = preflight_dify_chat(dify_base_url, dify_app_key, args.chat_preflight_timeout)
+        ok, detail = preflight_dify_chat(
+            dify_base_url,
+            dify_app_key,
+            args.chat_preflight_timeout,
+            args.dify_response_mode,
+        )
         if not ok:
             auto_hints = collect_worker_log_hints(args.worker_log_container)
             hint_block = ""
