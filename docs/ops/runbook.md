@@ -409,7 +409,9 @@ GitHub 自动监控（每日）：
 - 运行回归流水线并刷新看板
 - 生成自动风险说明（md/json）
 - 执行 gate 检查
-- 若 gate 失败，自动创建或更新 `eval-gate-alert` Issue
+- 若 gate 失败，自动创建或更新“同日唯一”`eval-gate-alert` Issue（避免重复开单）
+- 自动检查告警 SLA 字段：`Owner` + `DDL(YYYY-MM-DD)`
+- SLA 缺失自动加红色标签 `sla-missing` 并评论提醒
 - 若 gate 恢复 PASS，自动回写恢复评论并关闭所有 open `eval-gate-alert` Issue
 - 配套模板：`.github/ISSUE_TEMPLATE/04-eval-gate-alert.yml`
 

@@ -65,7 +65,7 @@ jobs:
             docs/eval/release_risk_note_auto.json
             docs/eval/eval_dashboard_data.json
 
-      - name: Create or Update Gate Alert Issue
+      - name: Create or Update Same-Day Gate Alert Issue
         if: steps.gate.outputs.status == 'fail'
         uses: actions/github-script@v7
         with:
@@ -116,23 +116,93 @@ jobs:
               gateOutput.slice(0, 12000),
               '```',
               '',
+              '## SLA (required for release follow-up)',
+              '- Owner: (required)',
+              '- DDL: YYYY-MM-DD (required)',
+              '',
               '## Suggested Next Actions',
               '- Check Dify primary route health and timeout behavior',
               '- If this is a temporary external issue, apply a short warn_only override with approval fields',
               '- Re-run regression after fix and confirm gate returns PASS'
             ].join('\n');
 
-            try {
-              await github.rest.issues.createLabel({
+            const ensureLabel = async (name, color, description) => {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name,
+                  color,
+                  description
+                });
+              } catch (e) {
+                // label may already exist
+              }
+            };
+            await ensureLabel('eval-gate-alert', 'B60205', 'Auto-created alert issue when eval gate fails');
+            await ensureLabel('sla-missing', 'FF0000', 'Alert issue missing SLA owner or ddl');
+
+            const allIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              labels: 'eval-gate-alert',
+              per_page: 100
+            });
+            const sameDayIssue = allIssues.data.find(i => i.title === title);
+
+            if (sameDayIssue) {
+              if (sameDayIssue.state === 'closed') {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: sameDayIssue.number,
+                  state: 'open'
+                });
+              }
+              await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                name: 'eval-gate-alert',
-                color: 'B60205',
-                description: 'Auto-created alert issue when eval gate fails'
+                issue_number: sameDayIssue.number,
+                body
               });
-            } catch (e) {
-              // label may already exist
+              core.setOutput('issue_number', String(sameDayIssue.number));
+              core.info(`Reused same-day issue #${sameDayIssue.number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['eval-gate-alert', 'sla-missing']
+              });
+              core.setOutput('issue_number', String(created.data.number));
+              core.info(`Created issue #${created.data.number}`);
             }
+
+      - name: Check Alert SLA Metadata
+        if: steps.gate.outputs.status == 'fail'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().slice(0, 10);
+            const markerMissing = `<!-- SLA-CHECK:${today}:missing -->`;
+            const markerResolved = `<!-- SLA-CHECK:${today}:resolved -->`;
+
+            const ensureLabel = async (name, color, description) => {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name,
+                  color,
+                  description
+                });
+              } catch (e) {
+                // label may already exist
+              }
+            };
+            await ensureLabel('sla-missing', 'FF0000', 'Alert issue missing SLA owner or ddl');
 
             const openIssues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -141,24 +211,88 @@ jobs:
               labels: 'eval-gate-alert',
               per_page: 100
             });
-            const existing = openIssues.data.find(i => i.title === title);
-            if (existing) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: existing.number,
-                body
-              });
-              core.info(`Updated existing issue #${existing.number}`);
-            } else {
-              const created = await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title,
-                body,
-                labels: ['eval-gate-alert']
-              });
-              core.info(`Created issue #${created.data.number}`);
+
+            const isOwnerValid = (body) => {
+              const m = body.match(/^- Owner:\s*(.+)$/m);
+              if (!m) return false;
+              const v = String(m[1] || '').trim().toLowerCase();
+              return !!v && v !== '(required)' && v !== 'required' && v !== 'tbd';
+            };
+            const isDdlValid = (body) => {
+              const m = body.match(/^- DDL:\s*(.+)$/m);
+              if (!m) return false;
+              const v = String(m[1] || '').trim();
+              return /^\d{4}-\d{2}-\d{2}$/.test(v);
+            };
+
+            for (const issue of openIssues.data) {
+              const body = String(issue.body || '');
+              const hasOwner = isOwnerValid(body);
+              const hasDdl = isDdlValid(body);
+              const missing = !(hasOwner && hasDdl);
+              const hasMissingLabel = issue.labels.some(l => (l.name || '') === 'sla-missing');
+
+              if (missing) {
+                if (!hasMissingLabel) {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    labels: ['sla-missing']
+                  });
+                }
+                const comments = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  per_page: 50
+                });
+                const alreadyCommented = comments.data.some(c => String(c.body || '').includes(markerMissing));
+                if (!alreadyCommented) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: [
+                      markerMissing,
+                      '**[RED] SLA missing**: please fill required fields in issue body.',
+                      '',
+                      '- Required: `Owner`',
+                      '- Required: `DDL` in `YYYY-MM-DD` format'
+                    ].join('\n')
+                  });
+                }
+              } else {
+                if (hasMissingLabel) {
+                  try {
+                    await github.rest.issues.removeLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: issue.number,
+                      name: 'sla-missing'
+                    });
+                  } catch (e) {}
+                }
+                const comments = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  per_page: 50
+                });
+                const alreadyCommented = comments.data.some(c => String(c.body || '').includes(markerResolved));
+                if (!alreadyCommented) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: [
+                      markerResolved,
+                      'SLA metadata check passed.',
+                      '- Owner and DDL are valid.'
+                    ].join('\n')
+                  });
+                }
+              }
             }
 
       - name: Close Open Gate Alert Issues On Recovery
@@ -173,7 +307,7 @@ jobs:
               `- Workflow Run: ${runUrl}`,
               '- Action: close this alert issue as recovered',
               '',
-              'If gate fails again, workflow will auto-create or update a new alert issue.'
+              'If gate fails again, workflow will auto-create or update a same-day alert issue.'
             ].join('\n');
 
             const openIssues = await github.rest.issues.listForRepo({

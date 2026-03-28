@@ -50,6 +50,24 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: owner
+    attributes:
+      label: Owner
+      description: 该告警的负责同学/负责人
+      placeholder: "@username 或姓名"
+    validations:
+      required: true
+
+  - type: input
+    id: ddl
+    attributes:
+      label: DDL
+      description: 修复截止日期（YYYY-MM-DD）
+      placeholder: 2026-03-31
+    validations:
+      required: true
+
   - type: textarea
     id: action_plan
     attributes:
