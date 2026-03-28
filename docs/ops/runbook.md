@@ -410,6 +410,7 @@ GitHub 自动监控（每日）：
 - 生成自动风险说明（md/json）
 - 执行 gate 检查
 - 若 gate 失败，自动创建或更新 `eval-gate-alert` Issue
+- 若 gate 恢复 PASS，自动回写恢复评论并关闭所有 open `eval-gate-alert` Issue
 - 配套模板：`.github/ISSUE_TEMPLATE/04-eval-gate-alert.yml`
 
 ## 第十步：使用网页提取 Skill（可选）

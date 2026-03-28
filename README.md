@@ -285,3 +285,16 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 - Pipeline behavior: when running `scripts/run_eval_regression_pipeline.py --update-dashboard`, risk note files are refreshed automatically (use `--skip-risk-note` to disable).
 - Daily monitor workflow: `.github/workflows/daily-eval-gate-monitor.yml` (auto runs pipeline + gate, and opens/updates `eval-gate-alert` issue on failure)
 
+### Alert-to-Recovery Flow
+
+```mermaid
+flowchart TD
+    A[Daily Eval Gate Monitor] --> B[Run Regression Pipeline]
+    B --> C[Generate Risk Note]
+    C --> D[Validate Gate]
+    D -->|FAIL| E[Open or Update eval-gate-alert Issue]
+    E --> F[Block Workflow]
+    D -->|PASS| G[Close Open eval-gate-alert Issues]
+    G --> H[Archive Recovery Comment]
+```
+
