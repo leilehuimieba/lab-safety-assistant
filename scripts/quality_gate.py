@@ -69,7 +69,7 @@ EVAL_FIELDNAMES = [
 ]
 
 ALLOWED_SHOULD_REFUSE = {"yes", "no"}
-ALLOWED_EVAL_TYPES = {"qa", "safety", "emergency"}
+ALLOWED_EVAL_TYPES = {"qa", "safety", "emergency", "fuzzy"}
 RISK_LEVELS = {"1", "2", "3", "4", "5"}
 
 

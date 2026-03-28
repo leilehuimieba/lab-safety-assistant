@@ -82,3 +82,14 @@ def test_check_eval_detects_duplicate_id(tmp_path: Path) -> None:
     qg.check_eval(tmp_path, errors)
     assert any("重复 id" in item for item in errors)
 
+
+def test_check_eval_accepts_fuzzy_type(tmp_path: Path) -> None:
+    write_csv(tmp_path / "knowledge_base_curated.csv", qg.KB_FIELDNAMES, make_kb_rows())
+    rows = make_eval_rows()
+    rows[0]["evaluation_type"] = "fuzzy"
+    write_csv(tmp_path / "eval_set_v1.csv", qg.EVAL_FIELDNAMES, rows)
+    write_rules(tmp_path / "safety_rules.yaml", count=10)
+
+    errors: list[str] = []
+    qg.check_eval(tmp_path, errors)
+    assert all("evaluation_type" not in item for item in errors)

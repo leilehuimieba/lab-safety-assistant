@@ -72,10 +72,10 @@ def fetch_app_key(args: argparse.Namespace) -> str:
         "select token from api_tokens "
         f"where app_id='{args.app_id}' order by created_at desc limit 1;"
     )
-    token = run_psql_sql(args, sql).strip()
-    if not token:
+    app_token_value = run_psql_sql(args, sql).strip()
+    if not app_token_value:
         raise RuntimeError(f"No api_tokens found for app_id={args.app_id}")
-    return token
+    return app_token_value
 
 
 def fetch_workflow_ids(args: argparse.Namespace) -> list[str]:
