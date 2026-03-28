@@ -58,6 +58,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Refresh eval dashboard after regression run.",
     )
+    parser.add_argument(
+        "--skip-failure-analysis",
+        action="store_true",
+        help="Skip eval failure clustering and Top10 fix list generation.",
+    )
     return parser.parse_args()
 
 
@@ -187,6 +192,24 @@ def main() -> int:
     review_stdout = run_cmd(review_cmd, cwd=repo_root)
     parse_run_dir(review_stdout, "Manual review merge done")
 
+    failure_cluster_csv = review_run_dir / "eval_failure_clusters.csv"
+    failure_cluster_md = review_run_dir / "eval_failure_clusters.md"
+    top10_fix_csv = review_run_dir / "eval_top10_fix_list.csv"
+    if not args.skip_failure_analysis:
+        analyze_cmd = [
+            python,
+            str(repo_root / "scripts" / "analyze_eval_failures.py"),
+            "--detailed-results",
+            str(detailed_results),
+            "--output-csv",
+            str(failure_cluster_csv),
+            "--output-md",
+            str(failure_cluster_md),
+            "--top10-csv",
+            str(top10_fix_csv),
+        ]
+        run_cmd(analyze_cmd, cwd=repo_root)
+
     if args.update_dashboard:
         dashboard_cmd = [
             python,
@@ -198,6 +221,10 @@ def main() -> int:
 
     print(f"Live smoke run: {smoke_run_dir}")
     print(f"Auto review run: {review_run_dir}")
+    if not args.skip_failure_analysis:
+        print(f"Failure clusters: {failure_cluster_csv}")
+        print(f"Failure report: {failure_cluster_md}")
+        print(f"Top10 fix list: {top10_fix_csv}")
     if args.update_dashboard:
         print("Dashboard refreshed.")
     return 0

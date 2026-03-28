@@ -344,6 +344,18 @@ set DIFY_APP_API_KEY=<app-xxxx>
 python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
 ```
 
+默认会自动输出“失败分簇 + Top10 修复清单”：
+
+- `eval_failure_clusters.csv`
+- `eval_failure_clusters.md`
+- `eval_top10_fix_list.csv`
+
+如果只想跑基础回归，可加：
+
+```powershell
+python scripts/run_eval_regression_pipeline.py --repo-root . --skip-failure-analysis
+```
+
 门禁规则（已启用）：
 
 - 标记文件：`docs/eval/eval_dashboard_gate_enabled.flag`

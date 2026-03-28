@@ -61,3 +61,13 @@
 1. 先修 Dify 工作流提示词与知识检索变量绑定（减少泛化回复）。
 2. 重点修 20 题中失败最多的 10 题（按 `detailed_results.csv` 分簇）。
 3. 修后立即重跑 `--limit 20` 回归，观察三项核心质量指标是否提升。
+
+## 本次新增自动化补充（同日）
+
+1. 新增失败分簇脚本：`scripts/analyze_eval_failures.py`
+2. 回归流水线已默认追加输出：
+- `eval_failure_clusters.csv`
+- `eval_failure_clusters.md`
+- `eval_top10_fix_list.csv`
+3. 补充修复手册：
+- `docs/eval/v4_2_dify绑定与Top10修复手册_20260328.md`

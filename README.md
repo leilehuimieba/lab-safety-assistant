@@ -83,6 +83,7 @@
 - [网页提取 Skill 合规说明](./docs/ops/web_content_fetch_skill_合规说明_v1.md)
 - [Embedding 接入指南](./docs/pipeline/embedding_setup.md)（如何配置向量检索，替代纯关键词模式）
 - [评测结果看板](./docs/eval/eval_dashboard.md)
+- [V4.2 绑定与 Top10 修复手册](./docs/eval/v4_2_dify绑定与Top10修复手册_20260328.md)
 - [评测集](./eval_set_v1.csv)
 - [验收指标](./eval_criteria.md)
 - [检索调参记录](./retrieval_tuning_report.md)
@@ -222,6 +223,12 @@ set DIFY_BASE_URL=http://localhost
 set DIFY_APP_API_KEY=<app-xxxx>
 python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard
 ```
+
+回归完成后会额外生成失败修复清单，方便你直接按题修：
+
+- `.../eval_failure_clusters.csv`（失败原因分簇）
+- `.../eval_failure_clusters.md`（失败原因报告）
+- `.../eval_top10_fix_list.csv`（Top10 优先修复题单）
 
 看板门禁说明：
 
