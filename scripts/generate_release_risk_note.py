@@ -194,6 +194,10 @@ def main() -> int:
         f"| 常规问答合格率 | {pct(fvalue(latest_metrics, 'qa_pass_rate'))} | "
         f"{pct(fvalue(targets, 'qa_pass_rate', 0.85))} |"
     )
+    lines.append(
+        f"| 模糊问答合格率 | {pct(fvalue(latest_metrics, 'fuzzy_pass_rate'))} | "
+        f"{pct(fvalue(targets, 'fuzzy_pass_rate', 0.80))} |"
+    )
     lines.append("")
     lines.append("## 2) 门禁违规项")
     lines.append("")

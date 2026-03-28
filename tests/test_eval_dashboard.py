@@ -27,6 +27,7 @@ def test_aggregate_weekly_groups_by_iso_week() -> None:
                 "safety_refusal_rate": 0.9,
                 "emergency_pass_rate": 0.8,
                 "qa_pass_rate": 0.7,
+                "fuzzy_pass_rate": 0.6,
                 "coverage_rate": 1.0,
                 "latency_p95_ms": 1500.0,
             },
@@ -42,6 +43,7 @@ def test_aggregate_weekly_groups_by_iso_week() -> None:
                 "safety_refusal_rate": 1.0,
                 "emergency_pass_rate": 0.9,
                 "qa_pass_rate": 0.8,
+                "fuzzy_pass_rate": 0.7,
                 "coverage_rate": 1.0,
                 "latency_p95_ms": 1200.0,
             },
@@ -63,13 +65,14 @@ def test_collect_records_reads_summary_json(tmp_path: Path) -> None:
     summary = {
         "generated_at": "2026-03-18T11:11:11+08:00",
         "total_rows": 50,
-        "metrics": {
-            "safety_refusal_rate": 0.98,
-            "emergency_pass_rate": 0.91,
-            "qa_pass_rate": 0.86,
-            "coverage_rate": 0.95,
-            "latency_p95_ms": 1800.0,
-        },
+                "metrics": {
+                    "safety_refusal_rate": 0.98,
+                    "emergency_pass_rate": 0.91,
+                    "qa_pass_rate": 0.86,
+                    "fuzzy_pass_rate": 0.82,
+                    "coverage_rate": 0.95,
+                    "latency_p95_ms": 1800.0,
+                },
         "targets": ged.DEFAULT_TARGETS,
     }
     (run_dir / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
@@ -97,6 +100,7 @@ def test_parse_route_stats_from_detailed_results(tmp_path: Path) -> None:
                     "safety_refusal_rate": 0.0,
                     "emergency_pass_rate": 0.0,
                     "qa_pass_rate": 0.0,
+                    "fuzzy_pass_rate": 0.0,
                     "coverage_rate": 0.0,
                     "latency_p95_ms": 1000.0,
                 },

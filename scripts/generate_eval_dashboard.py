@@ -51,6 +51,12 @@ METRIC_SPECS = [
         "as_percent": True,
     },
     {
+        "key": "fuzzy_pass_rate",
+        "label": "模糊问答合格率",
+        "higher_better": True,
+        "as_percent": True,
+    },
+    {
         "key": "coverage_rate",
         "label": "覆盖率",
         "higher_better": True,
@@ -68,6 +74,7 @@ DEFAULT_TARGETS = {
     "safety_refusal_rate": 0.95,
     "emergency_pass_rate": 0.90,
     "qa_pass_rate": 0.85,
+    "fuzzy_pass_rate": 0.80,
     "coverage_rate": 0.80,
     "latency_p95_ms": 5000.0,
 }
@@ -379,8 +386,8 @@ def render_recent_runs_table(records: list[RunRecord], title: str, max_rows: int
     tail = records[-max_rows:]
     lines.extend(
         [
-            "| 时间 | run_id | 样本数 | 安全拒答率 | 应急合格率 | 常规合格率 | 覆盖率 | 延迟P95(ms) |",
-            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+            "| 时间 | run_id | 样本数 | 安全拒答率 | 应急合格率 | 常规合格率 | 模糊合格率 | 覆盖率 | 延迟P95(ms) |",
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
     for item in tail:
@@ -390,6 +397,7 @@ def render_recent_runs_table(records: list[RunRecord], title: str, max_rows: int
             f"{fmt_metric(item.metrics['safety_refusal_rate'], True)} | "
             f"{fmt_metric(item.metrics['emergency_pass_rate'], True)} | "
             f"{fmt_metric(item.metrics['qa_pass_rate'], True)} | "
+            f"{fmt_metric(item.metrics['fuzzy_pass_rate'], True)} | "
             f"{fmt_metric(item.metrics['coverage_rate'], True)} | "
             f"{fmt_metric(item.metrics['latency_p95_ms'], False)} |"
         )
@@ -431,8 +439,8 @@ def render_weekly_table(weekly: list[dict[str, object]], title: str, max_rows: i
     tail = weekly[-max_rows:]
     lines.extend(
         [
-            "| 周次 | 运行次数 | 平均样本数 | 安全拒答率 | 应急合格率 | 常规合格率 | 覆盖率 | 延迟P95(ms) |",
-            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            "| 周次 | 运行次数 | 平均样本数 | 安全拒答率 | 应急合格率 | 常规合格率 | 模糊合格率 | 覆盖率 | 延迟P95(ms) |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
     for row in tail:
@@ -442,6 +450,7 @@ def render_weekly_table(weekly: list[dict[str, object]], title: str, max_rows: i
             f"{fmt_metric(float(row['safety_refusal_rate']), True)} | "
             f"{fmt_metric(float(row['emergency_pass_rate']), True)} | "
             f"{fmt_metric(float(row['qa_pass_rate']), True)} | "
+            f"{fmt_metric(float(row['fuzzy_pass_rate']), True)} | "
             f"{fmt_metric(float(row['coverage_rate']), True)} | "
             f"{fmt_metric(float(row['latency_p95_ms']), False)} |"
         )
@@ -584,6 +593,7 @@ def export_runs_csv(path: Path, smoke_records: list[RunRecord], review_records: 
         "safety_refusal_rate",
         "emergency_pass_rate",
         "qa_pass_rate",
+        "fuzzy_pass_rate",
         "coverage_rate",
         "latency_p95_ms",
         "route_success_rate",
@@ -604,6 +614,7 @@ def export_runs_csv(path: Path, smoke_records: list[RunRecord], review_records: 
                 "safety_refusal_rate": item.metrics["safety_refusal_rate"],
                 "emergency_pass_rate": item.metrics["emergency_pass_rate"],
                 "qa_pass_rate": item.metrics["qa_pass_rate"],
+                "fuzzy_pass_rate": item.metrics["fuzzy_pass_rate"],
                 "coverage_rate": item.metrics["coverage_rate"],
                 "latency_p95_ms": item.metrics["latency_p95_ms"],
                 "route_success_rate": item.route_stats.get("route_success_rate", 0.0),
