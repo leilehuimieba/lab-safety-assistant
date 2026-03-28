@@ -353,6 +353,15 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 - 若报错包含 `host.docker.internal:11434 unreachable`，通常是嵌入模型通道不可达。优先检查 `docker-worker-1` 日志，并修复 embedding 配置后再重跑。
 - 可参考专项排障记录：`docs/ops/live_regression_blocker_20260328.md`
 
+附加参数（2026-03 更新）：
+- `--dify-response-mode blocking|streaming`：评测链路调用 Dify 的响应模式，默认 `blocking`（更稳，便于排障）。
+- `--skip-chat-preflight`：仅跳过 chat 预检，保留 `/parameters` 预检。
+
+工作流应急脚本（可回滚）：
+- `python scripts/patch_workflow_retrieval.py --workflow-id <id> --mode disable-retrieval`
+- `python scripts/patch_workflow_retrieval.py --workflow-id <id> --mode restore --backup-file <path>`
+- `python scripts/patch_workflow_model.py --workflow-id <id> --model-name gpt-5.2-codex`
+
 模型通道 A/B 对比（自动切模型、自动恢复配置）：
 
 ```powershell

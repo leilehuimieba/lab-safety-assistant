@@ -125,6 +125,12 @@ def parse_args() -> argparse.Namespace:
         help="Per-request timeout seconds when calling Dify API.",
     )
     parser.add_argument(
+        "--dify-response-mode",
+        choices=["streaming", "blocking"],
+        default="streaming",
+        help="Dify response mode for /v1/chat-messages.",
+    )
+    parser.add_argument(
         "--concurrency",
         type=int,
         default=1,
@@ -214,12 +220,18 @@ def resolve_chat_endpoint(base_url: str) -> str:
     return f"{normalized}/v1/chat-messages"
 
 
-def call_dify(base_url: str, app_key: str, question: str, timeout_sec: float) -> tuple[str, float, str]:
+def call_dify(
+    base_url: str,
+    app_key: str,
+    question: str,
+    timeout_sec: float,
+    response_mode: str = "streaming",
+) -> tuple[str, float, str]:
     endpoint = resolve_chat_endpoint(base_url)
     payload = {
         "inputs": {},
         "query": question,
-        "response_mode": "streaming",
+        "response_mode": response_mode,
         "conversation_id": "",
         "user": "eval-smoke",
     }
@@ -331,6 +343,7 @@ def call_dify_with_failover(
     base_url: str,
     app_key: str,
     timeout_sec: float,
+    response_mode: str = "streaming",
     retry_on_timeout: int = 0,
     fallback_base_url: str = "",
     fallback_app_key: str = "",
@@ -341,7 +354,7 @@ def call_dify_with_failover(
     attempts = max(1, int(retry_on_timeout) + 1)
 
     for attempt in range(attempts):
-        answer, latency_ms, error = caller(base_url, app_key, question, timeout_sec)
+        answer, latency_ms, error = caller(base_url, app_key, question, timeout_sec, response_mode)
         total_latency += latency_ms
         if answer and not error:
             return answer, total_latency, "", "primary"
@@ -351,7 +364,9 @@ def call_dify_with_failover(
         break
 
     if fallback_base_url.strip() and fallback_app_key.strip() and is_retryable_error(primary_error):
-        answer, latency_ms, fallback_error = caller(fallback_base_url, fallback_app_key, question, timeout_sec)
+        answer, latency_ms, fallback_error = caller(
+            fallback_base_url, fallback_app_key, question, timeout_sec, response_mode
+        )
         total_latency += latency_ms
         if answer and not fallback_error:
             return answer, total_latency, "", "fallback"
@@ -369,6 +384,7 @@ def fetch_dify_responses(
     app_key: str,
     timeout_sec: float,
     concurrency: int,
+    response_mode: str = "streaming",
     retry_on_timeout: int = 0,
     fallback_base_url: str = "",
     fallback_app_key: str = "",
@@ -391,6 +407,7 @@ def fetch_dify_responses(
                 base_url=base_url,
                 app_key=app_key,
                 timeout_sec=timeout_sec,
+                response_mode=response_mode,
                 retry_on_timeout=retry_on_timeout,
                 fallback_base_url=fallback_base_url,
                 fallback_app_key=fallback_app_key,
@@ -408,6 +425,7 @@ def fetch_dify_responses(
                 base_url,
                 app_key,
                 timeout_sec,
+                response_mode,
                 retry_on_timeout,
                 fallback_base_url,
                 fallback_app_key,
@@ -551,6 +569,7 @@ def main() -> int:
             base_url=args.dify_base_url,
             app_key=args.dify_app_key,
             timeout_sec=args.dify_timeout,
+            response_mode=args.dify_response_mode,
             concurrency=args.concurrency,
             retry_on_timeout=args.retry_on_timeout,
             fallback_base_url=args.fallback_dify_base_url,

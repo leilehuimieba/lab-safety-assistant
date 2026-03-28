@@ -69,6 +69,12 @@ def parse_args() -> argparse.Namespace:
         help="Per-request timeout seconds for eval_smoke Dify calls.",
     )
     parser.add_argument(
+        "--dify-response-mode",
+        choices=["streaming", "blocking"],
+        default="blocking",
+        help="Response mode used by eval_smoke when calling Dify chat-messages.",
+    )
+    parser.add_argument(
         "--eval-concurrency",
         type=int,
         default=4,
@@ -362,6 +368,8 @@ def main() -> int:
         dify_app_key,
         "--dify-timeout",
         str(args.dify_timeout),
+        "--dify-response-mode",
+        args.dify_response_mode,
         "--concurrency",
         str(max(1, args.eval_concurrency)),
         "--retry-on-timeout",

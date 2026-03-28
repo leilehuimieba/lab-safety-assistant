@@ -43,7 +43,9 @@ def test_is_retryable_error() -> None:
 def test_call_dify_with_failover_hits_fallback() -> None:
     calls: list[str] = []
 
-    def fake_caller(base: str, _key: str, _q: str, _timeout: float) -> tuple[str, float, str]:
+    def fake_caller(
+        base: str, _key: str, _q: str, _timeout: float, _response_mode: str = "streaming"
+    ) -> tuple[str, float, str]:
         calls.append(base)
         if "primary" in base:
             return "", 10.0, "request_error: timed out"
@@ -76,7 +78,9 @@ def test_fetch_dify_responses_parallel_basic() -> None:
     thread_ids: set[int] = set()
     lock = threading.Lock()
 
-    def fake_caller(_base: str, _key: str, question: str, _timeout: float) -> tuple[str, float, str]:
+    def fake_caller(
+        _base: str, _key: str, question: str, _timeout: float, _response_mode: str = "streaming"
+    ) -> tuple[str, float, str]:
         time.sleep(0.01)
         with lock:
             thread_ids.add(threading.get_ident())
