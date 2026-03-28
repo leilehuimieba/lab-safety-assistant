@@ -348,6 +348,20 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 - 默认会先调用 `GET /v1/parameters` 做连通性预检，失败会提前退出，避免整轮长时间等待。
 - 如需临时跳过预检，可加 `--skip-preflight`（仅建议排障时使用）。
 
+模型通道 A/B 对比（自动切模型、自动恢复配置）：
+
+```powershell
+python scripts/run_model_ab_eval.py `
+  --repo-root . `
+  --app-id <your_app_id> `
+  --dify-base-url http://localhost:8080 `
+  --model-a MiniMax-M2.5 `
+  --model-b gpt-5.2-codex `
+  --limit 6 `
+  --dify-timeout 30 `
+  --eval-concurrency 4
+```
+
 默认会自动输出“失败分簇 + Top10 修复清单”：
 
 - `eval_failure_clusters.csv`
