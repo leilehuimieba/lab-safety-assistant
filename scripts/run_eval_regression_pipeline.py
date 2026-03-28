@@ -46,6 +46,16 @@ def parse_args() -> argparse.Namespace:
         help="Dify app key. If empty, use env DIFY_APP_API_KEY.",
     )
     parser.add_argument(
+        "--fallback-dify-base-url",
+        default=os.environ.get("DIFY_FALLBACK_BASE_URL", ""),
+        help="Fallback Dify base URL when primary requests time out.",
+    )
+    parser.add_argument(
+        "--fallback-dify-app-key",
+        default=os.environ.get("DIFY_FALLBACK_APP_API_KEY", ""),
+        help="Fallback Dify app key when primary requests time out.",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=0,
@@ -62,6 +72,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=4,
         help="Parallel workers for eval_smoke in Dify mode.",
+    )
+    parser.add_argument(
+        "--retry-on-timeout",
+        type=int,
+        default=0,
+        help="Retry count on primary channel before switching to fallback.",
     )
     parser.add_argument(
         "--skip-preflight",
@@ -230,9 +246,15 @@ def main() -> int:
         str(args.dify_timeout),
         "--concurrency",
         str(max(1, args.eval_concurrency)),
+        "--retry-on-timeout",
+        str(max(0, args.retry_on_timeout)),
         "--output-dir",
         str(smoke_output),
     ]
+    if args.fallback_dify_base_url.strip():
+        smoke_cmd.extend(["--fallback-dify-base-url", args.fallback_dify_base_url.strip()])
+    if args.fallback_dify_app_key.strip():
+        smoke_cmd.extend(["--fallback-dify-app-key", args.fallback_dify_app_key.strip()])
     if args.limit > 0:
         smoke_cmd.extend(["--limit", str(args.limit)])
 

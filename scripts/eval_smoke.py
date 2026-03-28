@@ -97,6 +97,16 @@ def parse_args() -> argparse.Namespace:
         help="Dify App API key (app-...). Recommended: use env var DIFY_APP_API_KEY.",
     )
     parser.add_argument(
+        "--fallback-dify-base-url",
+        default=os.environ.get("DIFY_FALLBACK_BASE_URL", ""),
+        help="Fallback Dify base URL when primary request times out.",
+    )
+    parser.add_argument(
+        "--fallback-dify-app-key",
+        default=os.environ.get("DIFY_FALLBACK_APP_API_KEY", ""),
+        help="Fallback Dify App API key when primary request times out.",
+    )
+    parser.add_argument(
         "--output-dir",
         default="artifacts/eval_smoke",
         help="Directory for evaluation artifacts.",
@@ -118,6 +128,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=1,
         help="Parallel request workers for Dify mode. 1 = sequential.",
+    )
+    parser.add_argument(
+        "--retry-on-timeout",
+        type=int,
+        default=0,
+        help="Retry count on primary channel when request timed out.",
     )
     parser.add_argument(
         "--generate-template",
@@ -298,15 +314,66 @@ def call_dify(base_url: str, app_key: str, question: str, timeout_sec: float) ->
         return "", latency_ms, f"request_error: {exc}"
 
 
+def is_retryable_error(error: str) -> bool:
+    text = (error or "").strip().lower()
+    if not text:
+        return False
+    if "timed out" in text or "timeout" in text:
+        return True
+    if "empty_stream_answer" in text:
+        return True
+    return False
+
+
+def call_dify_with_failover(
+    question: str,
+    base_url: str,
+    app_key: str,
+    timeout_sec: float,
+    retry_on_timeout: int = 0,
+    fallback_base_url: str = "",
+    fallback_app_key: str = "",
+    caller=call_dify,
+) -> tuple[str, float, str, str]:
+    total_latency = 0.0
+    primary_error = ""
+    attempts = max(1, int(retry_on_timeout) + 1)
+
+    for attempt in range(attempts):
+        answer, latency_ms, error = caller(base_url, app_key, question, timeout_sec)
+        total_latency += latency_ms
+        if answer and not error:
+            return answer, total_latency, "", "primary"
+        primary_error = error or "empty_response"
+        if attempt < attempts - 1 and is_retryable_error(primary_error):
+            continue
+        break
+
+    if fallback_base_url.strip() and fallback_app_key.strip() and is_retryable_error(primary_error):
+        answer, latency_ms, fallback_error = caller(fallback_base_url, fallback_app_key, question, timeout_sec)
+        total_latency += latency_ms
+        if answer and not fallback_error:
+            return answer, total_latency, "", "fallback"
+        merged_error = primary_error
+        if fallback_error:
+            merged_error = f"{primary_error} | fallback_error: {fallback_error}"
+        return "", total_latency, merged_error, "fallback_failed"
+
+    return "", total_latency, primary_error, "primary_failed"
+
+
 def fetch_dify_responses(
     eval_rows: list[dict[str, str]],
     base_url: str,
     app_key: str,
     timeout_sec: float,
     concurrency: int,
+    retry_on_timeout: int = 0,
+    fallback_base_url: str = "",
+    fallback_app_key: str = "",
     caller=call_dify,
-) -> dict[str, tuple[str, float, str]]:
-    response_by_id: dict[str, tuple[str, float, str]] = {}
+) -> dict[str, tuple[str, float, str, str]]:
+    response_by_id: dict[str, tuple[str, float, str, str]] = {}
     items: list[tuple[str, str]] = []
     for row in eval_rows:
         row_id = (row.get("id") or "").strip()
@@ -318,14 +385,33 @@ def fetch_dify_responses(
     worker_count = max(1, int(concurrency))
     if worker_count <= 1:
         for row_id, question in items:
-            answer, latency_ms, error = caller(base_url, app_key, question, timeout_sec)
-            response_by_id[row_id] = (answer, latency_ms, error)
-            print(f"[{row_id}] done latency={latency_ms:.0f}ms error={'none' if not error else 'yes'}")
+            answer, latency_ms, error, route = call_dify_with_failover(
+                question=question,
+                base_url=base_url,
+                app_key=app_key,
+                timeout_sec=timeout_sec,
+                retry_on_timeout=retry_on_timeout,
+                fallback_base_url=fallback_base_url,
+                fallback_app_key=fallback_app_key,
+                caller=caller,
+            )
+            response_by_id[row_id] = (answer, latency_ms, error, route)
+            print(f"[{row_id}] done route={route} latency={latency_ms:.0f}ms error={'none' if not error else 'yes'}")
         return response_by_id
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as executor:
         future_map = {
-            executor.submit(caller, base_url, app_key, question, timeout_sec): row_id
+            executor.submit(
+                call_dify_with_failover,
+                question,
+                base_url,
+                app_key,
+                timeout_sec,
+                retry_on_timeout,
+                fallback_base_url,
+                fallback_app_key,
+                caller,
+            ): row_id
             for row_id, question in items
         }
         total = len(future_map)
@@ -333,13 +419,13 @@ def fetch_dify_responses(
         for future in concurrent.futures.as_completed(future_map):
             row_id = future_map[future]
             try:
-                answer, latency_ms, error = future.result()
+                answer, latency_ms, error, route = future.result()
             except Exception as exc:  # pragma: no cover
-                answer, latency_ms, error = "", 0.0, f"request_error: {exc}"
-            response_by_id[row_id] = (answer, latency_ms, error)
+                answer, latency_ms, error, route = "", 0.0, f"request_error: {exc}", "internal_error"
+            response_by_id[row_id] = (answer, latency_ms, error, route)
             done += 1
             print(
-                f"[{row_id}] done latency={latency_ms:.0f}ms error={'none' if not error else 'yes'} "
+                f"[{row_id}] done route={route} latency={latency_ms:.0f}ms error={'none' if not error else 'yes'} "
                 f"({done}/{total})"
             )
     return response_by_id
@@ -431,7 +517,7 @@ def main() -> int:
         return 0
 
     source_mode = ""
-    response_by_id: dict[str, tuple[str, float, str]] = {}
+    response_by_id: dict[str, tuple[str, float, str, str]] = {}
 
     if args.responses_csv:
         source_mode = "responses_csv"
@@ -449,7 +535,7 @@ def main() -> int:
                 latency_ms = float(latency_raw) if latency_raw else 0.0
             except ValueError:
                 latency_ms = 0.0
-            response_by_id[row_id] = (response_text, latency_ms, "")
+            response_by_id[row_id] = (response_text, latency_ms, "", "responses_csv")
     elif args.use_dify:
         source_mode = "dify_api"
         if not args.dify_base_url:
@@ -462,6 +548,9 @@ def main() -> int:
             app_key=args.dify_app_key,
             timeout_sec=args.dify_timeout,
             concurrency=args.concurrency,
+            retry_on_timeout=args.retry_on_timeout,
+            fallback_base_url=args.fallback_dify_base_url,
+            fallback_app_key=args.fallback_dify_app_key,
         )
     else:
         raise SystemExit("Choose one input mode: --responses-csv or --use-dify")
@@ -482,7 +571,9 @@ def main() -> int:
         should_refuse = to_bool_yes(row.get("should_refuse") or "")
         eval_type = (row.get("evaluation_type") or "").strip().lower()
 
-        response_text, latency_ms, fetch_error = response_by_id.get(row_id, ("", 0.0, "missing_response"))
+        response_text, latency_ms, fetch_error, response_route = response_by_id.get(
+            row_id, ("", 0.0, "missing_response", "none")
+        )
         latencies.append(latency_ms)
         if (response_text or "").strip():
             covered += 1
@@ -513,6 +604,7 @@ def main() -> int:
                 "should_refuse": "yes" if should_refuse else "no",
                 "question": row.get("question") or "",
                 "response": response_text,
+                "response_route": response_route,
                 "latency_ms": round(latency_ms, 2),
                 "response_empty": "yes" if not (response_text or "").strip() else "no",
                 "refusal_detected": "yes" if refusal_detected else "no",
@@ -556,6 +648,7 @@ def main() -> int:
             "should_refuse",
             "question",
             "response",
+            "response_route",
             "latency_ms",
             "response_empty",
             "refusal_detected",

@@ -34,6 +34,38 @@ def test_resolve_chat_endpoint_variants() -> None:
     assert es.resolve_chat_endpoint("http://localhost/v1") == "http://localhost/v1/chat-messages"
 
 
+def test_is_retryable_error() -> None:
+    assert es.is_retryable_error("request_error: timed out")
+    assert es.is_retryable_error("empty_stream_answer")
+    assert not es.is_retryable_error("http_401: unauthorized")
+
+
+def test_call_dify_with_failover_hits_fallback() -> None:
+    calls: list[str] = []
+
+    def fake_caller(base: str, _key: str, _q: str, _timeout: float) -> tuple[str, float, str]:
+        calls.append(base)
+        if "primary" in base:
+            return "", 10.0, "request_error: timed out"
+        return "ok-from-fallback", 8.0, ""
+
+    answer, latency, error, route = es.call_dify_with_failover(
+        question="Q",
+        base_url="http://primary",
+        app_key="k1",
+        timeout_sec=5.0,
+        retry_on_timeout=0,
+        fallback_base_url="http://fallback",
+        fallback_app_key="k2",
+        caller=fake_caller,
+    )
+    assert answer == "ok-from-fallback"
+    assert error == ""
+    assert route == "fallback"
+    assert latency == 18.0
+    assert calls == ["http://primary", "http://fallback"]
+
+
 def test_fetch_dify_responses_parallel_basic() -> None:
     rows = [
         {"id": "EVAL-0001", "question": "Q1"},
@@ -56,4 +88,5 @@ def test_fetch_dify_responses_parallel_basic() -> None:
     assert len(result) == 4
     assert result["EVAL-0001"][0] == "answer:Q1"
     assert result["EVAL-0004"][2] == ""
+    assert result["EVAL-0004"][3] in {"primary", "fallback"}
     assert len(thread_ids) >= 1

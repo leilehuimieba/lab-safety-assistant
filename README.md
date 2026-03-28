@@ -85,6 +85,7 @@
 - [评测结果看板](./docs/eval/eval_dashboard.md)
 - [V4.2 绑定与 Top10 修复手册](./docs/eval/v4_2_dify绑定与Top10修复手册_20260328.md)
 - [模型通道A/B实测总结（2026-03-28）](./docs/eval/model_ab_eval_20260328_summary.md)
+- [评测链路自动降级说明（2026-03-28）](./docs/eval/failover_eval_pipeline_20260328.md)
 - [评测集](./eval_set_v1.csv)
 - [验收指标](./eval_criteria.md)
 - [检索调参记录](./retrieval_tuning_report.md)
@@ -223,6 +224,14 @@ python scripts/eval_review.py --detailed-results <detailed_results.csv> --manual
 set DIFY_BASE_URL=http://localhost
 set DIFY_APP_API_KEY=<app-xxxx>
 python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard --dify-timeout 30 --eval-concurrency 4
+```
+
+若要启用超时自动降级（主通道失败后切备用通道）：
+
+```powershell
+set DIFY_FALLBACK_BASE_URL=http://localhost:8080
+set DIFY_FALLBACK_APP_API_KEY=<app-backup-xxxx>
+python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard --dify-timeout 30 --eval-concurrency 4 --retry-on-timeout 1
 ```
 
 回归完成后会额外生成失败修复清单，方便你直接按题修：
