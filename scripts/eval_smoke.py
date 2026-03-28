@@ -189,7 +189,7 @@ def call_dify(base_url: str, app_key: str, question: str) -> tuple[str, float, s
     payload = {
         "inputs": {},
         "query": question,
-        "response_mode": "blocking",
+        "response_mode": "streaming",
         "conversation_id": "",
         "user": "eval-smoke",
     }
@@ -206,7 +206,71 @@ def call_dify(base_url: str, app_key: str, question: str) -> tuple[str, float, s
 
     started = time.perf_counter()
     try:
-        with urllib.request.urlopen(request, timeout=60) as response:
+        with urllib.request.urlopen(request, timeout=90) as response:
+            content_type = str(response.headers.get("Content-Type", "") or "").lower()
+
+            # Some Dify app modes always return SSE. Parse stream events directly.
+            if "text/event-stream" in content_type:
+                answer_parts: list[str] = []
+                stream_error = ""
+                workflow_error = ""
+
+                while True:
+                    raw_line = response.readline()
+                    if not raw_line:
+                        break
+                    line = raw_line.decode("utf-8", errors="ignore").strip()
+                    if not line or line.startswith("event:"):
+                        continue
+                    if not line.startswith("data:"):
+                        continue
+                    payload_str = line[5:].strip()
+                    if not payload_str or payload_str == "[DONE]":
+                        break
+                    try:
+                        event_obj = json.loads(payload_str)
+                    except json.JSONDecodeError:
+                        continue
+
+                    event_name = str(event_obj.get("event", "") or "").strip().lower()
+                    if event_name in {"message", "agent_message"}:
+                        piece = str(
+                            event_obj.get("answer", "")
+                            or event_obj.get("delta", "")
+                            or event_obj.get("text", "")
+                            or ""
+                        )
+                        if piece:
+                            answer_parts.append(piece)
+                    elif event_name == "workflow_finished":
+                        data = event_obj.get("data")
+                        if isinstance(data, dict):
+                            outputs = data.get("outputs")
+                            if isinstance(outputs, dict):
+                                text_out = str(outputs.get("text", "") or "")
+                                if text_out and not answer_parts:
+                                    answer_parts.append(text_out)
+                            err_val = data.get("error")
+                            if isinstance(err_val, str) and err_val.strip():
+                                workflow_error = err_val.strip()
+                        break
+                    elif event_name == "message_end":
+                        break
+                    elif event_name == "error":
+                        stream_error = str(event_obj.get("message", "") or event_obj.get("error", "") or "stream_error")
+                        break
+
+                latency_ms = (time.perf_counter() - started) * 1000
+                answer = "".join(answer_parts).strip()
+                if stream_error and not answer:
+                    return "", latency_ms, f"stream_error: {stream_error[:200]}"
+                if workflow_error and not answer:
+                    return "", latency_ms, f"workflow_error: {workflow_error[:200]}"
+                if not answer:
+                    return "", latency_ms, "empty_stream_answer"
+                return answer, latency_ms, ""
+
+            # Fallback: JSON blocking payload.
             raw = response.read().decode("utf-8")
         latency_ms = (time.perf_counter() - started) * 1000
         parsed = json.loads(raw)
@@ -460,4 +524,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

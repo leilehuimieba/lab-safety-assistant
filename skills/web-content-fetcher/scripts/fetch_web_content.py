@@ -23,8 +23,10 @@ import requests
 
 try:
     from bs4 import BeautifulSoup
+    from bs4 import FeatureNotFound
 except ImportError:  # pragma: no cover
     BeautifulSoup = None  # type: ignore[assignment]
+    FeatureNotFound = Exception  # type: ignore[assignment]
 
 try:
     import html2text  # type: ignore
@@ -119,6 +121,24 @@ def quality_score(text: str) -> float:
     return round(min(max(score, 0.0), 1.0), 4)
 
 
+def sanitize_broken_entities(html: str) -> str:
+    if not html:
+        return ""
+
+    # Keep valid numeric entities like &#123; / &#x1F44D;, drop malformed ones.
+    pattern = re.compile(r"&#([^;\s]{1,40});?")
+
+    def repl(match: re.Match[str]) -> str:
+        token = (match.group(1) or "").strip()
+        if re.fullmatch(r"[0-9]{1,7}", token):
+            return match.group(0)
+        if re.fullmatch(r"[xX][0-9A-Fa-f]{1,6}", token):
+            return match.group(0)
+        return " "
+
+    return pattern.sub(repl, html)
+
+
 def html_to_text(html: str) -> tuple[str, str]:
     title = ""
     if not html:
@@ -129,7 +149,21 @@ def html_to_text(html: str) -> tuple[str, str]:
         plain = re.sub(r"\s+", " ", plain).strip()
         return title, plain
 
-    soup = BeautifulSoup(html, "html.parser")
+    soup = None
+    safe_html = sanitize_broken_entities(html)
+    for parser in ("html.parser", "lxml", "html5lib"):
+        try:
+            soup = BeautifulSoup(safe_html, parser)
+            break
+        except FeatureNotFound:
+            continue
+        except Exception:
+            continue
+    if soup is None:
+        plain = re.sub(r"<[^>]+>", " ", safe_html)
+        plain = re.sub(r"\s+", " ", plain).strip()
+        return title, plain
+
     title = (soup.title.text or "").strip() if soup.title else ""
 
     for tag in soup.find_all(["script", "style", "noscript", "footer", "header", "nav", "aside", "form"]):
@@ -141,7 +175,10 @@ def html_to_text(html: str) -> tuple[str, str]:
         converter.ignore_links = False
         converter.ignore_images = True
         converter.body_width = 0
-        markdown_text = converter.handle(str(container))
+        try:
+            markdown_text = converter.handle(str(container))
+        except Exception:
+            markdown_text = container.get_text(" ", strip=True)
         markdown_text = re.sub(r"\n{3,}", "\n\n", markdown_text).strip()
         return title, markdown_text
 

@@ -1,6 +1,6 @@
 # Official Relink Summary (official_relink_v4_2)
 
-- generated_at: `2026-03-27T20:42:51+08:00`
+- generated_at: `2026-03-27T22:02:07+08:00`
 - mapping_file: `D:\workspace\lab-safe-assistant-github\data_sources\relink_official_map_v4_2.csv`
 - detail_csv: `D:\workspace\lab-safe-assistant-github\artifacts\relink_v4_2\official_relink_details.csv`
 
