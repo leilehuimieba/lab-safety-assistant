@@ -24,12 +24,12 @@ python scripts\patch_workflow_retrieval_keyword_only.py `
   --workflow-id d3e2be2d-c487-4dea-b9ed-8e374ba7ea07 `
   --mode apply-keyword-only
 ```
-5. Added temporary host mapping in Dify containers:
+5. Added one-click host mapping fixer (including `plugin_daemon`):
+   - [fix_embedding_host_mapping.py](../../scripts/fix_embedding_host_mapping.py)
 ```powershell
-$ip = docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" fake-ollama
-docker exec -u 0 docker-worker-1 sh -c "echo '$ip host.docker.internal' >> /etc/hosts"
-docker exec -u 0 docker-api-1 sh -c "echo '$ip host.docker.internal' >> /etc/hosts"
-docker exec -u 0 docker-worker_beat-1 sh -c "echo '$ip host.docker.internal' >> /etc/hosts"
+python scripts\fix_embedding_host_mapping.py `
+  --embed-container fake-ollama `
+  --containers docker-api-1 docker-worker-1 docker-plugin_daemon-1
 ```
 
 ## Verification
@@ -43,6 +43,7 @@ docker exec -u 0 docker-worker_beat-1 sh -c "echo '$ip host.docker.internal' >> 
 
 ## Known Limitations
 - `/etc/hosts` patch is container-local and non-persistent across full container recreation.
+- If `plugin_daemon` is not patched, embedding may still fail even when `worker/api` connectivity looks normal.
 - Embedding fallback service is deterministic pseudo-vector for stability testing, not production semantic embedding.
 - Latency remains above target; this recovery focused on reliability first.
 

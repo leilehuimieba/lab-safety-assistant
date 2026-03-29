@@ -253,6 +253,7 @@ def call_dify(
         "response_mode": response_mode,
         "conversation_id": "",
         "user": "eval-smoke",
+        "auto_generate_name": False,
     }
     body = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(

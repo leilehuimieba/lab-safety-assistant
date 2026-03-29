@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-29T11:48:18+08:00",
+  "generated_at": "2026-03-29T13:10:48+08:00",
   "smoke_runs": [
     {
       "run_id": "run_20260317_152652",
@@ -1334,6 +1334,267 @@
         "latency_p95_ms": 5000.0
       },
       "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260329_114407/summary.json"
+    },
+    {
+      "run_id": "run_20260329_120719",
+      "generated_at": "2026-03-29T12:11:29+08:00",
+      "total_rows": 20,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 1.0,
+        "qa_pass_rate": 0.9090909090909091,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 1.0,
+        "latency_p95_ms": 15732.528360001763
+      },
+      "route_stats": {
+        "route_success_rate": 1.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 1.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260329_120719/summary.json"
+    },
+    {
+      "run_id": "run_20260329_121211",
+      "generated_at": "2026-03-29T12:15:52+08:00",
+      "total_rows": 20,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 1.0,
+        "qa_pass_rate": 0.8181818181818182,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 0.9,
+        "latency_p95_ms": 16654.170715021613
+      },
+      "route_stats": {
+        "route_success_rate": 0.9,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.9,
+        "route_failure_rate": 0.1,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260329_121211/summary.json"
+    },
+    {
+      "run_id": "run_20260329_121648",
+      "generated_at": "2026-03-29T12:17:10+08:00",
+      "total_rows": 10,
+      "metrics": {
+        "safety_refusal_rate": 0.0,
+        "emergency_pass_rate": 0.0,
+        "qa_pass_rate": 0.0,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 0.0,
+        "latency_p95_ms": 4163.685390012684
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260329_121648/summary.json"
+    },
+    {
+      "run_id": "run_20260329_122129",
+      "generated_at": "2026-03-29T12:22:52+08:00",
+      "total_rows": 6,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 1.0,
+        "qa_pass_rate": 0.3333333333333333,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 1.0,
+        "latency_p95_ms": 20047.98275000212
+      },
+      "route_stats": {
+        "route_success_rate": 1.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 1.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260329_122129/summary.json"
+    },
+    {
+      "run_id": "run_20260329_122342",
+      "generated_at": "2026-03-29T12:25:17+08:00",
+      "total_rows": 6,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 1.0,
+        "qa_pass_rate": 1.0,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 1.0,
+        "latency_p95_ms": 23873.01779998961
+      },
+      "route_stats": {
+        "route_success_rate": 1.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 1.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260329_122342/summary.json"
+    },
+    {
+      "run_id": "run_20260329_122540",
+      "generated_at": "2026-03-29T12:29:36+08:00",
+      "total_rows": 20,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 1.0,
+        "qa_pass_rate": 0.9090909090909091,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 1.0,
+        "latency_p95_ms": 15688.188485002322
+      },
+      "route_stats": {
+        "route_success_rate": 1.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 1.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260329_122540/summary.json"
+    },
+    {
+      "run_id": "run_20260329_123047",
+      "generated_at": "2026-03-29T12:38:15+08:00",
+      "total_rows": 20,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 0.8,
+        "qa_pass_rate": 0.6363636363636364,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 60042.906419998326
+      },
+      "route_stats": {
+        "route_success_rate": 0.8,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.8,
+        "route_failure_rate": 0.2,
+        "route_timeout_rate": 0.2
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260329_123047/summary.json"
+    },
+    {
+      "run_id": "run_20260329_124314",
+      "generated_at": "2026-03-29T13:00:24+08:00",
+      "total_rows": 20,
+      "metrics": {
+        "safety_refusal_rate": 0.25,
+        "emergency_pass_rate": 0.4,
+        "qa_pass_rate": 0.18181818181818182,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 0.25,
+        "latency_p95_ms": 60773.575689989964
+      },
+      "route_stats": {
+        "route_success_rate": 0.25,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.25,
+        "route_failure_rate": 0.75,
+        "route_timeout_rate": 0.75
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260329_124314/summary.json"
+    },
+    {
+      "run_id": "run_20260329_130447",
+      "generated_at": "2026-03-29T13:10:48+08:00",
+      "total_rows": 6,
+      "metrics": {
+        "safety_refusal_rate": 0.0,
+        "emergency_pass_rate": 0.0,
+        "qa_pass_rate": 0.0,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 0.0,
+        "latency_p95_ms": 60139.44720001018
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 1.0,
+        "route_timeout_rate": 1.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_smoke_auto/run_20260329_130447/summary.json"
     }
   ],
   "review_runs": [
@@ -2409,6 +2670,267 @@
         "latency_p95_ms": 5000.0
       },
       "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260329_114407/review_summary.json"
+    },
+    {
+      "run_id": "run_20260329_120719",
+      "generated_at": "2026-03-29T12:11:29+08:00",
+      "total_rows": 20,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 1.0,
+        "qa_pass_rate": 0.9090909090909091,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 1.0,
+        "latency_p95_ms": 15732.52500000002
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260329_120719/review_summary.json"
+    },
+    {
+      "run_id": "run_20260329_121211",
+      "generated_at": "2026-03-29T12:15:52+08:00",
+      "total_rows": 20,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 1.0,
+        "qa_pass_rate": 0.8181818181818182,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 0.9,
+        "latency_p95_ms": 16654.168500000003
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260329_121211/review_summary.json"
+    },
+    {
+      "run_id": "run_20260329_121648",
+      "generated_at": "2026-03-29T12:17:10+08:00",
+      "total_rows": 10,
+      "metrics": {
+        "safety_refusal_rate": 0.0,
+        "emergency_pass_rate": 0.0,
+        "qa_pass_rate": 0.0,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 0.0,
+        "latency_p95_ms": 4163.686499999996
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260329_121648/review_summary.json"
+    },
+    {
+      "run_id": "run_20260329_122129",
+      "generated_at": "2026-03-29T12:22:52+08:00",
+      "total_rows": 6,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 1.0,
+        "qa_pass_rate": 0.3333333333333333,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 1.0,
+        "latency_p95_ms": 20047.985
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260329_122129/review_summary.json"
+    },
+    {
+      "run_id": "run_20260329_122342",
+      "generated_at": "2026-03-29T12:25:17+08:00",
+      "total_rows": 6,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 1.0,
+        "qa_pass_rate": 1.0,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 1.0,
+        "latency_p95_ms": 23873.0225
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260329_122342/review_summary.json"
+    },
+    {
+      "run_id": "run_20260329_122540",
+      "generated_at": "2026-03-29T12:29:36+08:00",
+      "total_rows": 20,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 1.0,
+        "qa_pass_rate": 0.9090909090909091,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 1.0,
+        "latency_p95_ms": 15688.1915
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260329_122540/review_summary.json"
+    },
+    {
+      "run_id": "run_20260329_123047",
+      "generated_at": "2026-03-29T12:38:15+08:00",
+      "total_rows": 20,
+      "metrics": {
+        "safety_refusal_rate": 1.0,
+        "emergency_pass_rate": 0.8,
+        "qa_pass_rate": 0.6363636363636364,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 60042.908
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260329_123047/review_summary.json"
+    },
+    {
+      "run_id": "run_20260329_124314",
+      "generated_at": "2026-03-29T13:00:24+08:00",
+      "total_rows": 20,
+      "metrics": {
+        "safety_refusal_rate": 0.25,
+        "emergency_pass_rate": 0.4,
+        "qa_pass_rate": 0.18181818181818182,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 0.25,
+        "latency_p95_ms": 60773.575000000004
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260329_124314/review_summary.json"
+    },
+    {
+      "run_id": "run_20260329_130447",
+      "generated_at": "2026-03-29T13:10:48+08:00",
+      "total_rows": 6,
+      "metrics": {
+        "safety_refusal_rate": 0.0,
+        "emergency_pass_rate": 0.0,
+        "qa_pass_rate": 0.0,
+        "fuzzy_pass_rate": 0.0,
+        "coverage_rate": 0.0,
+        "latency_p95_ms": 60139.4475
+      },
+      "route_stats": {
+        "route_success_rate": 0.0,
+        "route_fallback_rate": 0.0,
+        "route_primary_rate": 0.0,
+        "route_failure_rate": 0.0,
+        "route_timeout_rate": 0.0
+      },
+      "targets": {
+        "safety_refusal_rate": 0.95,
+        "emergency_pass_rate": 0.9,
+        "qa_pass_rate": 0.85,
+        "fuzzy_pass_rate": 0.8,
+        "coverage_rate": 0.8,
+        "latency_p95_ms": 5000.0
+      },
+      "summary_path": "D:/workspace/lab-safe-assistant-github/artifacts/eval_review_auto/run_20260329_130447/review_summary.json"
     }
   ],
   "weekly": {
@@ -2431,19 +2953,19 @@
       },
       {
         "week": "2026-W13",
-        "run_count": 45,
-        "total_rows_avg": 12.3,
-        "safety_refusal_rate": 0.381481,
-        "emergency_pass_rate": 0.308889,
-        "qa_pass_rate": 0.300202,
+        "run_count": 54,
+        "total_rows_avg": 12.6,
+        "safety_refusal_rate": 0.433642,
+        "emergency_pass_rate": 0.372222,
+        "qa_pass_rate": 0.338833,
         "fuzzy_pass_rate": 0.0,
-        "coverage_rate": 0.579259,
-        "latency_p95_ms": 33461.448972,
-        "route_success_rate": 0.524815,
+        "coverage_rate": 0.592901,
+        "latency_p95_ms": 33016.309381,
+        "route_success_rate": 0.547531,
         "route_fallback_rate": 0.0,
-        "route_primary_rate": 0.524815,
-        "route_failure_rate": 0.420741,
-        "route_timeout_rate": 0.34
+        "route_primary_rate": 0.547531,
+        "route_failure_rate": 0.407099,
+        "route_timeout_rate": 0.319444
       }
     ],
     "review": [
@@ -2465,14 +2987,14 @@
       },
       {
         "week": "2026-W13",
-        "run_count": 35,
+        "run_count": 44,
         "total_rows_avg": 13.9,
-        "safety_refusal_rate": 0.454762,
-        "emergency_pass_rate": 0.397143,
-        "qa_pass_rate": 0.385974,
+        "safety_refusal_rate": 0.503788,
+        "emergency_pass_rate": 0.456818,
+        "qa_pass_rate": 0.41584,
         "fuzzy_pass_rate": 0.0,
-        "coverage_rate": 0.61,
-        "latency_p95_ms": 32780.146214,
+        "coverage_rate": 0.620455,
+        "latency_p95_ms": 32373.196068,
         "route_success_rate": 0.0,
         "route_fallback_rate": 0.0,
         "route_primary_rate": 0.0,

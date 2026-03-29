@@ -213,6 +213,7 @@ def preflight_dify_chat(
         "response_mode": response_mode,
         "conversation_id": "",
         "user": "eval-preflight",
+        "auto_generate_name": False,
     }
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     request = urllib.request.Request(
