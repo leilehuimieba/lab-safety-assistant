@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 from __future__ import annotations
 
 import argparse
@@ -147,14 +147,14 @@ def main() -> int:
     report_json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
     lines: list[str] = []
-    lines.append("# 导入总库构建报告（V1~V4）")
+    lines.append("# Import Bundle Build Report")
     lines.append("")
-    lines.append(f"- 生成时间：`{report['generated_at']}`")
-    lines.append(f"- 输出文件：`{output_csv}`")
-    lines.append(f"- 合并后总条目：`{len(merged_rows)}`")
-    lines.append(f"- 空ID跳过：`{empty_id_count}`")
+    lines.append(f"- Generated at: `{report['generated_at']}`")
+    lines.append(f"- Output CSV: `{output_csv}`")
+    lines.append(f"- Total merged rows: `{len(merged_rows)}`")
+    lines.append(f"- Empty IDs skipped: `{empty_id_count}`")
     lines.append("")
-    lines.append("## 来源合并统计（按优先级）")
+    lines.append("## Source Merge Summary (Priority Order)")
     lines.append("")
     lines.append("| source | input_rows | selected_rows | duplicate_skips |")
     lines.append("|---|---:|---:|---:|")
@@ -163,7 +163,7 @@ def main() -> int:
             f"| {name} | {source_input_counts.get(name, 0)} | {source_selected_counts.get(name, 0)} | {duplicate_skips.get(name, 0)} |"
         )
     lines.append("")
-    lines.append("## 分布摘要")
+    lines.append("## Distribution Summary")
     lines.append("")
 
     def append_dist(title: str, data: dict[str, int]) -> None:
