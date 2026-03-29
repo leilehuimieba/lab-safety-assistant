@@ -1,4 +1,4 @@
-# Web Seed V5 Prefetch Report
+# web_seed_v5 Prefetch Report
 
 - Total sources: `22`
 - Fetchable (`status=ok`): `18` (81.8%)
@@ -24,6 +24,6 @@
 
 ## Import Plan
 
-1. Import `ok` rows from `artifacts/web_seed_v5_prefetch/knowledge_base_web.csv` into staging KB.
+1. Import `ok` rows from prefetch knowledge_base_web.csv into staging KB.
 2. Resolve blocked/error rows by collector and rerun one prefetch round.
 3. Clean low-quality rows before moving to official release batch.
