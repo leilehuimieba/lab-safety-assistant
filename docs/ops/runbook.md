@@ -588,6 +588,25 @@ python scripts/validate_release_policy_schema.py --repo-root .
 python scripts/validate_release_fix_plan.py --repo-root .
 ```
 
+将 P0 修复任务同步到 GitHub Issues（建议在发布前执行）：
+
+```powershell
+# 实际执行（需要 GITHUB_TOKEN + GITHUB_REPOSITORY）
+python scripts/sync_release_fix_plan_issues.py --repo-root . --only-priority P0
+
+# 预演模式（不写入 GitHub）
+python scripts/sync_release_fix_plan_issues.py --repo-root . --only-priority P0 --dry-run
+```
+
+- 输入：`docs/ops/release_fix_plan_auto.csv`
+- 输出：
+- `docs/ops/release_fix_plan_sync_report.json`
+- `docs/ops/release_fix_plan_sync_report.md`
+- 同步规则：
+- `status in [todo,in_progress,blocked]`：创建或更新 issue
+- `status in [done,wont_fix]`：关闭已关联 issue
+- `task_id` 通过 `<!-- RELEASE_FIX_TASK:{task_id} -->` 标记实现可追踪绑定
+
 GitHub 自动监控（每日）：
 
 - 工作流：`.github/workflows/daily-eval-gate-monitor.yml`

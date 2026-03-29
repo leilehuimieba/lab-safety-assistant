@@ -302,6 +302,8 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 - Policy schema guard: `python scripts/validate_release_policy_schema.py --repo-root .` (also enforced by `quality_gate.py`).
 - Fix-plan guard: `python scripts/validate_release_fix_plan.py --repo-root .` (checks task id/status/P0 owner+ETA).
 - Fix plan generation preserves existing `owner/status/eta` by `blocking_reason` to avoid assignment loss.
+- Fix-task issue sync: `python scripts/sync_release_fix_plan_issues.py --repo-root . --only-priority P0` (sync P0 tasks to GitHub Issues).
+- Sync reports: `docs/ops/release_fix_plan_sync_report.json` and `docs/ops/release_fix_plan_sync_report.md`.
 - Manual workflow: `.github/workflows/release-policy-check.yml` (workflow_dispatch).
 - One-click chain can run secondary policy too: `--release-policy-run-secondary --release-policy-secondary-profile prod`.
 - Secondary policy can be enforced as hard gate with `--release-policy-enforce-secondary`.
