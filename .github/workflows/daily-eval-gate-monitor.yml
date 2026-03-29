@@ -131,6 +131,29 @@ jobs:
           fi
           exit 0
 
+      - name: Sync P0 Release Fix Tasks to Issues
+        id: fix_sync
+        if: steps.fix_plan.outputs.status == 'pass'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set +e
+          python scripts/sync_release_fix_plan_issues.py \
+            --repo-root . \
+            --only-priority P0 \
+            > release_fix_sync_output.txt 2>&1
+          code=$?
+          cat release_fix_sync_output.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 0 ]; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
       - name: Upload Gate Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -141,6 +164,7 @@ jobs:
             release_policy_output.txt
             release_policy_prod_output.txt
             release_fix_plan_output.txt
+            release_fix_sync_output.txt
             docs/eval/release_risk_note_auto.md
             docs/eval/release_risk_note_auto.json
             docs/eval/release_policy_check_demo.md
@@ -153,16 +177,19 @@ jobs:
             docs/eval/release_blocker_topn.csv
             docs/ops/release_fix_plan_auto.md
             docs/ops/release_fix_plan_auto.csv
+            docs/ops/release_fix_plan_sync_report.md
+            docs/ops/release_fix_plan_sync_report.json
             docs/eval/eval_dashboard_data.json
             docs/eval/failover_status.json
             docs/eval/failover_status.md
 
       - name: Create or Update Same-Day Gate Alert Issue
-        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail' || steps.fix_sync.outputs.status == 'fail'
         uses: actions/github-script@v7
         env:
           EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
           EVAL_GATE_ESCALATION_STREAK_DAYS: ${{ vars.EVAL_GATE_ESCALATION_STREAK_DAYS }}
+          FIX_SYNC_STATUS: ${{ steps.fix_sync.outputs.status }}
         with:
           script: |
             const fs = require('fs');
@@ -176,6 +203,7 @@ jobs:
             const policyOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_policy_output.txt');
             const policyProdOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_policy_prod_output.txt');
             const fixPlanOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_fix_plan_output.txt');
+            const fixSyncOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_fix_sync_output.txt');
             const riskJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_risk_note_auto.json');
             const policyDemoJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_policy_check_demo.json');
             const policyProdJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_policy_check_prod.json');
@@ -193,6 +221,7 @@ jobs:
             let policyOutput = '';
             let policyProdOutput = '';
             let fixPlanOutput = '';
+            let fixSyncOutput = '';
             let gateDecision = 'BLOCK';
             let violations = [];
             let policyDemoStatus = 'BLOCK';
@@ -200,6 +229,7 @@ jobs:
             let policyProdStatus = 'BLOCK';
             let policyProdViolations = [];
             let fixPlanStatus = 'BLOCK';
+            let fixSyncStatus = String(process.env.FIX_SYNC_STATUS || '').toUpperCase() || 'SKIPPED';
             try {
               gateOutput = fs.readFileSync(gateOutputPath, 'utf8').trim();
             } catch (e) {
@@ -219,6 +249,11 @@ jobs:
               fixPlanOutput = fs.readFileSync(fixPlanOutputPath, 'utf8').trim();
             } catch (e) {
               fixPlanOutput = '(release fix plan output not found)';
+            }
+            try {
+              fixSyncOutput = fs.readFileSync(fixSyncOutputPath, 'utf8').trim();
+            } catch (e) {
+              fixSyncOutput = '(release fix sync output not found)';
             }
             try {
               const payload = JSON.parse(fs.readFileSync(riskJsonPath, 'utf8'));
@@ -257,6 +292,7 @@ jobs:
               `- Release Policy(demo) Status: \`${policyDemoStatus}\``,
               `- Release Policy(prod) Status: \`${policyProdStatus}\``,
               `- Release Fix Plan Status: \`${fixPlanStatus}\``,
+              `- Release Fix Sync Status: \`${fixSyncStatus}\``,
               `- Risk Note JSON: \`${riskJsonRepoPath}\``,
               `- Risk Note MD: \`${riskMdRepoPath}\``,
               `- Release Policy(demo) JSON: \`${policyDemoJsonRepoPath}\``,
@@ -266,6 +302,7 @@ jobs:
               `- Release Readiness Dashboard: \`${readinessMdRepoPath}\``,
               `- Release Blocker TopN: \`${blockerMdRepoPath}\``,
               `- Release Fix Plan (Auto): \`${fixPlanMdRepoPath}\``,
+              '- Release Fix Sync Report: `docs/ops/release_fix_plan_sync_report.md`',
               '',
               '## Violations',
               violationLines,
@@ -294,6 +331,11 @@ jobs:
               '## Release Fix Plan Output',
               '```text',
               fixPlanOutput.slice(0, 12000),
+              '```',
+              '',
+              '## Release Fix Sync Output',
+              '```text',
+              fixSyncOutput.slice(0, 12000),
               '```',
               '',
               '## SLA (required for release follow-up)',
@@ -424,7 +466,7 @@ jobs:
             }
 
       - name: Check Alert SLA Metadata
-        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail' || steps.fix_sync.outputs.status == 'fail'
         uses: actions/github-script@v7
         with:
           script: |
@@ -539,7 +581,7 @@ jobs:
             }
 
       - name: P1 24h Postmortem Reminder
-        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail' || steps.fix_sync.outputs.status == 'fail'
         uses: actions/github-script@v7
         env:
           EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
@@ -617,6 +659,7 @@ jobs:
           POLICY_DEMO_STATUS: ${{ steps.policy.outputs.status }}
           POLICY_PROD_STATUS: ${{ steps.policy_prod.outputs.status }}
           FIX_PLAN_STATUS: ${{ steps.fix_plan.outputs.status }}
+          FIX_SYNC_STATUS: ${{ steps.fix_sync.outputs.status }}
           EVAL_POLICY_ENFORCE_PROD: ${{ vars.EVAL_POLICY_ENFORCE_PROD }}
         uses: actions/github-script@v7
         with:
@@ -625,8 +668,10 @@ jobs:
             const demoStatus = String(process.env.POLICY_DEMO_STATUS || '').toLowerCase();
             const prodStatus = String(process.env.POLICY_PROD_STATUS || '').toLowerCase();
             const fixPlanStatus = String(process.env.FIX_PLAN_STATUS || '').toLowerCase();
+            const fixSyncStatus = String(process.env.FIX_SYNC_STATUS || '').toLowerCase();
             const enforceProd = String(process.env.EVAL_POLICY_ENFORCE_PROD || 'false').toLowerCase() === 'true';
-            const recoverable = gateStatus === 'pass' && demoStatus === 'pass' && fixPlanStatus === 'pass' && (!enforceProd || prodStatus === 'pass');
+            const syncOk = (fixSyncStatus === 'pass' || fixSyncStatus === '');
+            const recoverable = gateStatus === 'pass' && demoStatus === 'pass' && fixPlanStatus === 'pass' && syncOk && (!enforceProd || prodStatus === 'pass');
             if (!recoverable) {
               core.info('Skip recovery close: status not fully recovered under current policy mode.');
               return;
@@ -677,6 +722,7 @@ jobs:
           POLICY_DEMO_STATUS: ${{ steps.policy.outputs.status }}
           POLICY_PROD_STATUS: ${{ steps.policy_prod.outputs.status }}
           FIX_PLAN_STATUS: ${{ steps.fix_plan.outputs.status }}
+          FIX_SYNC_STATUS: ${{ steps.fix_sync.outputs.status }}
           EVAL_POLICY_ENFORCE_PROD: ${{ vars.EVAL_POLICY_ENFORCE_PROD }}
         run: |
           set -e
@@ -684,10 +730,11 @@ jobs:
           demo_status="$(echo "${POLICY_DEMO_STATUS}" | tr '[:upper:]' '[:lower:]')"
           prod_status="$(echo "${POLICY_PROD_STATUS}" | tr '[:upper:]' '[:lower:]')"
           fix_plan_status="$(echo "${FIX_PLAN_STATUS}" | tr '[:upper:]' '[:lower:]')"
+          fix_sync_status="$(echo "${FIX_SYNC_STATUS}" | tr '[:upper:]' '[:lower:]')"
           enforce_prod="$(echo "${EVAL_POLICY_ENFORCE_PROD:-false}" | tr '[:upper:]' '[:lower:]')"
 
-          if [ "$gate_status" = "fail" ] || [ "$demo_status" = "fail" ] || [ "$fix_plan_status" = "fail" ]; then
-            echo "Gate or demo release policy or release fix plan validation failed."
+          if [ "$gate_status" = "fail" ] || [ "$demo_status" = "fail" ] || [ "$fix_plan_status" = "fail" ] || [ "$fix_sync_status" = "fail" ]; then
+            echo "Gate or demo release policy or release fix plan validation/sync failed."
             exit 1
           fi
 

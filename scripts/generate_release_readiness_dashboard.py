@@ -25,6 +25,9 @@ ACTION_PLAN_FIELDNAMES = [
     "blocking_reason",
     "recommended_action",
     "verification_step",
+    "issue_number",
+    "issue_url",
+    "last_synced_at",
 ]
 
 ALLOWED_ACTION_STATUS = {"todo", "in_progress", "blocked", "done", "wont_fix"}
@@ -266,6 +269,9 @@ def build_action_plan_rows(
                 "blocking_reason": reason,
                 "recommended_action": recommended_action,
                 "verification_step": "Re-run one-click release check and verify profile status is PASS.",
+                "issue_number": str(existing.get("issue_number", "")).strip(),
+                "issue_url": str(existing.get("issue_url", "")).strip(),
+                "last_synced_at": str(existing.get("last_synced_at", "")).strip(),
             }
         )
     return rows
