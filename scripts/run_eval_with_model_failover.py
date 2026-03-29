@@ -49,6 +49,31 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--limit", type=int, default=20, help="Eval row limit.")
     parser.add_argument("--dify-timeout", type=float, default=60.0, help="Per-request timeout seconds.")
+    parser.add_argument(
+        "--canary-limit",
+        type=int,
+        default=3,
+        help="Quick canary row count before full run (0 to disable canary).",
+    )
+    parser.add_argument(
+        "--canary-timeout",
+        type=float,
+        default=20.0,
+        help="Per-request timeout for canary run.",
+    )
+    parser.add_argument(
+        "--canary-timeout-failover-threshold",
+        type=float,
+        default=1.0,
+        help="Trigger model failover when canary timeout ratio reaches this threshold (0-1).",
+    )
+    parser.add_argument(
+        "--canary-retry-on-timeout",
+        type=int,
+        default=0,
+        help="Retry count used in canary run before channel fallback (default 0 for faster fail-fast).",
+    )
+    parser.add_argument("--skip-canary", action="store_true", help="Skip canary run and go full directly.")
     parser.add_argument("--dify-response-mode", choices=["streaming", "blocking"], default="streaming")
     parser.add_argument("--eval-concurrency", type=int, default=1, help="Eval concurrency.")
     parser.add_argument("--retry-on-timeout", type=int, default=1, help="Retry count before channel fallback.")
@@ -61,6 +86,11 @@ def parse_args() -> argparse.Namespace:
         "--skip-health-check",
         action="store_true",
         help="Skip pre-run health check (Dify + embedding channel).",
+    )
+    parser.add_argument(
+        "--health-allow-chat-timeout-pass",
+        action="store_true",
+        help="Allow health check pass when only chat preflight timed out; canary will verify real traffic.",
     )
     parser.add_argument(
         "--health-check-script",
@@ -147,6 +177,16 @@ def timeout_error_ratio(fetch_errors: list[str]) -> float:
     return timeout_count / len(fetch_errors)
 
 
+def clamp_ratio(value: float) -> float:
+    return max(0.0, min(1.0, float(value)))
+
+
+def should_trigger_timeout_failover(fetch_errors: list[str], threshold: float) -> bool:
+    if not fetch_errors:
+        return False
+    return timeout_error_ratio(fetch_errors) >= clamp_ratio(threshold)
+
+
 def patch_workflow_model(repo_root: Path, workflow_id: str, model_name: str, temperature: float) -> None:
     cmd = [
         sys.executable,
@@ -167,9 +207,25 @@ def patch_workflow_model(repo_root: Path, workflow_id: str, model_name: str, tem
         )
 
 
-def run_regression(repo_root: Path, args: argparse.Namespace) -> subprocess.CompletedProcess[str]:
+def run_regression(
+    repo_root: Path,
+    args: argparse.Namespace,
+    *,
+    limit_override: int | None = None,
+    timeout_override: float | None = None,
+    retry_on_timeout_override: int | None = None,
+    update_dashboard_override: bool | None = None,
+    skip_failure_analysis_override: bool | None = None,
+) -> subprocess.CompletedProcess[str]:
     dify_base_url = args.dify_base_url.strip() or os.environ.get("DIFY_BASE_URL", "").strip()
     dify_app_key = args.dify_app_key.strip() or os.environ.get("DIFY_APP_API_KEY", "").strip()
+    effective_limit = max(0, args.limit if limit_override is None else limit_override)
+    effective_timeout = args.dify_timeout if timeout_override is None else timeout_override
+    effective_retry = max(0, args.retry_on_timeout if retry_on_timeout_override is None else retry_on_timeout_override)
+    effective_update_dashboard = args.update_dashboard if update_dashboard_override is None else update_dashboard_override
+    effective_skip_failure = (
+        args.skip_failure_analysis if skip_failure_analysis_override is None else skip_failure_analysis_override
+    )
     cmd = [
         sys.executable,
         str(repo_root / "scripts" / "run_eval_regression_pipeline.py"),
@@ -180,15 +236,15 @@ def run_regression(repo_root: Path, args: argparse.Namespace) -> subprocess.Comp
         "--dify-app-key",
         dify_app_key,
         "--limit",
-        str(max(0, args.limit)),
+        str(effective_limit),
         "--dify-timeout",
-        str(args.dify_timeout),
+        str(effective_timeout),
         "--dify-response-mode",
         args.dify_response_mode,
         "--eval-concurrency",
         str(max(1, args.eval_concurrency)),
         "--retry-on-timeout",
-        str(max(0, args.retry_on_timeout)),
+        str(effective_retry),
         "--preflight-timeout",
         str(max(1.0, args.preflight_timeout)),
         "--chat-preflight-timeout",
@@ -200,19 +256,44 @@ def run_regression(repo_root: Path, args: argparse.Namespace) -> subprocess.Comp
         cmd.extend(["--fallback-dify-base-url", args.fallback_dify_base_url.strip()])
     if args.fallback_dify_app_key.strip():
         cmd.extend(["--fallback-dify-app-key", args.fallback_dify_app_key.strip()])
-    if args.skip_preflight:
+    # If health check already ran, skip duplicate preflight in inner regression calls.
+    skip_inner_preflight = bool(args.skip_preflight or (not args.skip_health_check))
+    skip_inner_chat_preflight = bool(args.skip_chat_preflight or (not args.skip_health_check))
+
+    if skip_inner_preflight:
         cmd.append("--skip-preflight")
-    if args.skip_chat_preflight:
+    if skip_inner_chat_preflight:
         cmd.append("--skip-chat-preflight")
     if args.allow_skip_live:
         cmd.append("--allow-skip-live")
-    if args.update_dashboard:
+    if effective_update_dashboard:
         cmd.append("--update-dashboard")
     if args.skip_risk_note:
         cmd.append("--skip-risk-note")
-    if args.skip_failure_analysis:
+    if effective_skip_failure:
         cmd.append("--skip-failure-analysis")
     return run_cmd(cmd, cwd=repo_root)
+
+
+def summarize_run(completed: subprocess.CompletedProcess[str]) -> dict:
+    run_dir = ""
+    fetch_errors: list[str] = []
+    if completed.returncode == 0:
+        try:
+            parsed_dir = parse_live_run_dir(completed.stdout or "")
+            run_dir = str(parsed_dir)
+            fetch_errors = collect_fetch_errors(parsed_dir)
+        except Exception:
+            run_dir = ""
+    return {
+        "exit_code": completed.returncode,
+        "run_dir": run_dir,
+        "fetch_error_count": len(fetch_errors),
+        "timeout_error_ratio": round(timeout_error_ratio(fetch_errors), 4),
+        "fetch_errors": fetch_errors[:30],
+        "stdout_tail": (completed.stdout or "")[-6000:],
+        "stderr_tail": (completed.stderr or "")[-4000:],
+    }
 
 
 def run_health_check(repo_root: Path, args: argparse.Namespace) -> subprocess.CompletedProcess[str]:
@@ -247,6 +328,8 @@ def run_health_check(repo_root: Path, args: argparse.Namespace) -> subprocess.Co
         "--embedding-containers",
         *[c for c in args.embedding_containers if c.strip()],
     ]
+    if args.health_allow_chat_timeout_pass:
+        cmd.append("--allow-chat-timeout-pass")
     return run_cmd(cmd, cwd=repo_root)
 
 
@@ -297,6 +380,8 @@ def main() -> int:
         "active_model_final": args.primary_model,
         "runs": {},
     }
+    run_failed = False
+    current_model = args.primary_model
 
     try:
         if not args.skip_health_check:
@@ -312,84 +397,154 @@ def main() -> int:
                     f"{(health_result.stdout or '')[-2000:]}\n{(health_result.stderr or '')[-2000:]}"
                 )
 
-        patch_workflow_model(repo_root, args.workflow_id, args.primary_model, args.temperature)
-        primary_run = run_regression(repo_root, args)
-        primary_merged = (primary_run.stdout or "") + "\n" + (primary_run.stderr or "")
-
-        primary_run_dir = ""
-        primary_fetch_errors: list[str] = []
-        if primary_run.returncode == 0:
-            try:
-                parsed_dir = parse_live_run_dir(primary_run.stdout or "")
-                primary_run_dir = str(parsed_dir)
-                primary_fetch_errors = collect_fetch_errors(parsed_dir)
-            except Exception:
-                primary_run_dir = ""
-
-        primary_timeout_ratio = timeout_error_ratio(primary_fetch_errors)
-        report["runs"]["primary"] = {
-            "exit_code": primary_run.returncode,
-            "run_dir": primary_run_dir,
-            "fetch_error_count": len(primary_fetch_errors),
-            "timeout_error_ratio": round(primary_timeout_ratio, 4),
-            "fetch_errors": primary_fetch_errors[:30],
-            "stdout_tail": (primary_run.stdout or "")[-6000:],
-            "stderr_tail": (primary_run.stderr or "")[-4000:],
-        }
-
+        canary_enabled = (not args.skip_canary) and int(args.canary_limit) > 0
+        effective_canary_limit = max(1, int(args.canary_limit))
         failover_reason = ""
-        if primary_run.returncode != 0 and has_model_outage_marker(primary_merged):
-            failover_reason = "primary pipeline failed and output matched model outage markers"
-        elif any(has_model_outage_marker(item) for item in primary_fetch_errors):
-            failover_reason = "primary run completed but fetch_error contained model outage markers"
-        elif (
-            len(primary_fetch_errors) > 0
-            and max(0.0, min(1.0, float(args.timeout_failover_threshold))) <= primary_timeout_ratio
-        ):
-            failover_reason = (
-                "primary run completed but timeout ratio reached threshold "
-                f"({primary_timeout_ratio:.2f} >= {max(0.0, min(1.0, float(args.timeout_failover_threshold))):.2f})"
+
+        patch_workflow_model(repo_root, args.workflow_id, args.primary_model, args.temperature)
+        current_model = args.primary_model
+
+        primary_canary_meta: dict | None = None
+        if canary_enabled:
+            primary_canary_run = run_regression(
+                repo_root,
+                args,
+                limit_override=effective_canary_limit,
+                timeout_override=max(1.0, float(args.canary_timeout)),
+                retry_on_timeout_override=max(0, int(args.canary_retry_on_timeout)),
+                update_dashboard_override=False,
+                skip_failure_analysis_override=True,
             )
+            primary_canary_meta = summarize_run(primary_canary_run)
+            primary_canary_meta["phase"] = "canary"
+            report["runs"]["primary_canary"] = primary_canary_meta
+
+            primary_canary_merged = (primary_canary_run.stdout or "") + "\n" + (primary_canary_run.stderr or "")
+            if primary_canary_run.returncode != 0 and has_model_outage_marker(primary_canary_merged):
+                failover_reason = "primary canary failed and output matched model outage markers"
+            elif should_trigger_timeout_failover(
+                primary_canary_meta.get("fetch_errors", []) or [],
+                float(args.canary_timeout_failover_threshold),
+            ):
+                failover_reason = (
+                    "primary canary timeout ratio reached threshold "
+                    f"({primary_canary_meta.get('timeout_error_ratio', 0.0):.2f} >= "
+                    f"{clamp_ratio(float(args.canary_timeout_failover_threshold)):.2f})"
+                )
+            elif primary_canary_run.returncode != 0:
+                raise RuntimeError(
+                    "Primary model canary failed (non-model-outage).\n"
+                    f"{(primary_canary_run.stdout or '')[-2000:]}\n{(primary_canary_run.stderr or '')[-2000:]}"
+                )
+
+        need_primary_full = (not failover_reason) and not (
+            canary_enabled
+            and primary_canary_meta is not None
+            and int(args.limit) > 0
+            and int(args.limit) <= effective_canary_limit
+        )
+        if not need_primary_full and primary_canary_meta is not None:
+            primary_meta = dict(primary_canary_meta)
+            primary_meta["phase"] = "full_from_canary"
+            report["runs"]["primary"] = primary_meta
+        else:
+            primary_run = run_regression(repo_root, args)
+            primary_meta = summarize_run(primary_run)
+            primary_meta["phase"] = "full"
+            report["runs"]["primary"] = primary_meta
+
+            primary_merged = (primary_run.stdout or "") + "\n" + (primary_run.stderr or "")
+            primary_fetch_errors = primary_meta.get("fetch_errors", []) or []
+            if primary_run.returncode != 0 and has_model_outage_marker(primary_merged):
+                failover_reason = "primary pipeline failed and output matched model outage markers"
+            elif any(has_model_outage_marker(item) for item in primary_fetch_errors):
+                failover_reason = "primary run completed but fetch_error contained model outage markers"
+            elif should_trigger_timeout_failover(primary_fetch_errors, float(args.timeout_failover_threshold)):
+                failover_reason = (
+                    "primary run completed but timeout ratio reached threshold "
+                    f"({primary_meta.get('timeout_error_ratio', 0.0):.2f} >= "
+                    f"{clamp_ratio(float(args.timeout_failover_threshold)):.2f})"
+                )
+            elif primary_run.returncode != 0:
+                raise RuntimeError(
+                    "Primary model regression failed (no model-outage marker detected).\n"
+                    f"{(primary_run.stdout or '')[-2000:]}\n{(primary_run.stderr or '')[-2000:]}"
+                )
 
         if failover_reason:
             report["failover_triggered"] = True
             report["failover_reason"] = failover_reason
 
             patch_workflow_model(repo_root, args.workflow_id, args.fallback_model, args.temperature)
-            fallback_run = run_regression(repo_root, args)
-            fallback_dir = ""
-            fallback_fetch_errors: list[str] = []
-            if fallback_run.returncode == 0:
-                try:
-                    parsed_dir = parse_live_run_dir(fallback_run.stdout or "")
-                    fallback_dir = str(parsed_dir)
-                    fallback_fetch_errors = collect_fetch_errors(parsed_dir)
-                except Exception:
-                    fallback_dir = ""
+            current_model = args.fallback_model
 
-            report["runs"]["fallback"] = {
-                "exit_code": fallback_run.returncode,
-                "run_dir": fallback_dir,
-                "fetch_error_count": len(fallback_fetch_errors),
-                "timeout_error_ratio": round(timeout_error_ratio(fallback_fetch_errors), 4),
-                "fetch_errors": fallback_fetch_errors[:30],
-                "stdout_tail": (fallback_run.stdout or "")[-6000:],
-                "stderr_tail": (fallback_run.stderr or "")[-4000:],
-            }
-
-            if fallback_run.returncode != 0:
-                raise RuntimeError(
-                    "Fallback model regression failed.\n"
-                    f"{(fallback_run.stdout or '')[-2000:]}\n{(fallback_run.stderr or '')[-2000:]}"
+            fallback_canary_meta: dict | None = None
+            if canary_enabled:
+                fallback_canary_run = run_regression(
+                    repo_root,
+                    args,
+                    limit_override=effective_canary_limit,
+                    timeout_override=max(1.0, float(args.canary_timeout)),
+                    retry_on_timeout_override=max(0, int(args.canary_retry_on_timeout)),
+                    update_dashboard_override=False,
+                    skip_failure_analysis_override=True,
                 )
-            report["active_model_final"] = args.fallback_model
-        elif primary_run.returncode != 0:
-            raise RuntimeError(
-                "Primary model regression failed (no model-outage marker detected).\n"
-                f"{(primary_run.stdout or '')[-2000:]}\n{(primary_run.stderr or '')[-2000:]}"
+                fallback_canary_meta = summarize_run(fallback_canary_run)
+                fallback_canary_meta["phase"] = "canary"
+                report["runs"]["fallback_canary"] = fallback_canary_meta
+
+                fallback_canary_merged = (fallback_canary_run.stdout or "") + "\n" + (fallback_canary_run.stderr or "")
+                if fallback_canary_run.returncode != 0 and has_model_outage_marker(fallback_canary_merged):
+                    raise RuntimeError(
+                        "Fallback model canary failed (model outage marker detected).\n"
+                        f"{(fallback_canary_run.stdout or '')[-2000:]}\n{(fallback_canary_run.stderr or '')[-2000:]}"
+                    )
+                if should_trigger_timeout_failover(
+                    fallback_canary_meta.get("fetch_errors", []) or [],
+                    float(args.canary_timeout_failover_threshold),
+                ):
+                    raise RuntimeError(
+                        "Fallback model canary timed out at threshold. "
+                        "Stop full run to avoid long ineffective wait."
+                    )
+                if fallback_canary_run.returncode != 0:
+                    raise RuntimeError(
+                        "Fallback model canary failed.\n"
+                        f"{(fallback_canary_run.stdout or '')[-2000:]}\n{(fallback_canary_run.stderr or '')[-2000:]}"
+                    )
+
+            need_fallback_full = not (
+                canary_enabled
+                and fallback_canary_meta is not None
+                and int(args.limit) > 0
+                and int(args.limit) <= effective_canary_limit
             )
+            if not need_fallback_full and fallback_canary_meta is not None:
+                fallback_meta = dict(fallback_canary_meta)
+                fallback_meta["phase"] = "full_from_canary"
+                report["runs"]["fallback"] = fallback_meta
+            else:
+                fallback_run = run_regression(repo_root, args)
+                fallback_meta = summarize_run(fallback_run)
+                fallback_meta["phase"] = "full"
+                report["runs"]["fallback"] = fallback_meta
+                if fallback_run.returncode != 0:
+                    raise RuntimeError(
+                        "Fallback model regression failed.\n"
+                        f"{(fallback_run.stdout or '')[-2000:]}\n{(fallback_run.stderr or '')[-2000:]}"
+                    )
+
+            report["active_model_final"] = args.fallback_model
+            current_model = args.fallback_model
+        else:
+            report["active_model_final"] = args.primary_model
+            current_model = args.primary_model
+    except Exception:
+        run_failed = True
+        raise
     finally:
-        if args.restore_primary_after_run:
+        should_restore_primary = bool(args.restore_primary_after_run or run_failed)
+        if should_restore_primary and current_model != args.primary_model:
             try:
                 patch_workflow_model(repo_root, args.workflow_id, args.primary_model, args.temperature)
                 report["active_model_final"] = args.primary_model

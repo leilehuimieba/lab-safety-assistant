@@ -407,6 +407,11 @@ python scripts/run_eval_with_model_failover.py `
   --workflow-id <workflow_id> `
   --primary-model gpt-5.2-codex `
   --fallback-model MiniMax-M2.5 `
+  --health-allow-chat-timeout-pass `
+  --canary-limit 3 `
+  --canary-timeout 20 `
+  --canary-retry-on-timeout 0 `
+  --canary-timeout-failover-threshold 1.0 `
   --limit 20 `
   --dify-timeout 60 `
   --eval-concurrency 1 `
@@ -418,10 +423,16 @@ python scripts/run_eval_with_model_failover.py `
 说明：
 - 默认会先调用 `check_live_eval_health.py`；若体检失败会提前退出，避免整轮长时间等待后才失败。
 - 可用 `--skip-health-check` 临时跳过体检（仅建议排障时使用）。
+- 若环境存在“chat preflight 偶发超时”，可加 `--health-allow-chat-timeout-pass`：允许先进入 canary，由真实样本决定是否继续全量。
+- 默认启用 Canary（`--canary-limit` + `--canary-timeout`）：先跑小样本短超时回归；若超时比率达到阈值，会快速触发回退或直接中止，避免全量无效等待。
+- Canary 默认建议 `--canary-retry-on-timeout 0`，用于故障场景快速止损；全量阶段再按 `--retry-on-timeout` 使用常规重试策略。
+- 若要直接跑全量，可加 `--skip-canary`。
+- 为减少重复探测和抖动，外层健康检查通过后，内层回归默认跳过重复 preflight；若你关闭健康检查（`--skip-health-check`），内层会恢复 preflight。
 - 先用主模型跑真实回归；若检测到 `model_not_found`、`InvokeServerUnavailableError`、`503` 等模型不可用特征，会自动切到备用模型再跑一轮。
 - 若主模型“返回码成功但超时占比过高”，也可按阈值触发回退（`--timeout-failover-threshold`，默认 `1.0` 表示全超时才触发）。
 - 自动输出报告到 `artifacts/model_failover_eval/run_*/model_failover_report.json`（含触发原因、主备运行目录、错误摘要）。
 - 默认保留最终可用模型作为在线模型；如需跑完后恢复主模型，加 `--restore-primary-after-run`。
+- 安全策略：脚本执行中若出现异常中断，会自动回切到主模型，避免工作流停留在未验证通过的回退模型。
 
 默认会自动输出“失败分簇 + Top10 修复清单”：
 

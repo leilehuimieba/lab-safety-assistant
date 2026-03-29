@@ -47,6 +47,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--embedding-timeout", type=float, default=3.0, help="Embedding curl timeout seconds.")
     parser.add_argument("--skip-embedding-check", action="store_true", help="Skip embedding channel checks.")
     parser.add_argument(
+        "--allow-chat-timeout-pass",
+        action="store_true",
+        help="Allow health check pass when only chat preflight timed out (canary will verify real traffic).",
+    )
+    parser.add_argument(
         "--output-dir",
         default="artifacts/live_health",
         help="Health check output root dir.",
@@ -106,6 +111,7 @@ def write_report(report_path: Path, payload: dict) -> None:
         "",
         f"- generated_at: `{payload.get('generated_at', '')}`",
         f"- pass: `{payload.get('pass', False)}`",
+        f"- pass_effective: `{payload.get('pass_effective', False)}`",
         f"- dify_base_url: `{payload.get('dify_base_url', '')}`",
         "",
         "## Checks",
@@ -164,15 +170,26 @@ def main() -> int:
     else:
         embedding_details.append({"container": "(skipped)", "ok": True, "detail": "embedding check skipped"})
 
+    chat_timeout_detected = (not chat_ok) and (
+        "timed out" in chat_detail.lower() or "chat timeout" in chat_detail.lower()
+    )
+    effective_chat_ok = bool(chat_ok or (args.allow_chat_timeout_pass and chat_timeout_detected))
     hints = rep.collect_worker_log_hints(args.worker_log_container)
     passed = bool(parameters_ok and chat_ok and embedding_ok)
+    pass_effective = bool(parameters_ok and effective_chat_ok and embedding_ok)
     report = {
         "generated_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
         "pass": passed,
+        "pass_effective": pass_effective,
         "dify_base_url": dify_base_url,
         "checks": {
             "parameters_preflight": {"ok": parameters_ok, "detail": parameters_detail},
-            "chat_preflight": {"ok": chat_ok, "detail": chat_detail},
+            "chat_preflight": {
+                "ok": chat_ok,
+                "effective_ok": effective_chat_ok,
+                "detail": chat_detail,
+                "chat_timeout_detected": chat_timeout_detected,
+            },
             "embedding": {"ok": embedding_ok, "details": embedding_details},
         },
         "hints": hints,
@@ -181,10 +198,13 @@ def main() -> int:
     write_report(report_path, report)
     print(f"Health check report: {report_path}")
 
-    if not passed:
+    if not pass_effective:
         print("Health check failed.")
         return 2
-    print("Health check passed.")
+    if passed:
+        print("Health check passed.")
+    else:
+        print("Health check passed with chat-timeout override.")
     return 0
 
 
