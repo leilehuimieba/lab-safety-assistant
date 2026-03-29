@@ -14,9 +14,10 @@ import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+
 try:
     import yaml
-except ImportError:  # pragma: no cover - optional dependency at import time
+except ImportError:  # pragma: no cover
     yaml = None  # type: ignore[assignment]
 
 
@@ -25,15 +26,18 @@ REPO_ROOT = BASE_DIR.parent
 HTML_FILE = BASE_DIR / "templates" / "index.html"
 KB_FILE = REPO_ROOT / "knowledge_base_curated.csv"
 RULES_FILE = REPO_ROOT / "safety_rules.yaml"
-LOW_CONFIDENCE_QUEUE_FILE = (
-    REPO_ROOT / "artifacts" / "low_confidence_followups" / "data_gap_queue.csv"
-)
+LOW_CONFIDENCE_QUEUE_FILE = REPO_ROOT / "artifacts" / "low_confidence_followups" / "data_gap_queue.csv"
 
 DEFAULT_BASE_URL = "http://ai.little100.cn:3000/v1"
 DEFAULT_MODEL = "gpt-5.2-codex"
 DEFAULT_FALLBACK_MODELS = "grok-3-mini,grok-4,grok-3"
-DEFAULT_TOP_K = 3
+DEFAULT_TOP_K = 4
 DEFAULT_LOW_CONFIDENCE_TOP_SCORE = 3.5
+
+SEVERITY_SCORE = {"critical": 5, "high": 4, "medium": 3, "low": 2}
+TERMINAL_ACTIONS = {"refuse", "redirect_emergency", "ask_for_more_info"}
+RISK_LABEL = {1: "low", 2: "low", 3: "medium", 4: "high", 5: "critical"}
+
 QUEUE_HEADERS = [
     "created_at",
     "question_hash",
@@ -54,31 +58,31 @@ QUEUE_HEADERS = [
     "notes",
 ]
 
-SEVERITY_SCORE = {"critical": 4, "high": 3, "medium": 2, "low": 1}
-TERMINAL_ACTIONS = {"refuse", "redirect_emergency", "ask_for_more_info"}
-
 SYSTEM_PROMPTS = {
-    "agent": (
-        "你是项目协作智能体。目标是帮助高校项目组高效推进任务，回答要结构化、可执行、可落地。"
-        "如果信息不足，先明确假设，再给出下一步操作建议。"
-    ),
+    "agent": "You are a project copilot. Give concise, executable guidance.",
     "lab": (
-        "你是实验室安全小助手。你必须优先强调安全边界和应急优先级。"
-        "回答请给出：1)结论 2)步骤 3)禁止事项 4)何时上报老师/管理员。"
-        "不要提供鼓励违规或危险操作的建议。"
+        "You are a laboratory safety assistant. Output in this order: conclusion, steps, forbidden actions, escalation. "
+        "Never provide unsafe or policy-violating instructions."
     ),
 }
 
-EMERGENCY_TEMPLATE_BY_CATEGORY = {
-    "chemical_splash_skin": "emergency_chemical_splash_skin",
-    "chemical_splash_eye": "emergency_chemical_splash_eye",
-    "fire_smoke": "emergency_fire",
-    "gas_leak": "emergency_gas_leak",
-    "chemical_spill": "emergency_chemical_spill",
-    "ingestion": "emergency_ingestion",
-    "inhalation": "emergency_inhalation",
-    "burn": "emergency_burn",
-    "cut_bleeding": "emergency_cut",
+PPE_HINTS = {
+    "safety goggles": ["acid", "base", "solvent", "splash", "corrosive"],
+    "face shield": ["splash", "high pressure"],
+    "chemical-resistant gloves": ["acid", "base", "solvent", "corrosive", "hazardous chemical"],
+    "lab coat": ["chemical", "biosafety", "reagent"],
+    "respiratory protection": ["toxic gas", "vapor", "inhalation", "fume"],
+    "cryogenic gloves": ["liquid nitrogen", "cryogenic", "low temperature"],
+    "insulated gloves": ["electric", "shock", "high voltage"],
+}
+
+HAZARD_HINTS = {
+    "chemical": ["acid", "base", "solvent", "corrosive", "hazardous chemical"],
+    "biosafety": ["bio", "pathogen", "sample", "sterilization"],
+    "electrical": ["electric", "shock", "high voltage", "power"],
+    "fire": ["fire", "smoke", "ignition", "burn"],
+    "cryogenic": ["liquid nitrogen", "cryogenic", "frostbite"],
+    "mechanical": ["centrifuge", "rotation", "pinch", "moving parts"],
 }
 
 _CACHE_LOCK = threading.Lock()
@@ -88,8 +92,12 @@ _QUEUE_LOCK = threading.Lock()
 
 
 class ChatRequest(BaseModel):
-    mode: str = Field(default="lab", description="agent 或 lab")
+    mode: str = Field(default="lab", description="agent or lab")
     question: str = Field(min_length=1, max_length=4000)
+
+
+class RiskAssessRequest(BaseModel):
+    scenario: str = Field(min_length=1, max_length=6000)
 
 
 class Citation(BaseModel):
@@ -117,26 +125,18 @@ class ChatResponse(BaseModel):
     citations: list[Citation] = Field(default_factory=list)
 
 
-def get_env() -> dict[str, str]:
-    base_url = os.getenv("OPENAI_BASE_URL", DEFAULT_BASE_URL).strip()
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
-    model = os.getenv("OPENAI_MODEL", DEFAULT_MODEL).strip()
-    timeout_s = os.getenv("OPENAI_TIMEOUT", "60").strip()
-    fallback_models = os.getenv("OPENAI_FALLBACK_MODELS", DEFAULT_FALLBACK_MODELS).strip()
-    return {
-        "base_url": base_url,
-        "api_key": api_key,
-        "model": model,
-        "timeout_s": timeout_s,
-        "fallback_models": fallback_models,
-    }
-
-
-def resolve_endpoint(base_url: str) -> str:
-    normalized = base_url.rstrip("/")
-    if normalized.endswith("/v1"):
-        return f"{normalized}/chat/completions"
-    return f"{normalized}/v1/chat/completions"
+class RiskAssessResponse(BaseModel):
+    scenario: str
+    risk_score: int
+    risk_level: str
+    key_hazards: list[str] = Field(default_factory=list)
+    ppe: list[str] = Field(default_factory=list)
+    forbidden: list[str] = Field(default_factory=list)
+    emergency_actions: list[str] = Field(default_factory=list)
+    recommended_steps: list[str] = Field(default_factory=list)
+    low_confidence: bool = False
+    low_confidence_reason: str = ""
+    citations: list[Citation] = Field(default_factory=list)
 
 
 def normalize_text(text: str) -> str:
@@ -144,44 +144,40 @@ def normalize_text(text: str) -> str:
 
 
 def extract_tokens(text: str) -> set[str]:
+    chunks = re.findall(r"[a-zA-Z0-9_]+|[\u4e00-\u9fff]+", (text or "").lower())
     tokens: set[str] = set()
-    chunks = re.findall(r"[\u4e00-\u9fff]+|[a-zA-Z0-9_]+", text.lower())
     for chunk in chunks:
-        if re.fullmatch(r"[a-z0-9_]+", chunk):
-            if len(chunk) >= 3:
-                tokens.add(chunk)
-            continue
         if len(chunk) >= 2:
-            if len(chunk) <= 4:
-                tokens.add(chunk)
-            for n in (2, 3):
-                if len(chunk) >= n:
-                    for i in range(len(chunk) - n + 1):
-                        tokens.add(chunk[i : i + n])
+            tokens.add(chunk)
     return tokens
+
+
+def split_items(text: str) -> list[str]:
+    return [x.strip(" -\t") for x in re.split(r"[\n;；。]+", text or "") if x.strip(" -\t")]
 
 
 def load_kb_entries() -> list[dict[str, str]]:
     if not KB_FILE.exists():
         return []
-
     rows: list[dict[str, str]] = []
     with KB_FILE.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            blob_parts = [
-                row.get("title", ""),
-                row.get("question", ""),
-                row.get("answer", ""),
-                row.get("steps", ""),
-                row.get("forbidden", ""),
-                row.get("emergency", ""),
-                row.get("tags", ""),
-                row.get("hazard_types", ""),
-                row.get("source_title", ""),
-                row.get("source_org", ""),
-            ]
-            blob = normalize_text(" ".join(blob_parts))
+            blob = normalize_text(
+                " ".join(
+                    [
+                        row.get("title", ""),
+                        row.get("question", ""),
+                        row.get("answer", ""),
+                        row.get("steps", ""),
+                        row.get("forbidden", ""),
+                        row.get("emergency", ""),
+                        row.get("ppe", ""),
+                        row.get("hazard_types", ""),
+                        row.get("tags", ""),
+                    ]
+                )
+            )
             rows.append(
                 {
                     "id": (row.get("id") or "").strip(),
@@ -190,9 +186,12 @@ def load_kb_entries() -> list[dict[str, str]]:
                     "source_org": (row.get("source_org") or "").strip(),
                     "source_url": (row.get("source_url") or "").strip(),
                     "risk_level": (row.get("risk_level") or "").strip(),
+                    "hazard_types": (row.get("hazard_types") or "").strip(),
                     "answer": (row.get("answer") or "").strip(),
                     "steps": (row.get("steps") or "").strip(),
                     "forbidden": (row.get("forbidden") or "").strip(),
+                    "emergency": (row.get("emergency") or "").strip(),
+                    "ppe": (row.get("ppe") or "").strip(),
                     "blob": blob,
                 }
             )
@@ -209,13 +208,12 @@ def get_kb_entries() -> list[dict[str, str]]:
 
 def load_rules_config() -> dict[str, Any]:
     if yaml is None or not RULES_FILE.exists():
-        return {"rules": [], "safe_response_templates": {}}
+        return {"rules": []}
     with RULES_FILE.open("r", encoding="utf-8") as f:
         payload = yaml.safe_load(f) or {}
     if not isinstance(payload, dict):
-        return {"rules": [], "safe_response_templates": {}}
+        return {"rules": []}
     payload.setdefault("rules", [])
-    payload.setdefault("safe_response_templates", {})
     return payload
 
 
@@ -227,42 +225,26 @@ def get_rules_config() -> dict[str, Any]:
         return _RULES_CACHE
 
 
-def _clip(text: str, max_chars: int = 180) -> str:
-    if len(text) <= max_chars:
-        return text
-    return f"{text[:max_chars].rstrip()}..."
-
-
 def retrieve_citations(question: str, top_k: int = DEFAULT_TOP_K) -> list[Citation]:
-    kb_rows = get_kb_entries()
-    if not kb_rows:
-        return []
-
-    q_norm = normalize_text(question)
+    q = normalize_text(question)
     q_tokens = extract_tokens(question)
     scored: list[tuple[float, dict[str, str]]] = []
-
-    for row in kb_rows:
-        blob = row.get("blob", "")
+    for row in get_kb_entries():
         score = 0.0
+        blob = row.get("blob", "")
         for token in q_tokens:
-            if token and token in blob:
-                score += 1.0 + min(len(token), 6) * 0.15
+            if token in blob:
+                score += 1.0 + min(len(token), 6) * 0.12
         title = normalize_text(row.get("title", ""))
-        if title and title in q_norm:
-            score += 3.0
+        if title and title in q:
+            score += 2.5
         if score > 0:
             scored.append((score, row))
-
-    scored.sort(key=lambda item: item[0], reverse=True)
-    citations: list[Citation] = []
+    scored.sort(key=lambda x: x[0], reverse=True)
+    out: list[Citation] = []
     for score, row in scored[:top_k]:
-        snippet_raw = " ".join(
-            part
-            for part in (row.get("answer", ""), row.get("steps", ""), row.get("forbidden", ""))
-            if part
-        )
-        citations.append(
+        snippet = " ".join(x for x in [row.get("answer", ""), row.get("steps", ""), row.get("forbidden", "")] if x)[:200]
+        out.append(
             Citation(
                 kb_id=row.get("id", ""),
                 title=row.get("title", ""),
@@ -270,473 +252,155 @@ def retrieve_citations(question: str, top_k: int = DEFAULT_TOP_K) -> list[Citati
                 source_org=row.get("source_org", ""),
                 source_url=row.get("source_url", ""),
                 risk_level=row.get("risk_level", ""),
-                snippet=_clip(snippet_raw),
+                snippet=snippet,
                 score=round(score, 3),
             )
         )
-    return citations
-
-
-def build_context_block(citations: list[Citation]) -> str:
-    if not citations:
-        return ""
-    blocks: list[str] = []
-    for idx, item in enumerate(citations, start=1):
-        lines = [
-            f"[{idx}] {item.kb_id} - {item.title}",
-            f"来源：{item.source_title or '未标注'} | 机构：{item.source_org or '未标注'}",
-            f"要点：{item.snippet or '暂无摘要'}",
-        ]
-        if item.source_url:
-            lines.append(f"链接：{item.source_url}")
-        blocks.append("\n".join(lines))
-    return "\n\n".join(blocks)
-
-
-def get_low_confidence_top_score() -> float:
-    raw = os.getenv("LOW_CONFIDENCE_TOP_SCORE", "").strip()
-    if not raw:
-        return DEFAULT_LOW_CONFIDENCE_TOP_SCORE
-    try:
-        value = float(raw)
-    except ValueError:
-        return DEFAULT_LOW_CONFIDENCE_TOP_SCORE
-    return max(0.0, value)
-
-
-def assess_low_confidence(citations: list[Citation]) -> tuple[bool, str]:
-    if not citations:
-        return True, "未命中知识库条目"
-
-    top = citations[0]
-    threshold = get_low_confidence_top_score()
-    if top.score < threshold:
-        return True, f"最高检索分{top.score}低于阈值{threshold}"
-
-    empty_source = not (top.source_title or top.source_org or top.source_url)
-    if empty_source and top.score < (threshold + 1.5):
-        return True, "命中条目来源信息不足，需人工复核"
-
-    return False, ""
-
-
-def _resolve_queue_file(queue_file: Path | None = None) -> Path:
-    if queue_file is not None:
-        return queue_file
-    env_value = os.getenv("LOW_CONFIDENCE_QUEUE_FILE", "").strip()
-    if env_value:
-        return Path(env_value)
-    return LOW_CONFIDENCE_QUEUE_FILE
-
-
-def _read_existing_question_hashes(path: Path) -> set[str]:
-    if not path.exists():
-        return set()
-    hashes: set[str] = set()
-    with path.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            token = (row.get("question_hash") or "").strip()
-            if token:
-                hashes.add(token)
-    return hashes
-
-
-def build_low_confidence_followup_row(
-    *,
-    question: str,
-    mode: str,
-    decision: str,
-    risk_level: str,
-    matched_rule_id: str,
-    matched_rule_action: str,
-    low_confidence_reason: str,
-    citations: list[Citation],
-) -> dict[str, str]:
-    normalized = normalize_text(question)
-    question_hash = hashlib.sha1(normalized.encode("utf-8")).hexdigest()[:12]
-
-    top = citations[0] if citations else Citation(kb_id="", title="")
-    suggested_lane = "collect" if not citations else "clean"
-    suggested_action = (
-        "补充该问题相关权威来源文档并更新manifest"
-        if not citations
-        else "检查命中条目质量并优化标签/问句映射"
-    )
-    return {
-        "created_at": datetime.now().isoformat(timespec="seconds"),
-        "question_hash": question_hash,
-        "question": question.strip(),
-        "mode": mode,
-        "decision": decision,
-        "risk_level": risk_level,
-        "matched_rule_id": matched_rule_id,
-        "matched_rule_action": matched_rule_action,
-        "low_confidence_reason": low_confidence_reason,
-        "citation_count": str(len(citations)),
-        "top_score": str(top.score if citations else 0.0),
-        "top_kb_id": top.kb_id if citations else "",
-        "top_source_title": top.source_title if citations else "",
-        "suggested_lane": suggested_lane,
-        "suggested_action": suggested_action,
-        "status": "todo",
-        "notes": "",
-    }
-
-
-def append_low_confidence_followup(
-    *,
-    question: str,
-    mode: str,
-    decision: str,
-    risk_level: str,
-    matched_rule_id: str,
-    matched_rule_action: str,
-    low_confidence_reason: str,
-    citations: list[Citation],
-    queue_file: Path | None = None,
-) -> bool:
-    row = build_low_confidence_followup_row(
-        question=question,
-        mode=mode,
-        decision=decision,
-        risk_level=risk_level,
-        matched_rule_id=matched_rule_id,
-        matched_rule_action=matched_rule_action,
-        low_confidence_reason=low_confidence_reason,
-        citations=citations,
-    )
-    path = _resolve_queue_file(queue_file)
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    with _QUEUE_LOCK:
-        existing_hashes = _read_existing_question_hashes(path)
-        if row["question_hash"] in existing_hashes:
-            return False
-
-        file_exists = path.exists()
-        with path.open("a", encoding="utf-8-sig", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=QUEUE_HEADERS)
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow(row)
-    return True
+    return out
 
 
 def match_rule(question: str) -> dict[str, Any] | None:
-    config = get_rules_config()
-    rules = config.get("rules") or []
-    if not rules:
-        return None
-
-    q_norm = normalize_text(question)
+    q = normalize_text(question)
     best: dict[str, Any] | None = None
-    for order, rule in enumerate(rules):
+    for order, rule in enumerate(get_rules_config().get("rules") or []):
         if not isinstance(rule, dict):
             continue
-        patterns = [
-            str(item).strip()
-            for item in (rule.get("patterns") or [])
-            if str(item).strip()
-        ]
-        hit_patterns = [p for p in patterns if normalize_text(p) in q_norm]
-        if not hit_patterns:
+        patterns = [str(x).strip() for x in (rule.get("patterns") or []) if str(x).strip()]
+        hits = [p for p in patterns if normalize_text(p) in q]
+        if not hits:
             continue
-
         severity = str(rule.get("severity") or "low").lower()
         candidate = {
             "id": str(rule.get("id") or ""),
-            "category": str(rule.get("category") or ""),
             "action": str(rule.get("action") or "safe_answer"),
             "severity": severity,
             "response": str(rule.get("response") or ""),
-            "hit_patterns": hit_patterns,
-            "score": (
-                SEVERITY_SCORE.get(severity, 0),
-                len(hit_patterns),
-                max(len(v) for v in hit_patterns),
-                -order,
-            ),
+            "score": (SEVERITY_SCORE.get(severity, 1), len(hits), -order),
         }
         if best is None or candidate["score"] > best["score"]:
             best = candidate
     return best
 
 
-def pick_template_text(key: str, fallback: str = "") -> str:
-    config = get_rules_config()
-    templates = config.get("safe_response_templates") or {}
-    value = templates.get(key)
-    if isinstance(value, list) and value:
-        return str(value[0]).strip()
-    if isinstance(value, str):
-        return value.strip()
-    return fallback
-
-
-def build_reference_lines(citations: list[Citation]) -> str:
+def assess_low_confidence(citations: list[Citation]) -> tuple[bool, str]:
     if not citations:
-        return "暂无命中的知识库条目，建议联系实验室老师确认本地制度。"
-    lines: list[str] = []
-    for idx, item in enumerate(citations, start=1):
-        source_name = item.source_title or item.title or item.kb_id
-        org = item.source_org or "未标注机构"
-        if item.source_url:
-            lines.append(f"{idx}. [{item.kb_id}] {source_name}（{org}） {item.source_url}")
-        else:
-            lines.append(f"{idx}. [{item.kb_id}] {source_name}（{org}）")
-    return "\n".join(lines)
-
-
-def build_rule_answer(rule: dict[str, Any], citations: list[Citation]) -> str:
-    action = rule.get("action", "")
-    category = rule.get("category", "")
-    rule_text = rule.get("response", "").strip()
-
-    if action == "refuse":
-        refusal_tip = pick_template_text(
-            "refuse",
-            "该问题涉及高风险或违规操作，我不能提供具体操作建议。",
-        )
-        return (
-            "结论：\n"
-            f"{rule_text or refusal_tip}\n\n"
-            "步骤：\n"
-            "1. 立即停止当前相关操作，远离可能的危险源。\n"
-            "2. 保持现场安全，通知实验室老师或安全管理员。\n"
-            "3. 按学校和实验室制度获取正式指导后再处理。\n\n"
-            "禁止事项：\n"
-            "- 不要继续尝试高风险操作。\n"
-            "- 不要绕过PPE、通风、审批和双人复核要求。\n\n"
-            "上报建议：\n"
-            "- 立即向指导老师/实验室管理员报告。\n\n"
-            "参考依据：\n"
-            f"{build_reference_lines(citations)}"
-        )
-
-    if action == "redirect_emergency":
-        template_key = EMERGENCY_TEMPLATE_BY_CATEGORY.get(category, "redirect_emergency")
-        emergency_tip = pick_template_text(
-            template_key,
-            "若出现紧急情况，请立即停止实验并按应急预案处理。",
-        )
-        return (
-            "结论：\n"
-            f"{rule_text or emergency_tip}\n\n"
-            "步骤：\n"
-            "1. 立即停止实验并优先保障人身安全。\n"
-            "2. 在确保自身安全的前提下执行断电/断气/隔离等处置。\n"
-            "3. 按实验室应急预案处理，必要时联系医疗或119。\n\n"
-            "禁止事项：\n"
-            "- 不要在没有防护和培训的情况下冒险处置。\n"
-            "- 不要单独留在危险区域继续操作。\n\n"
-            "上报建议：\n"
-            "- 立刻上报指导老师和实验室安全管理员，记录时间、地点和化学品/设备信息。\n\n"
-            "参考依据：\n"
-            f"{build_reference_lines(citations)}"
-        )
-
-    if action == "ask_for_more_info":
-        ask_tip = pick_template_text(
-            "ask_more_info",
-            "请补充具体试剂名称、浓度、设备型号和场景，我才能提供准确建议。",
-        )
-        return (
-            "结论：\n"
-            f"{ask_tip}\n\n"
-            "步骤：\n"
-            "1. 说明实验类型、试剂/设备名称和当前操作步骤。\n"
-            "2. 补充风险信号（如异味、冒烟、温度异常、人员症状）。\n"
-            "3. 若存在伤害或泄漏，优先按应急流程处置并立即上报。\n\n"
-            "禁止事项：\n"
-            "- 不要在信息不完整时继续进行高风险操作。\n\n"
-            "上报建议：\n"
-            "- 若已出现人身伤害或设备异常，先上报再继续咨询。\n\n"
-            "参考依据：\n"
-            f"{build_reference_lines(citations)}"
-        )
-
-    return rule_text
-
-
-def coerce_text_content(value: Any) -> str:
-    if isinstance(value, str):
-        return value
-    if isinstance(value, dict):
-        for key in ("text", "content"):
-            item = value.get(key)
-            if isinstance(item, str):
-                return item
-        return ""
-    if isinstance(value, list):
-        chunks: list[str] = []
-        for item in value:
-            text = coerce_text_content(item)
-            if text:
-                chunks.append(text)
-        return "".join(chunks)
-    return ""
-
-
-def parse_sse_answer(response: requests.Response) -> str:
-    answer_parts: list[str] = []
-    for line in response.iter_lines(decode_unicode=False):
-        if not line:
-            continue
-        if not line.startswith(b"data:"):
-            continue
-        payload = line[5:].strip()
-        if payload == b"[DONE]":
-            break
-        try:
-            obj = json.loads(payload.decode("utf-8", errors="ignore"))
-        except json.JSONDecodeError:
-            continue
-        choices = obj.get("choices") or []
-        if not choices:
-            continue
-        first = choices[0] if isinstance(choices[0], dict) else {}
-        delta = first.get("delta") or {}
-        if isinstance(delta, dict):
-            piece = coerce_text_content(delta.get("content"))
-            if piece:
-                answer_parts.append(piece)
-        message = first.get("message") or {}
-        if isinstance(message, dict):
-            msg_content = coerce_text_content(message.get("content"))
-            if msg_content:
-                answer_parts.append(msg_content)
-    return "".join(answer_parts).strip()
-
-
-def parse_json_answer(response: requests.Response) -> str:
-    data = response.json()
-    choices = data.get("choices") or []
-    if not choices:
-        return ""
-    first = choices[0] if isinstance(choices[0], dict) else {}
-    message = first.get("message") or {}
-    if isinstance(message, dict):
-        content = coerce_text_content(message.get("content"))
-        if content:
-            return content.strip()
-    text = coerce_text_content(first.get("text"))
-    if text:
-        return text.strip()
-    return ""
+        return True, "no_kb_match"
+    threshold = float(os.getenv("LOW_CONFIDENCE_TOP_SCORE", str(DEFAULT_LOW_CONFIDENCE_TOP_SCORE)))
+    if citations[0].score < threshold:
+        return True, f"top_score_below_threshold:{citations[0].score}<{threshold}"
+    return False, ""
 
 
 def build_system_prompt(mode: str, guardrail: str = "") -> str:
     base = SYSTEM_PROMPTS.get(mode, SYSTEM_PROMPTS["lab"])
-    if mode != "lab":
-        return base
-
-    extra = (
-        "回答必须遵循以下格式：结论、步骤、禁止事项、上报建议。"
-        "如果知识库未覆盖，请明确说明不确定并给出保守建议。"
-    )
-    if guardrail:
-        extra += f" 已触发安全提醒：{guardrail}"
-    return f"{base}{extra}"
+    return f"{base} Guardrail: {guardrail}".strip() if guardrail else base
 
 
-def build_user_message(question: str, context_block: str) -> str:
-    if not context_block:
+def build_user_message(question: str, citations: list[Citation]) -> str:
+    if not citations:
         return question
-    return (
-        f"用户问题：\n{question}\n\n"
-        "知识库片段（优先依据以下内容回答）：\n"
-        f"{context_block}\n\n"
-        "请不要编造未给出的制度细节。"
+    context = "\n\n".join(
+        [
+            f"[{i + 1}] {c.kb_id} - {c.title}\nsource: {c.source_title or '-'} | org: {c.source_org or '-'}\nkey: {c.snippet}"
+            for i, c in enumerate(citations)
+        ]
     )
+    return f"Question:\n{question}\n\nKB Context:\n{context}\n\nUse KB first and avoid fabrication."
 
 
-def call_upstream(
-    mode: str,
-    question: str,
-    context_block: str = "",
-    guardrail: str = "",
-) -> tuple[str, str]:
-    env = get_env()
-    if not env["api_key"]:
-        raise HTTPException(
-            status_code=500,
-            detail="服务端缺少 OPENAI_API_KEY，请先配置部署环境变量。",
-        )
-
-    system_prompt = build_system_prompt(mode=mode, guardrail=guardrail)
-    user_message = build_user_message(question=question, context_block=context_block)
-    endpoint = resolve_endpoint(env["base_url"])
-
-    preferred_model = env["model"]
-    fallback_models = [m.strip() for m in env["fallback_models"].split(",") if m.strip()]
-    candidate_models: list[str] = []
-    for model in [preferred_model, *fallback_models]:
-        if model not in candidate_models:
-            candidate_models.append(model)
-
-    headers = {
-        "Authorization": f"Bearer {env['api_key']}",
-        "Content-Type": "application/json",
+def call_upstream(mode: str, question: str, citations: list[Citation], guardrail: str = "") -> tuple[str, str]:
+    env = {
+        "base_url": os.getenv("OPENAI_BASE_URL", DEFAULT_BASE_URL).strip(),
+        "api_key": os.getenv("OPENAI_API_KEY", "").strip(),
+        "model": os.getenv("OPENAI_MODEL", DEFAULT_MODEL).strip(),
+        "fallback": [x.strip() for x in os.getenv("OPENAI_FALLBACK_MODELS", DEFAULT_FALLBACK_MODELS).split(",") if x.strip()],
+        "timeout": float(os.getenv("OPENAI_TIMEOUT", "60") or "60"),
     }
-
-    try:
-        timeout = float(env["timeout_s"])
-    except ValueError:
-        timeout = 60.0
-
-    last_error = "unknown_error"
-
-    for model in candidate_models:
-        payload: dict[str, Any] = {
+    if not env["api_key"]:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is missing.")
+    endpoint = env["base_url"].rstrip("/")
+    if not endpoint.endswith("/v1"):
+        endpoint += "/v1"
+    endpoint += "/chat/completions"
+    models = [env["model"], *env["fallback"]]
+    models = list(dict.fromkeys(models))
+    headers = {"Authorization": f"Bearer {env['api_key']}", "Content-Type": "application/json"}
+    last_error = "unknown"
+    for model in models:
+        payload = {
             "model": model,
             "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
+                {"role": "system", "content": build_system_prompt(mode, guardrail)},
+                {"role": "user", "content": build_user_message(question, citations)},
             ],
             "temperature": 0.2,
-            "stream": True,
         }
-
         try:
-            response = requests.post(
-                endpoint,
-                headers=headers,
-                json=payload,
-                timeout=timeout,
-                stream=True,
-            )
+            resp = requests.post(endpoint, headers=headers, json=payload, timeout=env["timeout"])
         except requests.RequestException as exc:
-            last_error = f"上游请求失败: {exc}"
+            last_error = str(exc)
             continue
-
-        if response.status_code >= 400:
-            text = response.text[:500]
-            last_error = f"HTTP {response.status_code} {text}"
-            # 中转站经常返回 model_not_found，允许自动回退到备用模型。
-            if "model_not_found" in text:
-                continue
+        if resp.status_code >= 400:
+            last_error = f"HTTP {resp.status_code}: {resp.text[:200]}"
             continue
-
-        content_type = (response.headers.get("content-type") or "").lower()
-        answer = ""
-        try:
-            if "text/event-stream" in content_type:
-                answer = parse_sse_answer(response)
-            else:
-                answer = parse_json_answer(response)
-        except Exception as exc:  # noqa: BLE001
-            last_error = f"解析上游响应失败: {exc}"
-            continue
-
-        if answer:
-            return answer, model
-        last_error = f"模型 {model} 返回空文本"
-
-    raise HTTPException(status_code=502, detail=f"上游调用失败：{last_error}")
+        data = resp.json()
+        choices = data.get("choices") or []
+        if choices and isinstance(choices[0], dict):
+            message = choices[0].get("message") or {}
+            content = message.get("content") if isinstance(message, dict) else ""
+            if isinstance(content, str) and content.strip():
+                return content.strip(), model
+        last_error = "empty_response"
+    raise HTTPException(status_code=502, detail=f"upstream_failed: {last_error}")
 
 
-app = FastAPI(title="实验室安全小助手在线演示", version="0.1.0")
+def build_risk_assessment(scenario: str, citations: list[Citation], rule: dict[str, Any] | None) -> RiskAssessResponse:
+    severity_score = SEVERITY_SCORE.get(str((rule or {}).get("severity", "")).lower(), 1)
+    citation_score = max([int(float(c.risk_level)) for c in citations if str(c.risk_level).replace(".", "", 1).isdigit()] or [1])
+    text_norm = normalize_text(scenario)
+    keyword_score = 5 if any(x in text_norm for x in ["fire", "shock", "explosion", "leak", "burn", "toxic"]) else 3
+    risk_score = max(1, min(5, max(severity_score, citation_score, keyword_score)))
+
+    hazards: set[str] = set()
+    for name, words in HAZARD_HINTS.items():
+        if any(w in text_norm for w in words):
+            hazards.add(name)
+
+    ppe: set[str] = set()
+    merged = text_norm + " " + " ".join(c.snippet.lower() for c in citations)
+    for name, words in PPE_HINTS.items():
+        if any(w in merged for w in words):
+            ppe.add(name)
+
+    low_confidence, reason = assess_low_confidence(citations)
+    return RiskAssessResponse(
+        scenario=scenario,
+        risk_score=risk_score,
+        risk_level=RISK_LABEL.get(risk_score, "medium"),
+        key_hazards=sorted(hazards),
+        ppe=sorted(ppe),
+        forbidden=[
+            "Do not continue high-risk operation without full PPE.",
+            "Do not work alone in hazardous procedure.",
+            "Do not bypass ventilation, lockout, or approval controls.",
+        ],
+        emergency_actions=[
+            "Stop operation and isolate hazards immediately.",
+            "Execute local emergency plan and notify lab supervisor.",
+            "Call emergency services when personal injury or fire risk exists.",
+        ],
+        recommended_steps=[
+            "Verify SOP, chemicals, and equipment before starting.",
+            "Use buddy check at critical operation points.",
+            "Escalate immediately if abnormal smell/smoke/temperature appears.",
+        ],
+        low_confidence=low_confidence,
+        low_confidence_reason=reason,
+        citations=citations,
+    )
+
+
+app = FastAPI(title="Lab Safety Assistant Demo", version="0.2.0")
 
 
 @app.get("/")
@@ -754,68 +418,46 @@ def chat(payload: ChatRequest) -> ChatResponse:
     mode = payload.mode if payload.mode in {"agent", "lab"} else "lab"
     question = payload.question.strip()
     citations = retrieve_citations(question, top_k=DEFAULT_TOP_K) if mode == "lab" else []
-    matched_rule = match_rule(question) if mode == "lab" else None
+    rule = match_rule(question) if mode == "lab" else None
+    rule_action = str((rule or {}).get("action") or "")
     decision = "llm_answer"
-    risk_level = matched_rule.get("severity", "") if matched_rule else ""
-    matched_rule_id = matched_rule.get("id", "") if matched_rule else ""
-    matched_rule_action = matched_rule.get("action", "") if matched_rule else ""
-    low_confidence = False
-    low_confidence_reason = ""
-    followup_logged = False
+    if rule and rule_action in TERMINAL_ACTIONS:
+        decision = "rule_blocked" if rule_action == "refuse" else "emergency_redirect" if rule_action == "redirect_emergency" else "need_more_info"
+        answer = (rule.get("response") or "Operation blocked by safety policy. Please contact supervisor.").strip()
+        return ChatResponse(answer=answer, mode=mode, model="rule-engine", decision=decision, citations=citations)
 
-    if matched_rule and matched_rule_action in TERMINAL_ACTIONS:
-        answer = build_rule_answer(matched_rule, citations)
-        model = "rule-engine"
-        if matched_rule_action == "refuse":
-            decision = "rule_blocked"
-        elif matched_rule_action == "redirect_emergency":
-            decision = "emergency_redirect"
-        else:
-            decision = "need_more_info"
-    else:
-        context_block = build_context_block(citations)
-        guardrail = matched_rule.get("response", "") if matched_rule else ""
-        if mode == "lab":
-            low_confidence, low_confidence_reason = assess_low_confidence(citations)
-            if low_confidence:
-                decision = "llm_low_confidence"
-                guardrail = (
-                    f"{guardrail} 检索置信度较低（{low_confidence_reason}），"
-                    "请明确不确定性并给出保守、安全、可上报的建议。"
-                ).strip()
-        answer, model = call_upstream(
-            mode=mode,
-            question=question,
-            context_block=context_block,
-            guardrail=guardrail,
-        )
-        if matched_rule and not low_confidence:
-            decision = "llm_answer_guarded"
-
-    if mode == "lab" and low_confidence:
-        followup_logged = append_low_confidence_followup(
-            question=question,
-            mode=mode,
-            decision=decision,
-            risk_level=risk_level,
-            matched_rule_id=matched_rule_id,
-            matched_rule_action=matched_rule_action,
-            low_confidence_reason=low_confidence_reason,
-            citations=citations,
-        )
-
-    if not answer:
-        answer = "模型未返回文本，请重试。"
+    low_confidence, low_reason = assess_low_confidence(citations) if mode == "lab" else (False, "")
+    if low_confidence:
+        decision = "llm_low_confidence"
+    answer, model = call_upstream(mode, question, citations, guardrail=str((rule or {}).get("response") or ""))
     return ChatResponse(
-        answer=answer,
+        answer=answer or "No answer returned.",
         mode=mode,
         model=model,
-        decision=decision,
-        risk_level=risk_level,
-        matched_rule_id=matched_rule_id,
-        matched_rule_action=matched_rule_action,
+        decision=decision if not rule else "llm_answer_guarded",
+        risk_level=str((rule or {}).get("severity") or ""),
+        matched_rule_id=str((rule or {}).get("id") or ""),
+        matched_rule_action=rule_action,
         low_confidence=low_confidence,
-        low_confidence_reason=low_confidence_reason,
-        followup_logged=followup_logged,
+        low_confidence_reason=low_reason,
         citations=citations,
     )
+
+
+@app.post("/api/risk_assess", response_model=RiskAssessResponse)
+def risk_assess(payload: RiskAssessRequest) -> RiskAssessResponse:
+    scenario = payload.scenario.strip()
+    if not scenario:
+        raise HTTPException(status_code=400, detail="scenario is required.")
+    citations = retrieve_citations(scenario, top_k=5)
+    return build_risk_assessment(scenario, citations, match_rule(scenario))
+
+
+@app.get("/api/search")
+def search(q: str, top_k: int = 5) -> dict[str, Any]:
+    query = (q or "").strip()
+    if not query:
+        raise HTTPException(status_code=400, detail="q is required.")
+    top_k = max(1, min(10, int(top_k)))
+    citations = retrieve_citations(query, top_k=top_k)
+    return {"query": query, "count": len(citations), "citations": [c.model_dump() for c in citations]}
