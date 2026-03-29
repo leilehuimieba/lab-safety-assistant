@@ -1,0 +1,80 @@
+param(
+  [string]$PythonExe = "python",
+  [string]$DifyBaseUrl = "http://localhost:8080",
+  [string]$DatasetId = "",
+  [string]$DatasetApiKey = "",
+  [string]$DatasetName = "实验室安全知识库",
+  [string]$AppApiKey = "",
+  [int]$EvalLimit = 20,
+  [switch]$SkipImport = $false,
+  [switch]$AutoDetectDataset = $true,
+  [switch]$AutoProvisionDatasetToken = $true,
+  [switch]$AutoFetchAppKeyFromDb = $true,
+  [string]$DbContainer = "docker-db_postgres-1",
+  [string]$DbUser = "postgres",
+  [string]$DbName = "dify"
+)
+
+$ErrorActionPreference = "Stop"
+
+function Get-LatestAppTokenFromDb {
+  param(
+    [string]$Container,
+    [string]$User,
+    [string]$Database
+  )
+  $sql = "select token from api_tokens where type='app' order by created_at desc limit 1;"
+  $token = docker exec $Container psql -U $User -d $Database -t -A -c $sql
+  return ($token | Out-String).Trim()
+}
+
+$CsvPath = "release_exports\v7\knowledge_base_import_ready.csv"
+if (-not (Test-Path $CsvPath)) {
+  throw "Missing CSV: $CsvPath"
+}
+
+if (-not $SkipImport) {
+  Write-Host "=== Step 1/2: Import v7 CSV into Dify Dataset ===" -ForegroundColor Cyan
+  $importArgs = @(
+    "scripts\import_csv_to_dify_dataset.py",
+    "--csv", $CsvPath,
+    "--base-url", $DifyBaseUrl,
+    "--skip-existing",
+    "--report-json", "artifacts\dify_import_v7\import_report.json",
+    "--report-md", "docs\eval\dify_import_v7_report.md",
+    "--db-container", $DbContainer,
+    "--db-user", $DbUser,
+    "--db-name", $DbName,
+    "--dataset-name", $DatasetName
+  )
+  if ($DatasetId) { $importArgs += @("--dataset-id", $DatasetId) }
+  if ($DatasetApiKey) { $importArgs += @("--dataset-api-key", $DatasetApiKey) }
+  if ($AutoDetectDataset) { $importArgs += "--auto-detect-dataset" }
+  if ($AutoProvisionDatasetToken) { $importArgs += "--auto-provision-token" }
+  & $PythonExe @importArgs
+  if ($LASTEXITCODE -ne 0) { throw "Dify dataset import failed." }
+}
+
+if (-not $AppApiKey -and $AutoFetchAppKeyFromDb) {
+  $AppApiKey = Get-LatestAppTokenFromDb -Container $DbContainer -User $DbUser -Database $DbName
+}
+if (-not $AppApiKey) {
+  throw "Missing app api key. Provide -AppApiKey or keep -AutoFetchAppKeyFromDb enabled."
+}
+
+Write-Host "=== Step 2/2: Run live 20-question regression via Dify App API ===" -ForegroundColor Cyan
+& $PythonExe scripts\eval_smoke.py `
+  --use-dify `
+  --dify-base-url $DifyBaseUrl `
+  --dify-app-key $AppApiKey `
+  --dify-response-mode streaming `
+  --dify-timeout 180 `
+  --concurrency 1 `
+  --limit $EvalLimit `
+  --output-dir artifacts/eval_smoke_v7_demo_chain
+if ($LASTEXITCODE -ne 0) { throw "Live regression failed." }
+
+Write-Host ""
+Write-Host "=== v7 demo chain completed ===" -ForegroundColor Green
+Write-Host "- Import report: artifacts\\dify_import_v7\\import_report.json"
+Write-Host "- Eval output root: artifacts\\eval_smoke_v7_demo_chain"
