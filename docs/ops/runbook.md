@@ -376,6 +376,30 @@ python scripts/run_model_ab_eval.py `
   --eval-concurrency 4
 ```
 
+模型不可用自动回退（高优先级推荐）：
+
+```powershell
+set DIFY_BASE_URL=http://localhost:8080
+set DIFY_APP_API_KEY=<app-xxxx>
+python scripts/run_eval_with_model_failover.py `
+  --repo-root . `
+  --workflow-id <workflow_id> `
+  --primary-model gpt-5.2-codex `
+  --fallback-model MiniMax-M2.5 `
+  --limit 20 `
+  --dify-timeout 60 `
+  --eval-concurrency 1 `
+  --timeout-failover-threshold 1.0 `
+  --retry-on-timeout 1 `
+  --update-dashboard
+```
+
+说明：
+- 先用主模型跑真实回归；若检测到 `model_not_found`、`InvokeServerUnavailableError`、`503` 等模型不可用特征，会自动切到备用模型再跑一轮。
+- 若主模型“返回码成功但超时占比过高”，也可按阈值触发回退（`--timeout-failover-threshold`，默认 `1.0` 表示全超时才触发）。
+- 自动输出报告到 `artifacts/model_failover_eval/run_*/model_failover_report.json`（含触发原因、主备运行目录、错误摘要）。
+- 默认保留最终可用模型作为在线模型；如需跑完后恢复主模型，加 `--restore-primary-after-run`。
+
 默认会自动输出“失败分簇 + Top10 修复清单”：
 
 - `eval_failure_clusters.csv`
