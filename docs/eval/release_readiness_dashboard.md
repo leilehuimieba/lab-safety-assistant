@@ -1,6 +1,6 @@
 # Release Readiness Dashboard
 
-- Generated: `2026-03-29T16:12:58+08:00`
+- Generated: `2026-03-29T16:24:42+08:00`
 - Overall Status: `BLOCK`
 
 ## Profile Matrix

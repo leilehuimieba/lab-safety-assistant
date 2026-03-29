@@ -15,6 +15,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+ACTION_PLAN_FIELDNAMES = [
+    "task_id",
+    "priority",
+    "status",
+    "owner",
+    "eta",
+    "profiles",
+    "blocking_reason",
+    "recommended_action",
+    "verification_step",
+]
+
+ALLOWED_ACTION_STATUS = {"todo", "in_progress", "blocked", "done", "wont_fix"}
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
@@ -212,7 +226,24 @@ def write_blocker_md(path: Path, rows: list[dict[str, str]]) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def build_action_plan_rows(blocker_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+def load_existing_action_plan(path: Path) -> dict[str, dict[str, str]]:
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        records: dict[str, dict[str, str]] = {}
+        for row in reader:
+            reason = str(row.get("blocking_reason", "") or "").strip()
+            if not reason:
+                continue
+            records[reason] = {k: str(v or "").strip() for k, v in row.items()}
+        return records
+
+
+def build_action_plan_rows(
+    blocker_rows: list[dict[str, str]],
+    existing_by_reason: dict[str, dict[str, str]],
+) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for item in blocker_rows:
         rank = str(item.get("rank", "")).strip()
@@ -220,13 +251,17 @@ def build_action_plan_rows(blocker_rows: list[dict[str, str]]) -> list[dict[str,
         profiles = str(item.get("profiles", "")).strip()
         priority = str(item.get("priority", "P2")).strip() or "P2"
         recommended_action = str(item.get("recommended_action", "")).strip()
+        existing = existing_by_reason.get(reason, {})
+        existing_status = str(existing.get("status", "todo")).strip().lower()
+        status = existing_status if existing_status in ALLOWED_ACTION_STATUS else "todo"
+        task_id = str(existing.get("task_id", "")).strip() or (f"REL-FIX-{rank.zfill(2)}" if rank.isdigit() else "REL-FIX-XX")
         rows.append(
             {
-                "task_id": f"REL-FIX-{rank.zfill(2)}" if rank.isdigit() else "REL-FIX-XX",
+                "task_id": task_id,
                 "priority": priority,
-                "status": "todo",
-                "owner": "",
-                "eta": "",
+                "status": status,
+                "owner": str(existing.get("owner", "")).strip(),
+                "eta": str(existing.get("eta", "")).strip(),
                 "profiles": profiles,
                 "blocking_reason": reason,
                 "recommended_action": recommended_action,
@@ -237,30 +272,25 @@ def build_action_plan_rows(blocker_rows: list[dict[str, str]]) -> list[dict[str,
 
 
 def write_action_plan_csv(path: Path, rows: list[dict[str, str]]) -> None:
-    fieldnames = [
-        "task_id",
-        "priority",
-        "status",
-        "owner",
-        "eta",
-        "profiles",
-        "blocking_reason",
-        "recommended_action",
-        "verification_step",
-    ]
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=ACTION_PLAN_FIELDNAMES)
         writer.writeheader()
         for row in rows:
-            writer.writerow({k: row.get(k, "") for k in fieldnames})
+            writer.writerow({k: row.get(k, "") for k in ACTION_PLAN_FIELDNAMES})
 
 
 def write_action_plan_md(path: Path, rows: list[dict[str, str]]) -> None:
+    status_counter: Counter[str] = Counter(str(row.get("status", "todo")).strip().lower() for row in rows)
     lines = [
         "# Release Fix Plan (Auto)",
         "",
         f"- Generated: `{now_iso()}`",
+        f"- Total Tasks: `{len(rows)}`",
+        f"- todo: `{status_counter.get('todo', 0)}`",
+        f"- in_progress: `{status_counter.get('in_progress', 0)}`",
+        f"- blocked: `{status_counter.get('blocked', 0)}`",
+        f"- done: `{status_counter.get('done', 0)}`",
         "",
         "| Task ID | Priority | Status | Owner | ETA | Profiles | Blocking Reason | Recommended Action | Verification Step |",
         "|---|---|---|---|---|---|---|---|---|",
@@ -349,7 +379,8 @@ def main() -> int:
     blocker_md = resolve_path(repo_root, args.blocker_md)
     action_plan_csv = resolve_path(repo_root, args.action_plan_csv)
     action_plan_md = resolve_path(repo_root, args.action_plan_md)
-    action_plan_rows = build_action_plan_rows(blocker_rows)
+    existing_action_plan = load_existing_action_plan(action_plan_csv)
+    action_plan_rows = build_action_plan_rows(blocker_rows, existing_action_plan)
 
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_json.write_text(json.dumps(dashboard_payload, ensure_ascii=False, indent=2), encoding="utf-8")

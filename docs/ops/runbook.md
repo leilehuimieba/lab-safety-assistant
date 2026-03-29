@@ -574,11 +574,18 @@ python scripts/generate_release_readiness_dashboard.py `
 - `docs/eval/release_readiness_dashboard.json/.md`
 - `docs/eval/release_blocker_topn.csv/.md`
 - `docs/ops/release_fix_plan_auto.csv/.md`
+- 该流程会按 `blocking_reason` 尝试保留已存在的 `owner/status/eta`，避免覆盖人工分配。
 
 发布策略 schema 校验（建议提交前执行）：
 
 ```powershell
 python scripts/validate_release_policy_schema.py --repo-root .
+```
+
+修复计划质量门（建议提交前执行）：
+
+```powershell
+python scripts/validate_release_fix_plan.py --repo-root .
 ```
 
 GitHub 自动监控（每日）：

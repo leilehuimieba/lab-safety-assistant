@@ -62,6 +62,10 @@ jobs:
         run: |
           python scripts/generate_release_readiness_dashboard.py --repo-root . --profiles demo,prod --strict-profiles demo,prod
 
+      - name: Validate Release Fix Plan
+        run: |
+          python scripts/validate_release_fix_plan.py --repo-root .
+
       - name: Generate Weekly Report
         run: |
           python scripts/generate_weekly_team_report.py --repo-root . --since "7 days ago" --until "now"

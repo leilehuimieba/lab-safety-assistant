@@ -113,6 +113,24 @@ jobs:
         run: |
           python scripts/generate_release_readiness_dashboard.py --repo-root . --profiles demo,prod --strict-profiles demo,prod
 
+      - name: Validate Release Fix Plan
+        id: fix_plan
+        shell: bash
+        run: |
+          set +e
+          python scripts/validate_release_fix_plan.py \
+            --repo-root . \
+            > release_fix_plan_output.txt 2>&1
+          code=$?
+          cat release_fix_plan_output.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 0 ]; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
       - name: Upload Gate Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -122,6 +140,7 @@ jobs:
             gate_output.txt
             release_policy_output.txt
             release_policy_prod_output.txt
+            release_fix_plan_output.txt
             docs/eval/release_risk_note_auto.md
             docs/eval/release_risk_note_auto.json
             docs/eval/release_policy_check_demo.md
@@ -139,7 +158,7 @@ jobs:
             docs/eval/failover_status.md
 
       - name: Create or Update Same-Day Gate Alert Issue
-        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail'
         uses: actions/github-script@v7
         env:
           EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
@@ -156,6 +175,7 @@ jobs:
             const gateOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'gate_output.txt');
             const policyOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_policy_output.txt');
             const policyProdOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_policy_prod_output.txt');
+            const fixPlanOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_fix_plan_output.txt');
             const riskJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_risk_note_auto.json');
             const policyDemoJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_policy_check_demo.json');
             const policyProdJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_policy_check_prod.json');
@@ -172,12 +192,14 @@ jobs:
             let gateOutput = '';
             let policyOutput = '';
             let policyProdOutput = '';
+            let fixPlanOutput = '';
             let gateDecision = 'BLOCK';
             let violations = [];
             let policyDemoStatus = 'BLOCK';
             let policyDemoViolations = [];
             let policyProdStatus = 'BLOCK';
             let policyProdViolations = [];
+            let fixPlanStatus = 'BLOCK';
             try {
               gateOutput = fs.readFileSync(gateOutputPath, 'utf8').trim();
             } catch (e) {
@@ -194,6 +216,11 @@ jobs:
               policyProdOutput = '(release policy(prod) output not found)';
             }
             try {
+              fixPlanOutput = fs.readFileSync(fixPlanOutputPath, 'utf8').trim();
+            } catch (e) {
+              fixPlanOutput = '(release fix plan output not found)';
+            }
+            try {
               const payload = JSON.parse(fs.readFileSync(riskJsonPath, 'utf8'));
               gateDecision = String(payload.gate_decision || 'BLOCK');
               violations = Array.isArray(payload.violations) ? payload.violations : [];
@@ -208,6 +235,9 @@ jobs:
               policyProdStatus = String(policy.status || 'BLOCK');
               policyProdViolations = Array.isArray(policy.violations) ? policy.violations : [];
             } catch (e) {}
+            if (fixPlanOutput.toLowerCase().includes('passed')) {
+              fixPlanStatus = 'PASS';
+            }
 
             const violationLines = violations.length > 0
               ? violations.map(v => `- ${v}`).join('\n')
@@ -226,6 +256,7 @@ jobs:
               `- Gate Decision: \`${gateDecision}\``,
               `- Release Policy(demo) Status: \`${policyDemoStatus}\``,
               `- Release Policy(prod) Status: \`${policyProdStatus}\``,
+              `- Release Fix Plan Status: \`${fixPlanStatus}\``,
               `- Risk Note JSON: \`${riskJsonRepoPath}\``,
               `- Risk Note MD: \`${riskMdRepoPath}\``,
               `- Release Policy(demo) JSON: \`${policyDemoJsonRepoPath}\``,
@@ -258,6 +289,11 @@ jobs:
               '## Release Policy Output (prod)',
               '```text',
               policyProdOutput.slice(0, 12000),
+              '```',
+              '',
+              '## Release Fix Plan Output',
+              '```text',
+              fixPlanOutput.slice(0, 12000),
               '```',
               '',
               '## SLA (required for release follow-up)',
@@ -388,7 +424,7 @@ jobs:
             }
 
       - name: Check Alert SLA Metadata
-        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail'
         uses: actions/github-script@v7
         with:
           script: |
@@ -503,7 +539,7 @@ jobs:
             }
 
       - name: P1 24h Postmortem Reminder
-        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail'
         uses: actions/github-script@v7
         env:
           EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
@@ -580,6 +616,7 @@ jobs:
           GATE_STATUS: ${{ steps.gate.outputs.status }}
           POLICY_DEMO_STATUS: ${{ steps.policy.outputs.status }}
           POLICY_PROD_STATUS: ${{ steps.policy_prod.outputs.status }}
+          FIX_PLAN_STATUS: ${{ steps.fix_plan.outputs.status }}
           EVAL_POLICY_ENFORCE_PROD: ${{ vars.EVAL_POLICY_ENFORCE_PROD }}
         uses: actions/github-script@v7
         with:
@@ -587,8 +624,9 @@ jobs:
             const gateStatus = String(process.env.GATE_STATUS || '').toLowerCase();
             const demoStatus = String(process.env.POLICY_DEMO_STATUS || '').toLowerCase();
             const prodStatus = String(process.env.POLICY_PROD_STATUS || '').toLowerCase();
+            const fixPlanStatus = String(process.env.FIX_PLAN_STATUS || '').toLowerCase();
             const enforceProd = String(process.env.EVAL_POLICY_ENFORCE_PROD || 'false').toLowerCase() === 'true';
-            const recoverable = gateStatus === 'pass' && demoStatus === 'pass' && (!enforceProd || prodStatus === 'pass');
+            const recoverable = gateStatus === 'pass' && demoStatus === 'pass' && fixPlanStatus === 'pass' && (!enforceProd || prodStatus === 'pass');
             if (!recoverable) {
               core.info('Skip recovery close: status not fully recovered under current policy mode.');
               return;
@@ -638,16 +676,18 @@ jobs:
           GATE_STATUS: ${{ steps.gate.outputs.status }}
           POLICY_DEMO_STATUS: ${{ steps.policy.outputs.status }}
           POLICY_PROD_STATUS: ${{ steps.policy_prod.outputs.status }}
+          FIX_PLAN_STATUS: ${{ steps.fix_plan.outputs.status }}
           EVAL_POLICY_ENFORCE_PROD: ${{ vars.EVAL_POLICY_ENFORCE_PROD }}
         run: |
           set -e
           gate_status="$(echo "${GATE_STATUS}" | tr '[:upper:]' '[:lower:]')"
           demo_status="$(echo "${POLICY_DEMO_STATUS}" | tr '[:upper:]' '[:lower:]')"
           prod_status="$(echo "${POLICY_PROD_STATUS}" | tr '[:upper:]' '[:lower:]')"
+          fix_plan_status="$(echo "${FIX_PLAN_STATUS}" | tr '[:upper:]' '[:lower:]')"
           enforce_prod="$(echo "${EVAL_POLICY_ENFORCE_PROD:-false}" | tr '[:upper:]' '[:lower:]')"
 
-          if [ "$gate_status" = "fail" ] || [ "$demo_status" = "fail" ]; then
-            echo "Gate or demo release policy failed."
+          if [ "$gate_status" = "fail" ] || [ "$demo_status" = "fail" ] || [ "$fix_plan_status" = "fail" ]; then
+            echo "Gate or demo release policy or release fix plan validation failed."
             exit 1
           fi
 

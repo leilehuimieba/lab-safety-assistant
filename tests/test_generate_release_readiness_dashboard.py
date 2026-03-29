@@ -36,8 +36,46 @@ def test_build_action_plan_rows() -> None:
             "recommended_action": "Recover route.",
         }
     ]
-    plan = grd.build_action_plan_rows(blockers)
+    plan = grd.build_action_plan_rows(blockers, {})
     assert len(plan) == 1
     assert plan[0]["task_id"] == "REL-FIX-01"
     assert plan[0]["priority"] == "P0"
     assert plan[0]["status"] == "todo"
+
+
+def test_build_action_plan_rows_preserve_existing_assignment() -> None:
+    blockers = [
+        {
+            "rank": "2",
+            "reason": "route_timeout_rate too high",
+            "count": "1",
+            "profiles": "prod",
+            "priority": "P0",
+            "recommended_action": "Tune timeout.",
+        }
+    ]
+    existing = {
+        "route_timeout_rate too high": {
+            "task_id": "REL-FIX-99",
+            "status": "in_progress",
+            "owner": "alice",
+            "eta": "2026-04-02",
+        }
+    }
+    plan = grd.build_action_plan_rows(blockers, existing)
+    assert plan[0]["task_id"] == "REL-FIX-99"
+    assert plan[0]["status"] == "in_progress"
+    assert plan[0]["owner"] == "alice"
+    assert plan[0]["eta"] == "2026-04-02"
+
+
+def test_load_existing_action_plan(tmp_path) -> None:
+    csv_path = tmp_path / "release_fix_plan_auto.csv"
+    csv_path.write_text(
+        "task_id,priority,status,owner,eta,profiles,blocking_reason,recommended_action,verification_step\n"
+        "REL-FIX-01,P0,in_progress,alice,2026-04-02,prod,route_timeout_rate too high,fix,re-run\n",
+        encoding="utf-8",
+    )
+    existing = grd.load_existing_action_plan(csv_path)
+    assert "route_timeout_rate too high" in existing
+    assert existing["route_timeout_rate too high"]["owner"] == "alice"
