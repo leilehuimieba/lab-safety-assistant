@@ -1,6 +1,6 @@
 # Release Readiness Dashboard
 
-- Generated: `2026-03-29T16:02:06+08:00`
+- Generated: `2026-03-29T16:12:58+08:00`
 - Overall Status: `BLOCK`
 
 ## Profile Matrix
@@ -14,3 +14,8 @@
 
 - CSV: `docs/eval/release_blocker_topn.csv`
 - MD: `docs/eval/release_blocker_topn.md`
+
+## Auto Fix Plan
+
+- CSV: `docs/ops/release_fix_plan_auto.csv`
+- MD: `docs/ops/release_fix_plan_auto.md`

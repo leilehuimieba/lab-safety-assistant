@@ -60,6 +60,16 @@ def parse_args() -> argparse.Namespace:
         help="Blocker TopN markdown output path.",
     )
     parser.add_argument(
+        "--action-plan-csv",
+        default="docs/ops/release_fix_plan_auto.csv",
+        help="Auto-generated release fix plan csv path.",
+    )
+    parser.add_argument(
+        "--action-plan-md",
+        default="docs/ops/release_fix_plan_auto.md",
+        help="Auto-generated release fix plan markdown path.",
+    )
+    parser.add_argument(
         "--fail-on-block",
         action="store_true",
         help="Return non-zero when any profile status is BLOCK.",
@@ -121,20 +131,20 @@ def classify_priority(reason: str) -> str:
 def suggest_action(reason: str) -> str:
     lowered = reason.lower()
     if "route_success_rate" in lowered:
-        return "优先修复主链路可用性，检查 Dify 网关/模型路由和网络连通性。"
+        return "Recover primary route availability first; check Dify gateway, model routing, and network path."
     if "route_timeout_rate" in lowered:
-        return "先降并发并排查 SSE 超时链路，必要时启用备用通道并重跑 canary。"
+        return "Reduce concurrency and investigate SSE timeout path; enable fallback channel and rerun canary."
     if "failover latest result" in lowered or "fail streak" in lowered:
-        return "定位主模型不可用原因，恢复后连续两轮回归验证再解除阻断。"
+        return "Identify why primary model is unavailable; require two consecutive healthy regressions before release."
     if "timeout ratio" in lowered:
-        return "提高请求稳定性（超时阈值、重试策略、模型通道），避免连续超时触发回退。"
+        return "Improve request stability (timeout budget, retry policy, model channel) to prevent repeated failover."
     if "override mode not allowed" in lowered:
-        return "关闭临时豁免或切换到允许的发布 profile 后再执行发布。"
+        return "Disable temporary override or switch to an allowed release profile before release."
     if "stale" in lowered:
-        return "重新执行一键回归链路，刷新 failover/status/risk_note 后重验。"
+        return "Rerun one-click regression to refresh failover/status/risk_note artifacts and validate again."
     if "latency_p95_ms" in lowered:
-        return "优化提示词和检索链路，降低响应时延或调整限流策略。"
-    return "按违规描述逐项修复后，重跑一键发布校验链路。"
+        return "Optimize prompt and retrieval path, reduce latency, and tune rate limits."
+    return "Fix listed blockers and rerun one-click release validation."
 
 
 def build_blocker_rows(policy_results: list[dict[str, Any]], top_n: int) -> list[dict[str, str]]:
@@ -198,6 +208,71 @@ def write_blocker_md(path: Path, rows: list[dict[str, str]]) -> None:
             )
     else:
         lines.append("| - | - | 0 | - | none | none |")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def build_action_plan_rows(blocker_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for item in blocker_rows:
+        rank = str(item.get("rank", "")).strip()
+        reason = str(item.get("reason", "")).strip()
+        profiles = str(item.get("profiles", "")).strip()
+        priority = str(item.get("priority", "P2")).strip() or "P2"
+        recommended_action = str(item.get("recommended_action", "")).strip()
+        rows.append(
+            {
+                "task_id": f"REL-FIX-{rank.zfill(2)}" if rank.isdigit() else "REL-FIX-XX",
+                "priority": priority,
+                "status": "todo",
+                "owner": "",
+                "eta": "",
+                "profiles": profiles,
+                "blocking_reason": reason,
+                "recommended_action": recommended_action,
+                "verification_step": "Re-run one-click release check and verify profile status is PASS.",
+            }
+        )
+    return rows
+
+
+def write_action_plan_csv(path: Path, rows: list[dict[str, str]]) -> None:
+    fieldnames = [
+        "task_id",
+        "priority",
+        "status",
+        "owner",
+        "eta",
+        "profiles",
+        "blocking_reason",
+        "recommended_action",
+        "verification_step",
+    ]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({k: row.get(k, "") for k in fieldnames})
+
+
+def write_action_plan_md(path: Path, rows: list[dict[str, str]]) -> None:
+    lines = [
+        "# Release Fix Plan (Auto)",
+        "",
+        f"- Generated: `{now_iso()}`",
+        "",
+        "| Task ID | Priority | Status | Owner | ETA | Profiles | Blocking Reason | Recommended Action | Verification Step |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    if rows:
+        for row in rows:
+            lines.append(
+                f"| {row['task_id']} | {row['priority']} | {row['status']} | {row['owner']} | {row['eta']} | "
+                f"{row['profiles']} | {row['blocking_reason']} | {row['recommended_action']} | {row['verification_step']} |"
+            )
+    else:
+        lines.append("| - | - | done | - | - | - | none | none | none |")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -272,6 +347,9 @@ def main() -> int:
     output_md = resolve_path(repo_root, args.output_md)
     blocker_csv = resolve_path(repo_root, args.blocker_csv)
     blocker_md = resolve_path(repo_root, args.blocker_md)
+    action_plan_csv = resolve_path(repo_root, args.action_plan_csv)
+    action_plan_md = resolve_path(repo_root, args.action_plan_md)
+    action_plan_rows = build_action_plan_rows(blocker_rows)
 
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_json.write_text(json.dumps(dashboard_payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -304,6 +382,11 @@ def main() -> int:
             f"- CSV: `{to_repo_rel(blocker_csv, repo_root)}`",
             f"- MD: `{to_repo_rel(blocker_md, repo_root)}`",
             "",
+            "## Auto Fix Plan",
+            "",
+            f"- CSV: `{to_repo_rel(action_plan_csv, repo_root)}`",
+            f"- MD: `{to_repo_rel(action_plan_md, repo_root)}`",
+            "",
         ]
     )
     output_md.parent.mkdir(parents=True, exist_ok=True)
@@ -311,11 +394,22 @@ def main() -> int:
 
     write_blocker_csv(blocker_csv, blocker_rows)
     write_blocker_md(blocker_md, blocker_rows)
+    write_action_plan_csv(action_plan_csv, action_plan_rows)
+    write_action_plan_md(action_plan_md, action_plan_rows)
+
+    dashboard_payload["action_plan"] = {
+        "count": len(action_plan_rows),
+        "csv": to_repo_rel(action_plan_csv, repo_root),
+        "md": to_repo_rel(action_plan_md, repo_root),
+    }
+    output_json.write_text(json.dumps(dashboard_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(f"release readiness dashboard: {output_json}")
     print(f"release readiness markdown: {output_md}")
     print(f"release blocker csv: {blocker_csv}")
     print(f"release blocker md: {blocker_md}")
+    print(f"release fix plan csv: {action_plan_csv}")
+    print(f"release fix plan md: {action_plan_md}")
 
     if args.fail_on_block and overall_status == "BLOCK":
         return 1

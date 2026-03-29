@@ -298,6 +298,8 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 - Release policy validator: `python scripts/validate_release_policy.py --repo-root . --profile demo --strict`.
 - Release readiness dashboard: `python scripts/generate_release_readiness_dashboard.py --repo-root . --profiles demo,prod --strict-profiles demo,prod`.
 - Dashboard outputs: `docs/eval/release_readiness_dashboard.md` and `docs/eval/release_blocker_topn.md`.
+- Auto fix plan outputs: `docs/ops/release_fix_plan_auto.md` and `docs/ops/release_fix_plan_auto.csv`.
+- Policy schema guard: `python scripts/validate_release_policy_schema.py --repo-root .` (also enforced by `quality_gate.py`).
 - Manual workflow: `.github/workflows/release-policy-check.yml` (workflow_dispatch).
 - One-click chain can run secondary policy too: `--release-policy-run-secondary --release-policy-secondary-profile prod`.
 - Secondary policy can be enforced as hard gate with `--release-policy-enforce-secondary`.

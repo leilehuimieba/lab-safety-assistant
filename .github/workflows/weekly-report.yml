@@ -88,6 +88,7 @@ jobs:
             - Refreshed release policy checks at `docs/eval/release_policy_check_demo.md` and `docs/eval/release_policy_check_prod.md`
             - Refreshed release readiness dashboard at `docs/eval/release_readiness_dashboard.md`
             - Refreshed blocker TopN at `docs/eval/release_blocker_topn.md`
+            - Refreshed auto fix plan at `docs/ops/release_fix_plan_auto.md`
             - Generated weekly report under `docs/weekly_reports/`
             - Refreshed eval dashboard under `docs/eval/eval_dashboard.md`
             - Updated gate weekly ops summary at `docs/eval/weekly_gate_ops.md`

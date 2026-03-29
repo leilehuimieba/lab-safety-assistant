@@ -573,6 +573,13 @@ python scripts/generate_release_readiness_dashboard.py `
 - 输出：
 - `docs/eval/release_readiness_dashboard.json/.md`
 - `docs/eval/release_blocker_topn.csv/.md`
+- `docs/ops/release_fix_plan_auto.csv/.md`
+
+发布策略 schema 校验（建议提交前执行）：
+
+```powershell
+python scripts/validate_release_policy_schema.py --repo-root .
+```
 
 GitHub 自动监控（每日）：
 

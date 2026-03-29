@@ -132,6 +132,8 @@ jobs:
             docs/eval/release_readiness_dashboard.json
             docs/eval/release_blocker_topn.md
             docs/eval/release_blocker_topn.csv
+            docs/ops/release_fix_plan_auto.md
+            docs/ops/release_fix_plan_auto.csv
             docs/eval/eval_dashboard_data.json
             docs/eval/failover_status.json
             docs/eval/failover_status.md
@@ -163,6 +165,9 @@ jobs:
             const policyDemoMdRepoPath = 'docs/eval/release_policy_check_demo.md';
             const policyProdJsonRepoPath = 'docs/eval/release_policy_check_prod.json';
             const policyProdMdRepoPath = 'docs/eval/release_policy_check_prod.md';
+            const readinessMdRepoPath = 'docs/eval/release_readiness_dashboard.md';
+            const blockerMdRepoPath = 'docs/eval/release_blocker_topn.md';
+            const fixPlanMdRepoPath = 'docs/ops/release_fix_plan_auto.md';
 
             let gateOutput = '';
             let policyOutput = '';
@@ -227,6 +232,9 @@ jobs:
               `- Release Policy(demo) MD: \`${policyDemoMdRepoPath}\``,
               `- Release Policy(prod) JSON: \`${policyProdJsonRepoPath}\``,
               `- Release Policy(prod) MD: \`${policyProdMdRepoPath}\``,
+              `- Release Readiness Dashboard: \`${readinessMdRepoPath}\``,
+              `- Release Blocker TopN: \`${blockerMdRepoPath}\``,
+              `- Release Fix Plan (Auto): \`${fixPlanMdRepoPath}\``,
               '',
               '## Violations',
               violationLines,

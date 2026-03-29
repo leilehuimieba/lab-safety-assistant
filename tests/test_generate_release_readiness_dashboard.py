@@ -24,3 +24,20 @@ def test_build_blocker_rows_topn() -> None:
     assert rows[0]["priority"] == "P0"
     assert rows[0]["profiles"] == "demo,prod"
 
+
+def test_build_action_plan_rows() -> None:
+    blockers = [
+        {
+            "rank": "1",
+            "reason": "route_success_rate too low",
+            "count": "2",
+            "profiles": "demo,prod",
+            "priority": "P0",
+            "recommended_action": "Recover route.",
+        }
+    ]
+    plan = grd.build_action_plan_rows(blockers)
+    assert len(plan) == 1
+    assert plan[0]["task_id"] == "REL-FIX-01"
+    assert plan[0]["priority"] == "P0"
+    assert plan[0]["status"] == "todo"

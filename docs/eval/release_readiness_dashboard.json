@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-03-29T16:02:06+08:00",
+  "generated_at": "2026-03-29T16:12:58+08:00",
   "overall_status": "BLOCK",
   "profiles": [
     {
-      "generated_at": "2026-03-29T16:02:06+08:00",
+      "generated_at": "2026-03-29T16:12:58+08:00",
       "profile": "demo",
       "policy_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_v5.json",
       "risk_note_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_risk_note_auto.json",
@@ -20,7 +20,7 @@
       "exit_code": 0
     },
     {
-      "generated_at": "2026-03-29T16:02:06+08:00",
+      "generated_at": "2026-03-29T16:12:58+08:00",
       "profile": "prod",
       "policy_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_v5.json",
       "risk_note_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_risk_note_auto.json",
@@ -55,7 +55,7 @@
       "count": "1",
       "profiles": "prod",
       "priority": "P2",
-      "recommended_action": "按违规描述逐项修复后，重跑一键发布校验链路。"
+      "recommended_action": "Fix listed blockers and rerun one-click release validation."
     },
     {
       "rank": "2",
@@ -63,7 +63,7 @@
       "count": "1",
       "profiles": "prod",
       "priority": "P2",
-      "recommended_action": "按违规描述逐项修复后，重跑一键发布校验链路。"
+      "recommended_action": "Fix listed blockers and rerun one-click release validation."
     },
     {
       "rank": "3",
@@ -71,7 +71,7 @@
       "count": "1",
       "profiles": "prod",
       "priority": "P1",
-      "recommended_action": "关闭临时豁免或切换到允许的发布 profile 后再执行发布。"
+      "recommended_action": "Disable temporary override or switch to an allowed release profile before release."
     },
     {
       "rank": "4",
@@ -79,7 +79,7 @@
       "count": "1",
       "profiles": "prod",
       "priority": "P0",
-      "recommended_action": "优先修复主链路可用性，检查 Dify 网关/模型路由和网络连通性。"
+      "recommended_action": "Recover primary route availability first; check Dify gateway, model routing, and network path."
     },
     {
       "rank": "5",
@@ -87,7 +87,7 @@
       "count": "1",
       "profiles": "prod",
       "priority": "P0",
-      "recommended_action": "先降并发并排查 SSE 超时链路，必要时启用备用通道并重跑 canary。"
+      "recommended_action": "Reduce concurrency and investigate SSE timeout path; enable fallback channel and rerun canary."
     },
     {
       "rank": "6",
@@ -95,7 +95,7 @@
       "count": "1",
       "profiles": "prod",
       "priority": "P1",
-      "recommended_action": "优化提示词和检索链路，降低响应时延或调整限流策略。"
+      "recommended_action": "Optimize prompt and retrieval path, reduce latency, and tune rate limits."
     },
     {
       "rank": "7",
@@ -103,7 +103,7 @@
       "count": "1",
       "profiles": "prod",
       "priority": "P0",
-      "recommended_action": "定位主模型不可用原因，恢复后连续两轮回归验证再解除阻断。"
+      "recommended_action": "Identify why primary model is unavailable; require two consecutive healthy regressions before release."
     },
     {
       "rank": "8",
@@ -111,7 +111,7 @@
       "count": "1",
       "profiles": "prod",
       "priority": "P0",
-      "recommended_action": "提高请求稳定性（超时阈值、重试策略、模型通道），避免连续超时触发回退。"
+      "recommended_action": "Improve request stability (timeout budget, retry policy, model channel) to prevent repeated failover."
     },
     {
       "rank": "9",
@@ -119,7 +119,7 @@
       "count": "1",
       "profiles": "prod",
       "priority": "P0",
-      "recommended_action": "按违规描述逐项修复后，重跑一键发布校验链路。"
+      "recommended_action": "Fix listed blockers and rerun one-click release validation."
     },
     {
       "rank": "10",
@@ -127,7 +127,7 @@
       "count": "1",
       "profiles": "prod",
       "priority": "P0",
-      "recommended_action": "定位主模型不可用原因，恢复后连续两轮回归验证再解除阻断。"
+      "recommended_action": "Identify why primary model is unavailable; require two consecutive healthy regressions before release."
     }
   ],
   "steps": [
@@ -147,5 +147,10 @@
       "output_json": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_check_prod.json",
       "output_md": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_check_prod.md"
     }
-  ]
+  ],
+  "action_plan": {
+    "count": 10,
+    "csv": "docs/ops/release_fix_plan_auto.csv",
+    "md": "docs/ops/release_fix_plan_auto.md"
+  }
 }
