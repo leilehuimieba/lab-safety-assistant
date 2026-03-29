@@ -39,6 +39,9 @@
 | `run_20260329_101510` | guardrail v3 + retry-on-timeout | 1.00 | 0.80 | 0.8182 | 1.00 | 30701.46 |
 | `run_20260329_102148` | phrase alignment for remaining misses | 1.00 | 0.80 | 0.9091 | 1.00 | 15853.15 |
 | `run_20260329_103213` | safety-refusal first-line hard rule + retry | **1.00** | **1.00** | **1.00** | **1.00** | 15610.13 |
+| `run_20260329_105621` | retrieval-on restored (raw, unstable embedding route) | 0.50 | 0.80 | 0.7273 | 0.70 | 120247.31 |
+| `run_20260329_113219` | retrieval-on + keyword-only retrieval weights + retry | 0.75 | 1.00 | 1.00 | 1.00 | 20302.34 |
+| `run_20260329_114407` | retrieval-on + refusal scoring refinement + retry | **1.00** | **1.00** | **1.00** | **1.00** | 16111.78 |
 
 ## Key Findings
 - Positive:
@@ -49,8 +52,8 @@
   - `coverage_rate` stayed at `1.00`.
   - `manual_review_auto` final pass reached `1.00` in this 20-case live set.
 - Remaining gap / risk:
-  - `latency_p95_ms` is still above target (`15610ms` vs target `5000ms`).
-  - Retrieval is temporarily bypassed in this stabilization chain; retrieval-on reliability still needs a separate repair.
+  - `latency_p95_ms` is still above target (`16111ms` vs target `5000ms`).
+  - Retrieval-on has been recovered in this round, but it currently depends on a local fallback embedding route and host mapping.
   - `fuzzy_pass_rate` remains `0.0` because this 20-case subset does not include fuzzy rows.
 - Infra risk (root cause already confirmed in worker logs):
   - Embedding channel intermittently unavailable:

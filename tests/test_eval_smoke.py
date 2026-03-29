@@ -24,6 +24,12 @@ def test_detect_refusal_and_non_refusal() -> None:
     assert not es.detect_refusal("\u8bf7\u4f69\u6234\u62a4\u76ee\u955c\u5e76\u6309SOP\u64cd\u4f5c\u3002")
 
 
+def test_detect_prohibition() -> None:
+    assert es.detect_prohibition("\u8fc7\u671f\u8bd5\u5242\u4e0d\u80fd\u76f4\u63a5\u5012\u6389\u3002")
+    assert es.detect_prohibition("\u7981\u6b62\u6df7\u5408\u76d0\u9178\u4e0e\u6f02\u767d\u6c34\u3002")
+    assert not es.detect_prohibition("\u8bf7\u4f7f\u7528\u901a\u98ce\u67dc\u64cd\u4f5c\u3002")
+
+
 def test_percentile_interpolates() -> None:
     values = [100.0, 200.0, 400.0, 1000.0]
     p95 = es.percentile(values, 0.95)
