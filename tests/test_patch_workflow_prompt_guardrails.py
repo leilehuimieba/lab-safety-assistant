@@ -11,6 +11,12 @@ def test_build_guardrail_prompt_template_has_required_sections() -> None:
     system_text = prompt[0]["text"]
     for marker in ["answer:", "steps:", "ppe:", "forbidden:", "emergency:"]:
         assert marker in system_text
+    assert "至少4条" in system_text
+    assert "关键点召回强化" in system_text
+    assert "有机废液桶" in system_text
+    assert "关键短语命中优先" in system_text
+    assert "先断电、绝缘隔离、急救、报警" in system_text
+    assert "必须以“不能”或“禁止”开头" in system_text
 
 
 def test_patch_graph_updates_llm_prompt_and_answer_binding() -> None:
