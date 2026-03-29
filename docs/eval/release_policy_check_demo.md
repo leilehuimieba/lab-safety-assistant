@@ -1,9 +1,9 @@
 # Release Policy Check
 
-- Generated: `2026-03-29T16:00:50+08:00`
+- Generated: `2026-03-29T16:02:06+08:00`
 - Profile: `demo`
 - Status: `PASS`
-- Strict: `False`
+- Strict: `True`
 
 ## Snapshot
 - gate_decision: `WARN_ONLY`
@@ -21,4 +21,4 @@
 - policy: `D:\workspace\lab-safe-assistant-github\docs\eval\release_policy_v5.json`
 - risk note: `D:\workspace\lab-safe-assistant-github\docs\eval\release_risk_note_auto.json`
 - failover status: `D:\workspace\lab-safe-assistant-github\docs\eval\failover_status.json`
-- output json: `D:\workspace\lab-safe-assistant-github\docs\eval\release_policy_check.json`
+- output json: `D:\workspace\lab-safe-assistant-github\docs\eval\release_policy_check_demo.json`

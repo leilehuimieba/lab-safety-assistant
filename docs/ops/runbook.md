@@ -493,6 +493,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run_eval_release_oneclick.ps1 `
 - `1`：链路中间步骤失败（环境/脚本/接口异常）。
 - 默认会在门禁后继续执行 `validate_release_policy.py`（`demo` profile）。
 - 可通过 `--release-policy-profile prod` 切换到更严格发布策略。
+- 可通过 `--release-policy-run-secondary --release-policy-secondary-profile prod` 同时产出 `demo+prod` 双轨结论。
+- 若希望 secondary（如 `prod`）失败时也阻断，可加 `--release-policy-enforce-secondary`。
 - 临时跳过该步骤可用 `--skip-release-policy-check`（不建议常态化使用）。
 
 failover 门禁判定（分级策略）：
@@ -553,11 +555,24 @@ python scripts/validate_release_policy.py `
 - 策略文件：`docs/eval/release_policy_v5.json`
 - 支持 profile：`demo`、`prod`
 - 输出：
-- `docs/eval/release_policy_check.json`
-- `docs/eval/release_policy_check.md`
+- `docs/eval/release_policy_check_demo.json/.md`
+- `docs/eval/release_policy_check_prod.json/.md`
 - 返回码：
 - `0` 表示通过策略校验
 - `1` 表示被策略阻断
+
+生成发布就绪看板与阻断原因 TopN：
+
+```powershell
+python scripts/generate_release_readiness_dashboard.py `
+  --repo-root . `
+  --profiles demo,prod `
+  --strict-profiles demo,prod
+```
+
+- 输出：
+- `docs/eval/release_readiness_dashboard.json/.md`
+- `docs/eval/release_blocker_topn.csv/.md`
 
 GitHub 自动监控（每日）：
 
@@ -567,9 +582,10 @@ GitHub 自动监控（每日）：
 - 运行回归流水线并刷新看板
 - 生成自动风险说明（md/json）
 - 执行 gate 检查
-- 执行 release policy 检查（默认 `demo` profile，严格模式）
+- 执行 release policy 双轨检查（`demo` + `prod`，严格模式）
 - 若 gate 失败，自动创建或更新“同日唯一”`eval-gate-alert` Issue（避免重复开单）
-- 若 release policy 失败，也会触发同一告警链路
+- 若任一 release policy 失败，也会触发同一告警链路
+- 默认 `demo` 失败直接阻断；`prod` 是否阻断由仓库变量 `EVAL_POLICY_ENFORCE_PROD=true/false` 控制
 - 自动检查告警 SLA 字段：`Owner` + `DDL(YYYY-MM-DD)`
 - SLA 缺失自动加红色标签 `sla-missing` 并评论提醒
 - 若连续失败达到 3 天（含当天），自动加 `p1-gate` 标签并 @升级负责人

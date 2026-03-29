@@ -42,7 +42,25 @@ jobs:
 
       - name: Validate Release Policy (demo)
         run: |
-          python scripts/validate_release_policy.py --repo-root . --profile demo --strict
+          python scripts/validate_release_policy.py \
+            --repo-root . \
+            --profile demo \
+            --strict \
+            --output-json docs/eval/release_policy_check_demo.json \
+            --output-md docs/eval/release_policy_check_demo.md
+
+      - name: Validate Release Policy (prod)
+        run: |
+          python scripts/validate_release_policy.py \
+            --repo-root . \
+            --profile prod \
+            --strict \
+            --output-json docs/eval/release_policy_check_prod.json \
+            --output-md docs/eval/release_policy_check_prod.md
+
+      - name: Generate Release Readiness Dashboard
+        run: |
+          python scripts/generate_release_readiness_dashboard.py --repo-root . --profiles demo,prod --strict-profiles demo,prod
 
       - name: Generate Weekly Report
         run: |
@@ -67,7 +85,9 @@ jobs:
 
             - Triggered eval regression pipeline (live run when Dify secrets are configured)
             - Refreshed failover snapshot at `docs/eval/failover_status.md`
-            - Refreshed release policy check at `docs/eval/release_policy_check.md`
+            - Refreshed release policy checks at `docs/eval/release_policy_check_demo.md` and `docs/eval/release_policy_check_prod.md`
+            - Refreshed release readiness dashboard at `docs/eval/release_readiness_dashboard.md`
+            - Refreshed blocker TopN at `docs/eval/release_blocker_topn.md`
             - Generated weekly report under `docs/weekly_reports/`
             - Refreshed eval dashboard under `docs/eval/eval_dashboard.md`
             - Updated gate weekly ops summary at `docs/eval/weekly_gate_ops.md`

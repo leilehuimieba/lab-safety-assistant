@@ -16,6 +16,9 @@ param(
   [switch]$SkipGate,
   [switch]$SkipReleasePolicyCheck,
   [string]$ReleasePolicyProfile = "demo",
+  [switch]$ReleasePolicyRunSecondary,
+  [string]$ReleasePolicySecondaryProfile = "prod",
+  [switch]$ReleasePolicyEnforceSecondary,
   [switch]$ReleasePolicyStrict,
   [switch]$SkipHealthCheck,
   [switch]$HealthAllowChatTimeoutPass,
@@ -43,13 +46,16 @@ $argsList = @(
   "--failover-fail-streak-threshold", "$FailoverFailStreakThreshold",
   "--failover-max-age-hours", "$FailoverMaxAgeHours",
   "--failover-days", "$FailoverDays",
-  "--release-policy-profile", $ReleasePolicyProfile
+  "--release-policy-profile", $ReleasePolicyProfile,
+  "--release-policy-secondary-profile", $ReleasePolicySecondaryProfile
 )
 
 if ($WorkflowId) { $argsList += @("--workflow-id", $WorkflowId) }
 if ($SkipFailoverEval) { $argsList += "--skip-failover-eval" }
 if ($SkipGate) { $argsList += "--skip-gate" }
 if ($SkipReleasePolicyCheck) { $argsList += "--skip-release-policy-check" }
+if ($ReleasePolicyRunSecondary) { $argsList += "--release-policy-run-secondary" }
+if ($ReleasePolicyEnforceSecondary) { $argsList += "--release-policy-enforce-secondary" }
 if ($ReleasePolicyStrict) { $argsList += "--release-policy-strict" }
 if ($SkipHealthCheck) { $argsList += "--skip-health-check" }
 if ($HealthAllowChatTimeoutPass) { $argsList += "--health-allow-chat-timeout-pass" }

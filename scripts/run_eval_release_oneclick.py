@@ -57,6 +57,21 @@ def parse_args() -> argparse.Namespace:
         help="Release policy profile name (for example: demo/prod).",
     )
     parser.add_argument(
+        "--release-policy-run-secondary",
+        action="store_true",
+        help="Run secondary release policy check in addition to --release-policy-profile.",
+    )
+    parser.add_argument(
+        "--release-policy-secondary-profile",
+        default="prod",
+        help="Secondary release policy profile name.",
+    )
+    parser.add_argument(
+        "--release-policy-enforce-secondary",
+        action="store_true",
+        help="Block one-click result when secondary profile check fails.",
+    )
+    parser.add_argument(
         "--release-policy-strict",
         action="store_true",
         help="Pass --strict to validate_release_policy.py.",
@@ -227,6 +242,11 @@ def write_report(run_dir: Path, payload: dict[str, Any]) -> tuple[Path, Path]:
     risk = payload.get("risk_note", {}) if isinstance(payload.get("risk_note"), dict) else {}
     gate = payload.get("gate", {}) if isinstance(payload.get("gate"), dict) else {}
     release_policy = payload.get("release_policy", {}) if isinstance(payload.get("release_policy"), dict) else {}
+    release_policy_secondary = (
+        payload.get("release_policy_secondary", {})
+        if isinstance(payload.get("release_policy_secondary"), dict)
+        else {}
+    )
     lines = [
         "# Eval Release One-Click Report",
         "",
@@ -243,6 +263,8 @@ def write_report(run_dir: Path, payload: dict[str, Any]) -> tuple[Path, Path]:
         f"- Gate Exit Code: `{gate.get('exit_code', 'NA')}`",
         f"- Release Policy Profile: `{release_policy.get('profile', '')}`",
         f"- Release Policy Exit Code: `{release_policy.get('exit_code', 'NA')}`",
+        f"- Secondary Policy Profile: `{release_policy_secondary.get('profile', '')}`",
+        f"- Secondary Policy Exit Code: `{release_policy_secondary.get('exit_code', 'NA')}`",
         "",
         "## Artifacts",
         f"- Failover Status JSON: `{payload.get('failover_status_json', '')}`",
@@ -251,6 +273,8 @@ def write_report(run_dir: Path, payload: dict[str, Any]) -> tuple[Path, Path]:
         f"- Failover Eval Report: `{payload.get('failover_eval_report', '')}`",
         f"- Release Policy JSON: `{release_policy.get('output_json', '')}`",
         f"- Release Policy MD: `{release_policy.get('output_md', '')}`",
+        f"- Secondary Policy JSON: `{release_policy_secondary.get('output_json', '')}`",
+        f"- Secondary Policy MD: `{release_policy_secondary.get('output_md', '')}`",
         "",
         "## Steps",
     ]
@@ -452,6 +476,43 @@ def main() -> int:
                 print(f"One-click completed with release policy block. Report: {json_path}")
                 print(f"Markdown: {md_path}")
                 return 2
+
+            if args.release_policy_run_secondary:
+                secondary_profile = str(args.release_policy_secondary_profile).strip() or "prod"
+                secondary_json = repo_root / "docs" / "eval" / f"release_policy_check_{secondary_profile}.json"
+                secondary_md = repo_root / "docs" / "eval" / f"release_policy_check_{secondary_profile}.md"
+                policy_secondary_cmd = [
+                    sys.executable,
+                    str(repo_root / "scripts" / "validate_release_policy.py"),
+                    "--repo-root",
+                    str(repo_root),
+                    "--profile",
+                    secondary_profile,
+                    "--output-json",
+                    str(secondary_json),
+                    "--output-md",
+                    str(secondary_md),
+                ]
+                if args.release_policy_strict:
+                    policy_secondary_cmd.append("--strict")
+                policy_secondary_run = run_cmd(policy_secondary_cmd, cwd=repo_root)
+                report["steps"]["validate_release_policy_secondary"] = summarize_step(
+                    policy_secondary_run, policy_secondary_cmd
+                )
+                report["release_policy_secondary"] = {
+                    "profile": secondary_profile,
+                    "strict": bool(args.release_policy_strict),
+                    "exit_code": int(policy_secondary_run.returncode),
+                    "output_json": str(secondary_json),
+                    "output_md": str(secondary_md),
+                    "enforced": bool(args.release_policy_enforce_secondary),
+                }
+                if policy_secondary_run.returncode != 0 and args.release_policy_enforce_secondary:
+                    report["status"] = "blocked_by_release_policy_secondary"
+                    json_path, md_path = write_report(run_dir, report)
+                    print(f"One-click completed with secondary release policy block. Report: {json_path}")
+                    print(f"Markdown: {md_path}")
+                    return 2
 
         report["status"] = "success"
         json_path, md_path = write_report(run_dir, report)

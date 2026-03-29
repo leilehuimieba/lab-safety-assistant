@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-29T15:08:26+08:00",
+  "generated_at": "2026-03-29T16:00:50+08:00",
   "gate_decision": "WARN_ONLY",
   "violations": [
     "route_success_rate failed for 2 consecutive weeks (target=0.7, 2026-W12:0.0000, 2026-W13:0.5475)",
