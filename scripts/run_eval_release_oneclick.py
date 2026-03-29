@@ -46,6 +46,21 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip validate_eval_dashboard_gate.py and only generate status/risk note.",
     )
+    parser.add_argument(
+        "--skip-release-policy-check",
+        action="store_true",
+        help="Skip validate_release_policy.py step.",
+    )
+    parser.add_argument(
+        "--release-policy-profile",
+        default="demo",
+        help="Release policy profile name (for example: demo/prod).",
+    )
+    parser.add_argument(
+        "--release-policy-strict",
+        action="store_true",
+        help="Pass --strict to validate_release_policy.py.",
+    )
 
     parser.add_argument("--workflow-id", default="", help="Workflow id (required unless --skip-failover-eval).")
     parser.add_argument("--primary-model", default="gpt-5.2-codex", help="Primary model name.")
@@ -211,6 +226,7 @@ def write_report(run_dir: Path, payload: dict[str, Any]) -> tuple[Path, Path]:
 
     risk = payload.get("risk_note", {}) if isinstance(payload.get("risk_note"), dict) else {}
     gate = payload.get("gate", {}) if isinstance(payload.get("gate"), dict) else {}
+    release_policy = payload.get("release_policy", {}) if isinstance(payload.get("release_policy"), dict) else {}
     lines = [
         "# Eval Release One-Click Report",
         "",
@@ -225,12 +241,16 @@ def write_report(run_dir: Path, payload: dict[str, Any]) -> tuple[Path, Path]:
         f"- Risk Warnings: `{len(risk.get('warnings', []) if isinstance(risk.get('warnings'), list) else [])}`",
         f"- Gate Enforced: `{gate.get('enforced', False)}`",
         f"- Gate Exit Code: `{gate.get('exit_code', 'NA')}`",
+        f"- Release Policy Profile: `{release_policy.get('profile', '')}`",
+        f"- Release Policy Exit Code: `{release_policy.get('exit_code', 'NA')}`",
         "",
         "## Artifacts",
         f"- Failover Status JSON: `{payload.get('failover_status_json', '')}`",
         f"- Risk Note JSON: `{payload.get('risk_note_json', '')}`",
         f"- Risk Note MD: `{payload.get('risk_note_md', '')}`",
         f"- Failover Eval Report: `{payload.get('failover_eval_report', '')}`",
+        f"- Release Policy JSON: `{release_policy.get('output_json', '')}`",
+        f"- Release Policy MD: `{release_policy.get('output_md', '')}`",
         "",
         "## Steps",
     ]
@@ -406,6 +426,33 @@ def main() -> int:
                 print(f"Markdown: {md_path}")
                 return 2
 
+        if not args.skip_release_policy_check:
+            policy_cmd = [
+                sys.executable,
+                str(repo_root / "scripts" / "validate_release_policy.py"),
+                "--repo-root",
+                str(repo_root),
+                "--profile",
+                str(args.release_policy_profile).strip() or "demo",
+            ]
+            if args.release_policy_strict:
+                policy_cmd.append("--strict")
+            policy_run = run_cmd(policy_cmd, cwd=repo_root)
+            report["steps"]["validate_release_policy"] = summarize_step(policy_run, policy_cmd)
+            report["release_policy"] = {
+                "profile": str(args.release_policy_profile).strip() or "demo",
+                "strict": bool(args.release_policy_strict),
+                "exit_code": int(policy_run.returncode),
+                "output_json": str(repo_root / "docs" / "eval" / "release_policy_check.json"),
+                "output_md": str(repo_root / "docs" / "eval" / "release_policy_check.md"),
+            }
+            if policy_run.returncode != 0:
+                report["status"] = "blocked_by_release_policy"
+                json_path, md_path = write_report(run_dir, report)
+                print(f"One-click completed with release policy block. Report: {json_path}")
+                print(f"Markdown: {md_path}")
+                return 2
+
         report["status"] = "success"
         json_path, md_path = write_report(run_dir, report)
         print(f"Eval release one-click success. Report: {json_path}")
@@ -423,4 +470,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

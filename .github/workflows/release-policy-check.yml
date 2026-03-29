@@ -1,0 +1,53 @@
+name: Release Policy Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Policy profile (demo/prod)"
+        required: true
+        default: "demo"
+      strict:
+        description: "Fail when risk/failover artifacts are missing"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Release Policy Validation
+        run: |
+          STRICT_FLAG=""
+          if [ "${{ github.event.inputs.strict }}" = "true" ]; then
+            STRICT_FLAG="--strict"
+          fi
+          python scripts/validate_release_policy.py \
+            --repo-root . \
+            --profile "${{ github.event.inputs.profile }}" \
+            ${STRICT_FLAG}
+
+      - name: Upload Policy Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-policy-check-${{ github.run_id }}
+          path: |
+            docs/eval/release_policy_check.json
+            docs/eval/release_policy_check.md
+

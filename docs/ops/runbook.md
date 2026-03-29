@@ -491,6 +491,9 @@ powershell -ExecutionPolicy Bypass -File scripts/run_eval_release_oneclick.ps1 `
 - `0`：全链路成功，门禁通过。
 - `2`：流程执行完成但被门禁阻断（需要修复后重跑）。
 - `1`：链路中间步骤失败（环境/脚本/接口异常）。
+- 默认会在门禁后继续执行 `validate_release_policy.py`（`demo` profile）。
+- 可通过 `--release-policy-profile prod` 切换到更严格发布策略。
+- 临时跳过该步骤可用 `--skip-release-policy-check`（不建议常态化使用）。
 
 failover 门禁判定（分级策略）：
 
@@ -535,6 +538,26 @@ python scripts/generate_release_risk_note.py --repo-root .
 - 输出：`docs/eval/release_risk_note_auto.md`
 - 明细：`docs/eval/release_risk_note_auto.json`
 - 当执行 `run_eval_regression_pipeline.py --update-dashboard` 时，会自动生成这两份文件（可加 `--skip-risk-note` 跳过）
+
+发布前策略门槛（V5，可执行）：
+
+```powershell
+python scripts/validate_release_policy.py `
+  --repo-root . `
+  --profile demo `
+  --strict
+```
+
+说明：
+
+- 策略文件：`docs/eval/release_policy_v5.json`
+- 支持 profile：`demo`、`prod`
+- 输出：
+- `docs/eval/release_policy_check.json`
+- `docs/eval/release_policy_check.md`
+- 返回码：
+- `0` 表示通过策略校验
+- `1` 表示被策略阻断
 
 GitHub 自动监控（每日）：
 

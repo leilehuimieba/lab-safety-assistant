@@ -1,0 +1,69 @@
+{
+  "version": "v5",
+  "updated_at": "2026-03-29T16:30:00+08:00",
+  "profiles": {
+    "demo": {
+      "allowed_gate_decisions": [
+        "PASS",
+        "WARN",
+        "WARN_ONLY"
+      ],
+      "max_violation_count": 2,
+      "max_warning_count": 6,
+      "allowed_override_modes": [
+        "warn_only"
+      ],
+      "freshness": {
+        "max_risk_note_age_hours": 72,
+        "max_failover_status_age_hours": 72
+      },
+      "route": {
+        "min_route_success_rate": 0.0,
+        "max_route_timeout_rate": 1.0
+      },
+      "latency": {
+        "max_latency_p95_ms": 120000
+      },
+      "failover": {
+        "allowed_latest_results": [
+          "pass",
+          "degraded",
+          "fail"
+        ],
+        "max_latest_timeout_error_ratio": 1.0,
+        "max_fail_window": 20,
+        "max_fail_streak": 20
+      }
+    },
+    "prod": {
+      "allowed_gate_decisions": [
+        "PASS",
+        "WARN"
+      ],
+      "max_violation_count": 0,
+      "max_warning_count": 2,
+      "allowed_override_modes": [],
+      "freshness": {
+        "max_risk_note_age_hours": 24,
+        "max_failover_status_age_hours": 24
+      },
+      "route": {
+        "min_route_success_rate": 0.8,
+        "max_route_timeout_rate": 0.2
+      },
+      "latency": {
+        "max_latency_p95_ms": 30000
+      },
+      "failover": {
+        "allowed_latest_results": [
+          "pass",
+          "degraded"
+        ],
+        "max_latest_timeout_error_ratio": 0.4,
+        "max_fail_window": 1,
+        "max_fail_streak": 1
+      }
+    }
+  }
+}
+

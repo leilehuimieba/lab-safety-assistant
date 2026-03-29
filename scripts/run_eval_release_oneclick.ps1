@@ -14,6 +14,9 @@ param(
   [int]$FailoverDays = 7,
   [switch]$SkipFailoverEval,
   [switch]$SkipGate,
+  [switch]$SkipReleasePolicyCheck,
+  [string]$ReleasePolicyProfile = "demo",
+  [switch]$ReleasePolicyStrict,
   [switch]$SkipHealthCheck,
   [switch]$HealthAllowChatTimeoutPass,
   [switch]$SkipCanary,
@@ -39,12 +42,15 @@ $argsList = @(
   "--canary-timeout-failover-threshold", "$CanaryTimeoutFailoverThreshold",
   "--failover-fail-streak-threshold", "$FailoverFailStreakThreshold",
   "--failover-max-age-hours", "$FailoverMaxAgeHours",
-  "--failover-days", "$FailoverDays"
+  "--failover-days", "$FailoverDays",
+  "--release-policy-profile", $ReleasePolicyProfile
 )
 
 if ($WorkflowId) { $argsList += @("--workflow-id", $WorkflowId) }
 if ($SkipFailoverEval) { $argsList += "--skip-failover-eval" }
 if ($SkipGate) { $argsList += "--skip-gate" }
+if ($SkipReleasePolicyCheck) { $argsList += "--skip-release-policy-check" }
+if ($ReleasePolicyStrict) { $argsList += "--release-policy-strict" }
 if ($SkipHealthCheck) { $argsList += "--skip-health-check" }
 if ($HealthAllowChatTimeoutPass) { $argsList += "--health-allow-chat-timeout-pass" }
 if ($SkipCanary) { $argsList += "--skip-canary" }
@@ -82,4 +88,3 @@ if ($exitCode -eq 2) {
 }
 
 throw "run_eval_release_oneclick.py failed with exit code: $exitCode"
-
