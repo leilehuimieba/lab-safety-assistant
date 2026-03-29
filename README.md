@@ -279,6 +279,9 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 ## Release Gate Override & Risk Note
 
 - Gate script: `scripts/validate_eval_dashboard_gate.py`
+- One-click release chain: `python scripts/run_eval_release_oneclick.py --repo-root . --workflow-id <workflow_id>`
+- Windows wrapper: `powershell -ExecutionPolicy Bypass -File scripts/run_eval_release_oneclick.ps1 -RepoRoot . -WorkflowId <workflow_id>`
+- Exit code semantics for one-click chain: `0=pass`, `2=blocked_by_gate`, `1=step_error`.
 - Override config: `docs/eval/eval_dashboard_gate_override.json`
 - Override template: `docs/eval/eval_dashboard_gate_override.example.json`
 - Auto risk note: `python scripts/generate_release_risk_note.py --repo-root .`

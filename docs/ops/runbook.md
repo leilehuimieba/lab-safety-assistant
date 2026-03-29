@@ -454,6 +454,44 @@ python scripts/validate_eval_dashboard_gate.py `
   --failover-fail-streak-threshold 2
 ```
 
+一键串联（健康检查 -> 回归/回退 -> failover快照 -> 风险说明 -> 门禁）：
+
+```powershell
+set DIFY_BASE_URL=http://localhost:8080
+set DIFY_APP_API_KEY=<app-xxxx>
+python scripts/run_eval_release_oneclick.py `
+  --repo-root . `
+  --workflow-id <workflow_id> `
+  --primary-model gpt-5.2-codex `
+  --fallback-model MiniMax-M2.5 `
+  --health-allow-chat-timeout-pass `
+  --canary-limit 3 `
+  --canary-timeout 20 `
+  --canary-retry-on-timeout 0 `
+  --limit 20 `
+  --dify-timeout 60 `
+  --eval-concurrency 1 `
+  --retry-on-timeout 1 `
+  --failover-fail-streak-threshold 2
+```
+
+Windows 封装脚本（等价执行）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run_eval_release_oneclick.ps1 `
+  -RepoRoot . `
+  -WorkflowId <workflow_id> `
+  -PrimaryModel gpt-5.2-codex `
+  -FallbackModel MiniMax-M2.5 `
+  -FailoverFailStreakThreshold 2
+```
+
+退出码说明：
+
+- `0`：全链路成功，门禁通过。
+- `2`：流程执行完成但被门禁阻断（需要修复后重跑）。
+- `1`：链路中间步骤失败（环境/脚本/接口异常）。
+
 failover 门禁判定（分级策略）：
 
 - `latest=pass`：正常通过。
