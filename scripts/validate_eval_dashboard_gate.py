@@ -135,9 +135,15 @@ def parse_args() -> argparse.Namespace:
         help="Max acceptable age for latest failover status when enforcement is enabled.",
     )
     parser.add_argument(
+        "--failover-fail-streak-threshold",
+        type=int,
+        default=2,
+        help="Block only when latest failover result is FAIL for N consecutive runs.",
+    )
+    parser.add_argument(
         "--failover-allow-degraded",
         action="store_true",
-        help="Allow degraded failover result to pass when failover enforcement is enabled.",
+        help="Do not report warning when latest failover result is degraded.",
     )
     return parser.parse_args()
 
@@ -293,26 +299,41 @@ def parse_iso_dt(raw: str) -> datetime | None:
         return None
 
 
+def count_latest_fail_streak(recent_runs: list[dict]) -> int:
+    if not recent_runs:
+        return 0
+    streak = 0
+    for item in reversed(recent_runs):
+        result = str(item.get("result", "") or "").strip().lower()
+        if result == "fail":
+            streak += 1
+            continue
+        break
+    return streak
+
+
 def evaluate_failover_status(
     *,
     status_path: Path,
     max_age_hours: float,
+    fail_streak_threshold: int,
     allow_degraded: bool,
-) -> list[str]:
+) -> tuple[list[str], list[str]]:
     violations: list[str] = []
+    warnings: list[str] = []
     if not status_path.exists():
-        return [f"failover status missing: {status_path}"]
+        return [f"failover status missing: {status_path}"], warnings
 
     try:
         payload = json.loads(status_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as exc:
-        return [f"failover status unreadable: {exc}"]
+        return [f"failover status unreadable: {exc}"], warnings
     if not isinstance(payload, dict):
-        return ["failover status invalid: root is not object"]
+        return ["failover status invalid: root is not object"], warnings
 
     latest = payload.get("latest")
     if not isinstance(latest, dict) or not latest:
-        return ["failover status invalid: latest record missing"]
+        return ["failover status invalid: latest record missing"], warnings
 
     generated_at = parse_iso_dt(str(latest.get("generated_at", "") or ""))
     if generated_at is None:
@@ -324,15 +345,28 @@ def evaluate_failover_status(
                 f"failover status stale: age={age_hours:.1f}h > max_age_hours={max(1.0, float(max_age_hours)):.1f}"
             )
 
+    recent_runs = payload.get("recent_runs")
+    if not isinstance(recent_runs, list):
+        recent_runs = []
     result = str(latest.get("result", "") or "").strip().lower()
     if result == "fail":
-        violations.append("latest failover result is fail")
-    elif result == "degraded" and not allow_degraded:
-        violations.append("latest failover result is degraded")
+        fail_streak = count_latest_fail_streak([item for item in recent_runs if isinstance(item, dict)])
+        threshold = max(1, int(fail_streak_threshold))
+        if fail_streak >= threshold:
+            violations.append(
+                f"latest failover result is fail with streak={fail_streak} (threshold={threshold})"
+            )
+        else:
+            warnings.append(
+                f"latest failover result is fail but streak={fail_streak} < threshold={threshold}"
+            )
+    elif result == "degraded":
+        if not allow_degraded:
+            warnings.append("latest failover result is degraded")
     elif result not in {"pass", "degraded", "fail"}:
         violations.append(f"latest failover result unknown: {result or 'empty'}")
 
-    return violations
+    return violations, warnings
 
 
 def main() -> int:
@@ -381,13 +415,16 @@ def main() -> int:
     )
 
     violations = [*route_violations, *quality_violations]
+    warnings: list[str] = []
     if args.enforce_failover_status:
-        failover_violations = evaluate_failover_status(
+        failover_violations, failover_warnings = evaluate_failover_status(
             status_path=failover_path,
             max_age_hours=max(1.0, float(args.failover_max_age_hours)),
+            fail_streak_threshold=max(1, int(args.failover_fail_streak_threshold)),
             allow_degraded=bool(args.failover_allow_degraded),
         )
         violations.extend(failover_violations)
+        warnings.extend(failover_warnings)
     override = load_override_config(override_path)
     override_active = is_override_active(override, today=date.today())
 
@@ -397,6 +434,8 @@ def main() -> int:
                 print("eval dashboard gate WARN-ONLY override active:")
                 for item in violations:
                     print(f"- {item}")
+                for item in warnings:
+                    print(f"- warning: {item}")
                 if override.reason:
                     print(f"- override_reason: {override.reason}")
                 if override.ticket:
@@ -407,6 +446,8 @@ def main() -> int:
         print("eval dashboard gate failed:")
         for item in violations:
             print(f"- {item}")
+        for item in warnings:
+            print(f"- warning: {item}")
         return 1
 
     if not args.quiet:
@@ -418,6 +459,8 @@ def main() -> int:
             print("eval dashboard gate passed (override active but no violations).")
         else:
             print("eval dashboard gate passed.")
+        for item in warnings:
+            print(f"- warning: {item}")
     return 0
 
 

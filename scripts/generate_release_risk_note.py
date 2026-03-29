@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate an auto release risk note from eval dashboard outputs.
+Generate an auto release risk note from eval dashboard + gate + failover status.
 """
 
 from __future__ import annotations
@@ -61,6 +61,28 @@ def parse_args() -> argparse.Namespace:
         default=0.70,
         help="Only enforce quality metrics on route-healthy weeks.",
     )
+    parser.add_argument(
+        "--failover-status-json",
+        default="docs/eval/failover_status.json",
+        help="Path to failover status json.",
+    )
+    parser.add_argument(
+        "--failover-max-age-hours",
+        type=float,
+        default=72.0,
+        help="Max acceptable age for latest failover status.",
+    )
+    parser.add_argument(
+        "--failover-fail-streak-threshold",
+        type=int,
+        default=2,
+        help="Block only when latest failover result is FAIL for N consecutive runs.",
+    )
+    parser.add_argument(
+        "--failover-allow-degraded",
+        action="store_true",
+        help="Do not record degraded failover as warning.",
+    )
     return parser.parse_args()
 
 
@@ -87,6 +109,7 @@ def main() -> int:
     repo_root = Path(args.repo_root).resolve()
     dashboard_path = resolve_path(repo_root, args.dashboard_data)
     override_path = resolve_path(repo_root, args.override_config)
+    failover_path = resolve_path(repo_root, args.failover_status_json)
     output_md = resolve_path(repo_root, args.output_md)
     output_json = resolve_path(repo_root, args.output_json)
 
@@ -121,7 +144,16 @@ def main() -> int:
         metrics=metrics,
         weeks=max(2, args.weeks),
     )
-    violations = [*route_violations, *quality_violations]
+
+    failover_violations, failover_warnings = veg.evaluate_failover_status(
+        status_path=failover_path,
+        max_age_hours=max(1.0, float(args.failover_max_age_hours)),
+        fail_streak_threshold=max(1, int(args.failover_fail_streak_threshold)),
+        allow_degraded=bool(args.failover_allow_degraded),
+    )
+
+    violations = [*route_violations, *quality_violations, *failover_violations]
+    warnings = [*failover_warnings]
 
     override = veg.load_override_config(override_path)
     override_active = veg.is_override_active(override, today=date.today())
@@ -133,6 +165,8 @@ def main() -> int:
         gate_decision = "BLOCK"
     elif violations and override_warn_only:
         gate_decision = "WARN_ONLY"
+    elif warnings:
+        gate_decision = "WARN"
     else:
         gate_decision = "PASS"
 
@@ -145,10 +179,24 @@ def main() -> int:
         else {}
     )
 
+    failover_payload: dict[str, Any] = {}
+    if failover_path.exists():
+        try:
+            raw = json.loads(failover_path.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                failover_payload = raw
+        except (json.JSONDecodeError, OSError):
+            failover_payload = {}
+
     payload = {
         "generated_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
         "gate_decision": gate_decision,
         "violations": violations,
+        "warnings": warnings,
+        "route_violations": route_violations,
+        "quality_violations": quality_violations,
+        "failover_violations": failover_violations,
+        "failover_warnings": failover_warnings,
         "override_active": override_active,
         "override_mode": (override.mode if override else ""),
         "override_reason": (override.reason if override else ""),
@@ -159,6 +207,9 @@ def main() -> int:
         "latest_metrics": latest_metrics,
         "latest_route_stats": latest_route_stats,
         "targets": targets,
+        "failover_status_path": str(failover_path),
+        "failover_latest": failover_payload.get("latest", {}) if isinstance(failover_payload, dict) else {},
+        "failover_window_counts": failover_payload.get("window_counts", {}) if isinstance(failover_payload, dict) else {},
     }
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_json.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -199,15 +250,37 @@ def main() -> int:
         f"{pct(fvalue(targets, 'fuzzy_pass_rate', 0.80))} |"
     )
     lines.append("")
-    lines.append("## 2) 门禁违规项")
+    lines.append("## 2) Failover 状态")
+    lines.append("")
+    failover_latest = payload.get("failover_latest", {}) if isinstance(payload.get("failover_latest", {}), dict) else {}
+    failover_counts = payload.get("failover_window_counts", {}) if isinstance(payload.get("failover_window_counts", {}), dict) else {}
+    if failover_latest:
+        lines.append(f"- 最新结果：`{failover_latest.get('result', 'unknown')}`")
+        lines.append(f"- 最新时间：`{failover_latest.get('generated_at', '')}`")
+        lines.append(f"- 最终模型：`{failover_latest.get('active_model_final', '')}`")
+        lines.append(f"- 触发原因：`{failover_latest.get('failover_reason', '')}`")
+        lines.append(
+            f"- 最近窗口统计：PASS={failover_counts.get('pass', 0)}, "
+            f"DEGRADED={failover_counts.get('degraded', 0)}, "
+            f"FAIL={failover_counts.get('fail', 0)}"
+        )
+    else:
+        lines.append("- 未读取到 failover 状态文件或内容为空。")
+    lines.append("")
+    lines.append("## 3) 门禁违规项")
     lines.append("")
     if violations:
         for item in violations:
             lines.append(f"- {item}")
     else:
-        lines.append("- 无连续周违规项。")
+        lines.append("- 无阻塞性违规项。")
+    if warnings:
+        lines.append("")
+        lines.append("### 预警项")
+        for item in warnings:
+            lines.append(f"- {item}")
     lines.append("")
-    lines.append("## 3) 临时豁免信息")
+    lines.append("## 4) 临时豁免信息")
     lines.append("")
     if override_active and override is not None:
         lines.append(f"- 模式：`{override.mode}`")
@@ -224,16 +297,21 @@ def main() -> int:
     else:
         lines.append("- 当前未启用豁免窗口。")
     lines.append("")
-    lines.append("## 4) 发布建议")
+    lines.append("## 5) 发布建议")
     lines.append("")
     if gate_decision == "PASS":
         lines.append("- 建议：可发布。")
+    elif gate_decision == "WARN":
+        lines.append("- 建议：可发布但需跟踪预警项，建议当日完成回归修复验证。")
     elif gate_decision == "WARN_ONLY":
-        lines.append("- 建议：可临时发布（告警放行），需在下个周期关闭链路风险。")
+        lines.append("- 建议：告警放行（临时豁免），需在下个周期关闭链路风险。")
     else:
-        lines.append("- 建议：禁止发布，优先修复链路健康问题。")
+        lines.append("- 建议：禁止发布，优先修复阻塞性风险后重跑门禁。")
     lines.append("")
-    lines.append(f"- JSON 明细：`{output_json}`")
+    lines.append("## 6) 文件索引")
+    lines.append("")
+    lines.append(f"- 风险说明 JSON：`{output_json}`")
+    lines.append(f"- failover 状态：`{failover_path}`")
     lines.append("")
 
     output_md.parent.mkdir(parents=True, exist_ok=True)
