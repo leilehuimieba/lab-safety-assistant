@@ -450,8 +450,15 @@ python scripts/generate_failover_status.py --repo-root . --days 7
 python scripts/validate_eval_dashboard_gate.py `
   --repo-root . `
   --enforce-failover-status `
-  --failover-max-age-hours 72
+  --failover-max-age-hours 72 `
+  --failover-fail-streak-threshold 2
 ```
+
+failover 门禁判定（分级策略）：
+
+- `latest=pass`：正常通过。
+- `latest=degraded`：默认记预警（`warning`），不直接阻断；如需静默该预警，可加 `--failover-allow-degraded`。
+- `latest=fail`：仅当最近连续 `fail` 次数达到 `--failover-fail-streak-threshold` 才阻断发布；未达到阈值时仅预警。
 
 默认会自动输出“失败分簇 + Top10 修复清单”：
 

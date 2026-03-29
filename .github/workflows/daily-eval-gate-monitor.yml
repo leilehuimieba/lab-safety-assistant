@@ -36,7 +36,9 @@ jobs:
 
       - name: Generate Release Risk Note
         run: |
-          python scripts/generate_release_risk_note.py --repo-root .
+          python scripts/generate_release_risk_note.py \
+            --repo-root . \
+            --failover-fail-streak-threshold 2
 
       - name: Generate Failover Status
         run: |
@@ -51,6 +53,7 @@ jobs:
             --repo-root . \
             --enforce-failover-status \
             --failover-max-age-hours 72 \
+            --failover-fail-streak-threshold 2 \
             > gate_output.txt 2>&1
           code=$?
           cat gate_output.txt
