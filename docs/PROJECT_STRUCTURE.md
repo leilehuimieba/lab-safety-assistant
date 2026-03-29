@@ -1,61 +1,52 @@
-# 项目目录结构与分工说明
+# 项目结构与文件管理规范
 
-本文档用于统一项目内文件放置规范，避免“文件越做越散、队友找不到入口”。
+本文件用于约束仓库目录，避免再次出现“历史文件堆积、入口分散、产物混杂”的问题。
 
-## 1. 目录分层（当前标准）
+## 1. 当前标准目录
 
 ```text
 lab-safe-assistant-github/
-├─ docs/                    # 文档中心（手册、流程、报告）
-│  ├─ guides/               # 快速入门与规则说明
-│  ├─ ops/                  # 协作流程、SOP、运行与部署
-│  ├─ pipeline/             # 数据入库、抓取、清洗流水线文档
-│  ├─ eval/                 # 评测看板、发布验收与门禁
-│  ├─ proposal/             # 立项书与申报材料
-│  ├─ reports/              # 阶段报告与过程复盘
-│  ├─ word/                 # 面向成员分发的 Word 手册
-│  └─ PROJECT_STRUCTURE.md  # 本文档（目录规范）
-├─ templates/               # 结构模板（KB、Eval、Schema）
-├─ scripts/                 # 自动化脚本（采集、清洗、评测、门禁）
-├─ data_sources/            # 种子链接、manifest、预抓取状态
-├─ manual_sources/          # 人工补录资料（inbox/approved/rejected）
-├─ artifacts/               # 脚本运行产物（可再生成）
-├─ web_demo/                # 演示页面与接口
+├─ data_sources/                 # 数据源清单与模板（当前主用 v7）
+├─ docs/
+│  ├─ guides/                    # 快速入门与规则指南
+│  ├─ ops/                       # 运行、部署、SOP
+│  ├─ pipeline/                  # 抓取/清洗/入库流程
+│  ├─ eval/                      # 评测、门禁、发布审核
+│  ├─ proposal/                  # 立项申报材料
+│  ├─ reports/                   # 阶段报告
+│  └─ word/                      # 分发用 Word 文档
+├─ release_exports/
+│  └─ v7/                        # 当前正式发布包
+├─ scripts/                      # 自动化脚本
+├─ skills/                       # 本地技能
+├─ tests/                        # 回归测试
+├─ web_demo/                     # 演示服务
 ├─ knowledge_base_curated.csv
 ├─ safety_rules.yaml
 └─ eval_set_v1.csv
 ```
 
-## 2. 放置规则（必须遵守）
+## 2. 文件放置规则
 
-1. 新增模板文件一律放 `templates/`，不要再放仓库根目录。
-2. 阶段性报告统一放 `docs/reports/`，命名建议 `*_report.md`。
-3. 申报书、结题书等材料统一放 `docs/proposal/`。
-4. 快速上手类文档统一放 `docs/guides/`。
-5. 新增脚本统一放 `scripts/`，并在脚本开头写用途说明。
-6. 运行产物放 `artifacts/`，可重复生成的中间文件不要提交到根目录。
+1. 可再生成的运行产物不入仓库根目录。
+2. 版本发布产物统一放在 `release_exports/<version>/`。
+3. 数据清单统一放在 `data_sources/`，并保留模板文件。
+4. 执行说明统一放在 `docs/ops/`，流程说明统一放在 `docs/pipeline/`。
+5. 脚本统一放 `scripts/`，测试统一放 `tests/`。
 
-## 3. 角色协作入口
+## 3. 清理策略（长期）
 
-1. 信息收集员：`docs/ops/角色1_信息收集员执行手册_v2.md`
-2. 数据清洗员：`docs/ops/角色2_数据清洗员执行手册_v2.md`
-3. 发布负责人：`docs/ops/角色3_发布与验收负责人执行手册_v1.md`
-4. 云端协作总入口：`docs/ops/TEAM_CLOUD_WORKFLOW.md`
+1. 保留最新发布版本（例如 `v7`）；旧版本由 Git 历史追溯，不在工作树长期保留。
+2. 每轮发布后执行一次仓库清理：
+   - 删除历史中间产物
+   - 删除过期批次清单
+   - 删除失效文档引用
+3. 每轮清理后必须执行：
+   - `python -m pytest -q`
+   - `python scripts/quality_gate.py --repo-root . --skip-secret-scan`
 
-## 4. 提交流程建议
+## 4. 推荐入口
 
-1. 每次提交只改一类内容（例如“只改采集清单”或“只改清洗脚本”）。
-2. 提交前执行：
-   - `python scripts/quality_gate.py`
-3. Pull Request 标题建议：
-   - `docs: ...`
-   - `data: ...`
-   - `scripts: ...`
-   - `feat: ...`
-
-## 5. 后续可选优化
-
-1. 将 `scripts` 按功能拆为子目录（`scripts/ingest`、`scripts/eval`、`scripts/governance`）。
-2. 增加一个自动检查：阻止把新文件直接丢到仓库根目录（除白名单外）。
-3. 增加一个自动检查：阻止把新文档直接丢到 `docs/` 根目录（除白名单外）。
-
+1. 运行总入口：`scripts/run_v7_release.ps1`
+2. 发布包入口：`release_exports/v7/knowledge_base_import_ready.csv`
+3. 演示入口：`web_demo/app.py`

@@ -21,11 +21,10 @@ $AssignmentCsv = "data_sources\web_seed_v7_task_assignment.csv"
 $BundleDir = "artifacts\import_bundle_v7"
 $ReleaseDir = "release_exports\v7"
 $CuratedCsv = "knowledge_base_curated.csv"
-$BaseReleaseCsv = "release_exports\v6.1\knowledge_base_import_ready.csv"
+$BaseReleaseCsv = "release_exports\v7\knowledge_base_import_ready.csv"
 
 if (-not (Test-Path $Manifest)) { throw "Missing manifest: $Manifest" }
 if (-not (Test-Path $CuratedCsv)) { throw "Missing curated CSV: $CuratedCsv" }
-if (-not (Test-Path $BaseReleaseCsv)) { throw "Missing base release CSV: $BaseReleaseCsv" }
 
 if (-not $SkipFetch) {
   Write-Host "=== Step 1/6: Fetch V7 web seeds ===" -ForegroundColor Cyan
@@ -67,12 +66,17 @@ Write-Host "=== Step 4/6: Rewrite low-quality rows ===" -ForegroundColor Cyan
   --low-quality-threshold $LowQualityThreshold
 if ($LASTEXITCODE -ne 0) { throw "Rewrite low-quality rows failed." }
 
-Write-Host "=== Step 5/6: Build import-ready bundle (curated + v7 + v6.1) ===" -ForegroundColor Cyan
-& $PythonExe scripts\build_import_ready_bundle.py `
-  --output-dir $BundleDir `
-  --source curated=$CuratedCsv `
-  --source v7_web_rewritten=$KbRewrittenCsv `
-  --source v6_1_release=$BaseReleaseCsv
+Write-Host "=== Step 5/6: Build import-ready bundle (curated + v7 + previous v7 if exists) ===" -ForegroundColor Cyan
+$buildArgs = @(
+  "scripts\build_import_ready_bundle.py",
+  "--output-dir", $BundleDir,
+  "--source", "curated=$CuratedCsv",
+  "--source", "v7_web_rewritten=$KbRewrittenCsv"
+)
+if (Test-Path $BaseReleaseCsv) {
+  $buildArgs += @("--source", "v7_previous_release=$BaseReleaseCsv")
+}
+& $PythonExe @buildArgs
 if ($LASTEXITCODE -ne 0) { throw "Build V7 import bundle failed." }
 
 Write-Host "=== Step 6/6: Export V7 release directory ===" -ForegroundColor Cyan
@@ -115,7 +119,7 @@ $releaseNote = @"
 - prefetch_blocked: $blocked
 - prefetch_failed: $failed
 - low_quality_before_rewrite: $low
-- source_priority: curated > v7_web_rewritten > v6_1_release
+- source_priority: curated > v7_web_rewritten > v7_previous_release(optional)
 
 ## Included files
 

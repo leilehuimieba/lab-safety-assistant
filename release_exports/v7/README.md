@@ -1,13 +1,13 @@
 ﻿# Release Export v7
 
-- generated_at: 2026-03-29 18:48:59
+- generated_at: 2026-03-29 19:27:44
 - import_ready_rows: 350
 - prefetch_total: 14
 - prefetch_ok: 14
 - prefetch_blocked: 0
 - prefetch_failed: 0
 - low_quality_before_rewrite: 3
-- source_priority: curated > v7_web_rewritten > v6_1_release
+- source_priority: curated > v7_web_rewritten > v7_previous_release(optional)
 
 ## Included files
 
