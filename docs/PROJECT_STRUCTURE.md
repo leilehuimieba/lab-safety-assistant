@@ -18,6 +18,10 @@ lab-safe-assistant-github/
 ├─ release_exports/
 │  └─ v7/                        # 当前正式发布包
 ├─ scripts/                      # 自动化脚本
+│  ├─ pipeline/                  # 抓取、清洗、入库主链路脚本
+│  ├─ release/                   # 发布打包脚本
+│  ├─ qa/                        # 质量门禁脚本
+│  └─ *.py                       # 兼容入口（转发到上述子目录）
 ├─ skills/                       # 本地技能
 ├─ tests/                        # 回归测试
 ├─ web_demo/                     # 演示服务
@@ -45,7 +49,13 @@ lab-safe-assistant-github/
    - `python -m pytest -q`
    - `python scripts/quality_gate.py --repo-root . --skip-secret-scan`
 
-## 4. 推荐入口
+## 4. 脚本调用约定
+
+1. 外部调用优先使用 `scripts/*.py` 兼容入口，避免路径频繁变更导致 CI 和文档失效。
+2. 新增脚本按功能放入 `scripts/pipeline`、`scripts/release`、`scripts/qa`。
+3. 若脚本升级需要迁移位置，必须保留原入口转发文件，确保历史命令可继续使用。
+
+## 5. 推荐入口
 
 1. 运行总入口：`scripts/run_v7_release.ps1`
 2. 发布包入口：`release_exports/v7/knowledge_base_import_ready.csv`
