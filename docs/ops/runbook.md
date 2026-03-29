@@ -567,7 +567,9 @@ GitHub 自动监控（每日）：
 - 运行回归流水线并刷新看板
 - 生成自动风险说明（md/json）
 - 执行 gate 检查
+- 执行 release policy 检查（默认 `demo` profile，严格模式）
 - 若 gate 失败，自动创建或更新“同日唯一”`eval-gate-alert` Issue（避免重复开单）
+- 若 release policy 失败，也会触发同一告警链路
 - 自动检查告警 SLA 字段：`Owner` + `DDL(YYYY-MM-DD)`
 - SLA 缺失自动加红色标签 `sla-missing` 并评论提醒
 - 若连续失败达到 3 天（含当天），自动加 `p1-gate` 标签并 @升级负责人

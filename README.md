@@ -287,6 +287,7 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 - Auto risk note: `python scripts/generate_release_risk_note.py --repo-root .`
 - Pipeline behavior: when running `scripts/run_eval_regression_pipeline.py --update-dashboard`, risk note files are refreshed automatically (use `--skip-risk-note` to disable).
 - Daily monitor workflow: `.github/workflows/daily-eval-gate-monitor.yml` (auto runs pipeline + gate, and opens/updates `eval-gate-alert` issue on failure)
+- Daily monitor now also runs `validate_release_policy.py` (`demo` + `--strict`) and treats policy failure as alert/block signal.
 - Same-day dedup + SLA check: daily monitor keeps one issue per day and enforces `Owner`/`DDL` fields; missing SLA is marked with red `sla-missing` label.
 - Escalation policy: if gate fails for 3 consecutive days, workflow adds `p1-gate` label and @mentions escalation owners from repo variable `EVAL_GATE_ESCALATION_MENTIONS`.
 - Postmortem reminder: for open `p1-gate` issues older than 24h, workflow posts one reminder per day until recovery; template at `docs/eval/p1_postmortem_template.md`.

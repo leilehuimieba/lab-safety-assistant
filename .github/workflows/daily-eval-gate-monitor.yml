@@ -65,6 +65,26 @@ jobs:
           fi
           exit 0
 
+      - name: Validate Release Policy (demo)
+        id: policy
+        shell: bash
+        run: |
+          set +e
+          python scripts/validate_release_policy.py \
+            --repo-root . \
+            --profile demo \
+            --strict \
+            > release_policy_output.txt 2>&1
+          code=$?
+          cat release_policy_output.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 0 ]; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
       - name: Upload Gate Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -72,14 +92,17 @@ jobs:
           name: eval-gate-${{ github.run_id }}
           path: |
             gate_output.txt
+            release_policy_output.txt
             docs/eval/release_risk_note_auto.md
             docs/eval/release_risk_note_auto.json
+            docs/eval/release_policy_check.md
+            docs/eval/release_policy_check.json
             docs/eval/eval_dashboard_data.json
             docs/eval/failover_status.json
             docs/eval/failover_status.md
 
       - name: Create or Update Same-Day Gate Alert Issue
-        if: steps.gate.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail'
         uses: actions/github-script@v7
         env:
           EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
@@ -94,42 +117,73 @@ jobs:
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             const gateOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'gate_output.txt');
+            const policyOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_policy_output.txt');
             const riskJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_risk_note_auto.json');
+            const policyJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_policy_check.json');
             const riskJsonRepoPath = 'docs/eval/release_risk_note_auto.json';
             const riskMdRepoPath = 'docs/eval/release_risk_note_auto.md';
+            const policyJsonRepoPath = 'docs/eval/release_policy_check.json';
+            const policyMdRepoPath = 'docs/eval/release_policy_check.md';
 
             let gateOutput = '';
+            let policyOutput = '';
             let gateDecision = 'BLOCK';
             let violations = [];
+            let policyStatus = 'BLOCK';
+            let policyViolations = [];
             try {
               gateOutput = fs.readFileSync(gateOutputPath, 'utf8').trim();
             } catch (e) {
               gateOutput = '(gate output not found)';
             }
             try {
+              policyOutput = fs.readFileSync(policyOutputPath, 'utf8').trim();
+            } catch (e) {
+              policyOutput = '(release policy output not found)';
+            }
+            try {
               const payload = JSON.parse(fs.readFileSync(riskJsonPath, 'utf8'));
               gateDecision = String(payload.gate_decision || 'BLOCK');
               violations = Array.isArray(payload.violations) ? payload.violations : [];
+            } catch (e) {}
+            try {
+              const policy = JSON.parse(fs.readFileSync(policyJsonPath, 'utf8'));
+              policyStatus = String(policy.status || 'BLOCK');
+              policyViolations = Array.isArray(policy.violations) ? policy.violations : [];
             } catch (e) {}
 
             const violationLines = violations.length > 0
               ? violations.map(v => `- ${v}`).join('\n')
               : '- (no violation list in json)';
+            const policyViolationLines = policyViolations.length > 0
+              ? policyViolations.map(v => `- ${v}`).join('\n')
+              : '- (no policy violation list in json)';
 
             const body = [
               'Auto monitor detected eval gate failure. This issue was created by workflow.',
               '',
               `- Workflow Run: ${runUrl}`,
               `- Gate Decision: \`${gateDecision}\``,
+              `- Release Policy Status: \`${policyStatus}\``,
               `- Risk Note JSON: \`${riskJsonRepoPath}\``,
               `- Risk Note MD: \`${riskMdRepoPath}\``,
+              `- Release Policy JSON: \`${policyJsonRepoPath}\``,
+              `- Release Policy MD: \`${policyMdRepoPath}\``,
               '',
               '## Violations',
               violationLines,
               '',
+              '## Release Policy Violations',
+              policyViolationLines,
+              '',
               '## Gate Output',
               '```text',
               gateOutput.slice(0, 12000),
+              '```',
+              '',
+              '## Release Policy Output',
+              '```text',
+              policyOutput.slice(0, 12000),
               '```',
               '',
               '## SLA (required for release follow-up)',
@@ -260,7 +314,7 @@ jobs:
             }
 
       - name: Check Alert SLA Metadata
-        if: steps.gate.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail'
         uses: actions/github-script@v7
         with:
           script: |
@@ -375,7 +429,7 @@ jobs:
             }
 
       - name: P1 24h Postmortem Reminder
-        if: steps.gate.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail'
         uses: actions/github-script@v7
         env:
           EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
@@ -447,7 +501,7 @@ jobs:
             }
 
       - name: Close Open Gate Alert Issues On Recovery
-        if: steps.gate.outputs.status == 'pass'
+        if: steps.gate.outputs.status == 'pass' && steps.policy.outputs.status == 'pass'
         uses: actions/github-script@v7
         with:
           script: |
@@ -491,7 +545,7 @@ jobs:
             }
 
       - name: Fail Workflow On Gate Failure
-        if: steps.gate.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail'
         run: |
-          echo "Eval gate failed. Failing workflow after alert issue creation."
+          echo "Eval gate or release policy failed. Failing workflow after alert issue creation."
           exit 1

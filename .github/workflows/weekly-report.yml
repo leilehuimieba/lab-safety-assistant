@@ -40,6 +40,10 @@ jobs:
         run: |
           python scripts/generate_failover_status.py --repo-root . --days 7
 
+      - name: Validate Release Policy (demo)
+        run: |
+          python scripts/validate_release_policy.py --repo-root . --profile demo --strict
+
       - name: Generate Weekly Report
         run: |
           python scripts/generate_weekly_team_report.py --repo-root . --since "7 days ago" --until "now"
@@ -63,6 +67,7 @@ jobs:
 
             - Triggered eval regression pipeline (live run when Dify secrets are configured)
             - Refreshed failover snapshot at `docs/eval/failover_status.md`
+            - Refreshed release policy check at `docs/eval/release_policy_check.md`
             - Generated weekly report under `docs/weekly_reports/`
             - Refreshed eval dashboard under `docs/eval/eval_dashboard.md`
             - Updated gate weekly ops summary at `docs/eval/weekly_gate_ops.md`
