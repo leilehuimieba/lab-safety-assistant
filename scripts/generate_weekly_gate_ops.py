@@ -27,6 +27,7 @@ class Issue:
     state: str
     created_at: datetime
     updated_at: datetime
+    closed_at: datetime | None
     labels: set[str]
 
 
@@ -58,6 +59,11 @@ def parse_args() -> argparse.Namespace:
         "--issues-json",
         default="",
         help="Optional local issues json for offline generation/testing.",
+    )
+    parser.add_argument(
+        "--release-fix-issues-json",
+        default="",
+        help="Optional local release-fix issues json for offline generation/testing.",
     )
     parser.add_argument(
         "--today",
@@ -100,6 +106,8 @@ def parse_issue(item: dict[str, Any]) -> Issue | None:
         state = str(item.get("state", "") or "").strip().lower()
         created_at = parse_dt(str(item.get("created_at", "") or ""))
         updated_at = parse_dt(str(item.get("updated_at", "") or ""))
+        closed_raw = str(item.get("closed_at", "") or "").strip()
+        closed_at = parse_dt(closed_raw) if closed_raw else None
     except Exception:
         return None
     if number <= 0 or not title:
@@ -110,6 +118,7 @@ def parse_issue(item: dict[str, Any]) -> Issue | None:
         state=state,
         created_at=created_at,
         updated_at=updated_at,
+        closed_at=closed_at,
         labels=labels,
     )
 
@@ -130,7 +139,7 @@ def github_get_json(url: str, token: str) -> Any:
     return json.loads(body)
 
 
-def load_issues_from_github(repo: str, token: str) -> list[Issue]:
+def load_issues_from_github_by_label(repo: str, token: str, *, labels: str) -> list[Issue]:
     owner, name = repo.split("/", 1)
     all_issues: list[Issue] = []
     per_page = 100
@@ -138,7 +147,7 @@ def load_issues_from_github(repo: str, token: str) -> list[Issue]:
         qs = urllib.parse.urlencode(
             {
                 "state": "all",
-                "labels": "eval-gate-alert",
+                "labels": labels,
                 "per_page": per_page,
                 "page": page,
             }
@@ -183,9 +192,12 @@ def title_date(title: str) -> date | None:
 
 
 def summarize(issues: list[Issue], *, start: date, end: date) -> dict[str, Any]:
+    gate_issues = [
+        issue for issue in issues if ("eval-gate-alert" in issue.labels or title_date(issue.title) is not None)
+    ]
     day_total = (end - start).days + 1
     by_day: dict[str, Issue] = {}
-    for issue in issues:
+    for issue in gate_issues:
         d = title_date(issue.title)
         if d is None or d < start or d > end:
             continue
@@ -197,10 +209,10 @@ def summarize(issues: list[Issue], *, start: date, end: date) -> dict[str, Any]:
     fail_days = len(by_day)
     pass_days = max(0, day_total - fail_days)
     p1_days = sum(1 for issue in by_day.values() if "p1-gate" in issue.labels)
-    open_alerts = sum(1 for issue in issues if issue.state == "open")
-    open_p1 = sum(1 for issue in issues if issue.state == "open" and "p1-gate" in issue.labels)
+    open_alerts = sum(1 for issue in gate_issues if issue.state == "open")
+    open_p1 = sum(1 for issue in gate_issues if issue.state == "open" and "p1-gate" in issue.labels)
     open_sla_missing = sum(
-        1 for issue in issues if issue.state == "open" and "sla-missing" in issue.labels
+        1 for issue in gate_issues if issue.state == "open" and "sla-missing" in issue.labels
     )
 
     rows = []
@@ -243,6 +255,43 @@ def summarize(issues: list[Issue], *, start: date, end: date) -> dict[str, Any]:
     }
 
 
+def summarize_release_fix_p0(issues: list[Issue], *, start: date, end: date) -> dict[str, Any]:
+    filtered = [
+        issue
+        for issue in issues
+        if "release-fix-task" in issue.labels and "priority-p0" in issue.labels
+    ]
+    created_in_window = sum(1 for issue in filtered if start <= issue.created_at.date() <= end)
+    closed_in_window = sum(
+        1
+        for issue in filtered
+        if issue.closed_at is not None and start <= issue.closed_at.date() <= end
+    )
+    open_now = [issue for issue in filtered if issue.state == "open"]
+    stale_open_7d = sum(1 for issue in open_now if (end - issue.created_at.date()).days >= 7)
+    open_rows = sorted(
+        [
+            {
+                "number": issue.number,
+                "title": issue.title,
+                "created_at": issue.created_at.date().isoformat(),
+                "updated_at": issue.updated_at.date().isoformat(),
+                "labels": ",".join(sorted(issue.labels)),
+            }
+            for issue in open_now
+        ],
+        key=lambda item: item["number"],
+    )
+    return {
+        "total_p0": len(filtered),
+        "created_in_window": created_in_window,
+        "closed_in_window": closed_in_window,
+        "open_now": len(open_now),
+        "stale_open_7d": stale_open_7d,
+        "open_rows": open_rows,
+    }
+
+
 def load_failover_status(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
@@ -260,6 +309,8 @@ def render_markdown(
     *,
     generated_at: str,
     source: str,
+    release_fix_summary: dict[str, Any] | None = None,
+    release_fix_source: str = "",
     failover_status: dict[str, Any] | None = None,
 ) -> str:
     lines: list[str] = []
@@ -294,6 +345,33 @@ def render_markdown(
     lines.append("")
     lines.append("- `FAIL` is inferred from `eval-gate-alert` issue existence for that date.")
     lines.append("- `PASS` is inferred when no `eval-gate-alert` issue exists for that date in the window.")
+    if release_fix_summary is not None:
+        lines.append("")
+        lines.append("## Release Fix P0 Summary")
+        lines.append("")
+        if release_fix_source:
+            lines.append(f"- Source: `{release_fix_source}`")
+            lines.append("")
+        lines.append("| Metric | Value |")
+        lines.append("|---|---:|")
+        lines.append(f"| Total P0 Tasks (all-time issues) | {release_fix_summary['total_p0']} |")
+        lines.append(f"| Created in Window | {release_fix_summary['created_in_window']} |")
+        lines.append(f"| Closed in Window | {release_fix_summary['closed_in_window']} |")
+        lines.append(f"| Open Now | {release_fix_summary['open_now']} |")
+        lines.append(f"| Open >= 7 Days | {release_fix_summary['stale_open_7d']} |")
+        lines.append("")
+        lines.append("### Open P0 Tasks")
+        lines.append("")
+        lines.append("| Issue | Title | Created | Updated | Labels |")
+        lines.append("|---|---|---|---|---|")
+        if release_fix_summary["open_rows"]:
+            for row in release_fix_summary["open_rows"]:
+                title = str(row["title"]).replace("|", "\\|")
+                lines.append(
+                    f"| #{row['number']} | {title} | {row['created_at']} | {row['updated_at']} | {row['labels']} |"
+                )
+        else:
+            lines.append("| - | none | - | - | - |")
     if failover_status:
         lines.append("")
         lines.append("## Failover Snapshot")
@@ -331,12 +409,22 @@ def main() -> int:
     start = today - timedelta(days=days - 1)
 
     source = ""
+    release_fix_source = ""
     if args.issues_json:
         issues_path = Path(args.issues_json)
         if not issues_path.is_absolute():
             issues_path = repo_root / issues_path
         issues = load_issues_from_json(issues_path)
         source = f"issues-json:{issues_path}"
+        if args.release_fix_issues_json:
+            release_fix_path = Path(args.release_fix_issues_json)
+            if not release_fix_path.is_absolute():
+                release_fix_path = repo_root / release_fix_path
+            release_fix_issues = load_issues_from_json(release_fix_path)
+            release_fix_source = f"issues-json:{release_fix_path}"
+        else:
+            release_fix_issues = issues
+            release_fix_source = source
     else:
         repo = (args.repo or "").strip()
         token = (args.token or "").strip()
@@ -344,10 +432,17 @@ def main() -> int:
             raise SystemExit(
                 "Missing repo/token. Provide --issues-json or set GITHUB_REPOSITORY + GITHUB_TOKEN."
             )
-        issues = load_issues_from_github(repo=repo, token=token)
+        issues = load_issues_from_github_by_label(repo=repo, token=token, labels="eval-gate-alert")
         source = f"github:{repo}"
+        release_fix_issues = load_issues_from_github_by_label(
+            repo=repo,
+            token=token,
+            labels="release-fix-task,priority-p0",
+        )
+        release_fix_source = f"github:{repo}:release-fix-task+priority-p0"
 
     summary = summarize(issues, start=start, end=today)
+    release_fix_summary = summarize_release_fix_p0(release_fix_issues, start=start, end=today)
     generated_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     failover_path = Path(args.failover_status_json)
     if not failover_path.is_absolute():
@@ -358,6 +453,8 @@ def main() -> int:
         summary,
         generated_at=generated_at,
         source=source,
+        release_fix_summary=release_fix_summary,
+        release_fix_source=release_fix_source,
         failover_status=failover_status,
     )
 

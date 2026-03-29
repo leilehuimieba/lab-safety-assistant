@@ -13,6 +13,7 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,12 @@ from typing import Any
 DEFAULT_LABELS = ["release-fix-task"]
 ACTIVE_STATUS = {"todo", "in_progress", "blocked"}
 CLOSED_STATUS = {"done", "wont_fix"}
+
+
+@dataclass
+class OwnerParseResult:
+    valid: list[str]
+    invalid: list[str]
 
 
 def now_iso() -> str:
@@ -99,19 +106,31 @@ def build_issue_title(task_id: str, reason: str) -> str:
     return f"[Release Fix] {task_id} {reason_part}".strip()
 
 
-def parse_owner_to_assignees(owner: str) -> list[str]:
+def parse_owner_field(owner: str) -> OwnerParseResult:
     raw = str(owner or "").strip()
     if not raw:
-        return []
+        return OwnerParseResult(valid=[], invalid=[])
     tokens = re.split(r"[,\s;]+", raw)
-    assignees: list[str] = []
+    valid: list[str] = []
+    invalid: list[str] = []
     for token in tokens:
         candidate = token.strip().lstrip("@")
         if not candidate:
             continue
         if re.fullmatch(r"[A-Za-z0-9-]+", candidate):
-            assignees.append(candidate)
-    return sorted(set(assignees))
+            valid.append(candidate)
+        else:
+            invalid.append(candidate)
+    return OwnerParseResult(valid=sorted(set(valid)), invalid=sorted(set(invalid)))
+
+
+def parse_owner_to_assignees(owner: str) -> list[str]:
+    return parse_owner_field(owner).valid
+
+
+def is_assignee_error(exc: Exception) -> bool:
+    text = str(exc or "").lower()
+    return "assignee" in text or "could not resolve to a user" in text
 
 
 def build_issue_body(row: dict[str, str]) -> str:
@@ -256,6 +275,38 @@ def upsert_row_sync_meta(row: dict[str, str], *, issue: dict[str, Any] | None) -
     row["last_synced_at"] = now_iso()
 
 
+def upsert_issue_with_assignee_fallback(
+    *,
+    client: GitHubClient,
+    existing: dict[str, Any] | None,
+    payload: dict[str, Any],
+    assignees: list[str],
+    task_id: str,
+    warnings: list[str],
+) -> tuple[dict[str, Any], bool]:
+    try:
+        if existing is None:
+            issue = client.create_issue(payload)
+        else:
+            issue_number = int(existing.get("number", 0) or 0)
+            issue = client.update_issue(issue_number, payload)
+        return issue, False
+    except Exception as exc:
+        if not assignees or not is_assignee_error(exc):
+            raise
+        fallback_payload = dict(payload)
+        fallback_payload.pop("assignees", None)
+        warnings.append(
+            f"{task_id}: assignee fallback applied (owner not assignable): {', '.join(assignees)}"
+        )
+        if existing is None:
+            issue = client.create_issue(fallback_payload)
+        else:
+            issue_number = int(existing.get("number", 0) or 0)
+            issue = client.update_issue(issue_number, fallback_payload)
+        return issue, True
+
+
 def main() -> int:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
@@ -288,6 +339,10 @@ def main() -> int:
     updated = 0
     closed = 0
     skipped = 0
+    warning_count_owner_parse = 0
+    warning_count_owner_empty = 0
+    warning_count_assignee_fallback = 0
+    warnings: list[str] = []
     errors: list[str] = []
     touched_tasks: list[str] = []
 
@@ -305,7 +360,21 @@ def main() -> int:
         existing = issues_by_task.get(task_id)
         title = build_issue_title(task_id, str(row.get("blocking_reason", "")))
         body = build_issue_body(row)
-        assignees = parse_owner_to_assignees(row.get("owner", "")) if args.assign_from_owner else []
+        owner_raw = str(row.get("owner", "")).strip()
+        assignees: list[str] = []
+        if args.assign_from_owner:
+            owner_parsed = parse_owner_field(owner_raw)
+            assignees = owner_parsed.valid
+            if owner_parsed.invalid:
+                warning_count_owner_parse += 1
+                warnings.append(
+                    f"{task_id}: invalid owner tokens skipped: {', '.join(owner_parsed.invalid)}"
+                )
+            if owner_raw and not assignees:
+                warning_count_owner_empty += 1
+                warnings.append(
+                    f"{task_id}: owner present but no valid assignee parsed, continue without assignee"
+                )
 
         try:
             if status in ACTIVE_STATUS:
@@ -323,7 +392,19 @@ def main() -> int:
                         fake = {"number": "", "html_url": "", "state": "open"}
                         upsert_row_sync_meta(row, issue=fake)
                     else:
-                        issue = client.create_issue(payload) if client else {}
+                        issue = {}
+                        used_fallback = False
+                        if client:
+                            issue, used_fallback = upsert_issue_with_assignee_fallback(
+                                client=client,
+                                existing=None,
+                                payload=payload,
+                                assignees=assignees,
+                                task_id=task_id,
+                                warnings=warnings,
+                            )
+                        if used_fallback:
+                            warning_count_assignee_fallback += 1
                         upsert_row_sync_meta(row, issue=issue)
                         issues_by_task[task_id] = issue
                     created += 1
@@ -331,7 +412,16 @@ def main() -> int:
                 else:
                     issue_number = int(existing.get("number", 0) or 0)
                     if issue_number > 0 and not dry_run and client:
-                        issue = client.update_issue(issue_number, payload)
+                        issue, used_fallback = upsert_issue_with_assignee_fallback(
+                            client=client,
+                            existing=existing,
+                            payload=payload,
+                            assignees=assignees,
+                            task_id=task_id,
+                            warnings=warnings,
+                        )
+                        if used_fallback:
+                            warning_count_assignee_fallback += 1
                         upsert_row_sync_meta(row, issue=issue)
                         issues_by_task[task_id] = issue
                     else:
@@ -362,7 +452,8 @@ def main() -> int:
         except Exception as exc:
             errors.append(f"{task_id}: {exc}")
 
-    write_csv(csv_path, headers, rows)
+    if not dry_run:
+        write_csv(csv_path, headers, rows)
 
     report = {
         "generated_at": now_iso(),
@@ -377,8 +468,13 @@ def main() -> int:
             "closed": closed,
             "skipped": skipped,
             "errors": len(errors),
+            "warnings": len(warnings),
+            "owner_parse_warnings": warning_count_owner_parse,
+            "owner_no_valid_assignee": warning_count_owner_empty,
+            "assignee_fallbacks": warning_count_assignee_fallback,
         },
         "touched_tasks": touched_tasks,
+        "warnings": warnings,
         "errors": errors,
     }
 
@@ -399,6 +495,10 @@ def main() -> int:
         f"- updated: `{updated}`",
         f"- closed: `{closed}`",
         f"- skipped: `{skipped}`",
+        f"- warnings: `{len(warnings)}`",
+        f"- owner_parse_warnings: `{warning_count_owner_parse}`",
+        f"- owner_no_valid_assignee: `{warning_count_owner_empty}`",
+        f"- assignee_fallbacks: `{warning_count_assignee_fallback}`",
         f"- errors: `{len(errors)}`",
         "",
         "## Touched Tasks",
@@ -410,6 +510,9 @@ def main() -> int:
     if errors:
         lines.extend(["", "## Errors"])
         lines.extend([f"- {item}" for item in errors])
+    if warnings:
+        lines.extend(["", "## Warnings"])
+        lines.extend([f"- {item}" for item in warnings])
     report_md.parent.mkdir(parents=True, exist_ok=True)
     report_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

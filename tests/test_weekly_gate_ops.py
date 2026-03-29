@@ -25,6 +25,23 @@ def test_generate_weekly_gate_ops_from_local_json(tmp_path: Path, monkeypatch) -
             "updated_at": "2026-03-24T08:00:00Z",
             "labels": [{"name": "eval-gate-alert"}, {"name": "p1-gate"}, {"name": "sla-missing"}],
         },
+        {
+            "number": 301,
+            "title": "[Release Fix] REL-FIX-01 demo blocked",
+            "state": "open",
+            "created_at": "2026-03-23T02:00:00Z",
+            "updated_at": "2026-03-28T05:00:00Z",
+            "labels": [{"name": "release-fix-task"}, {"name": "priority-p0"}],
+        },
+        {
+            "number": 302,
+            "title": "[Release Fix] REL-FIX-02 prod blocked",
+            "state": "closed",
+            "created_at": "2026-03-24T02:00:00Z",
+            "updated_at": "2026-03-27T05:00:00Z",
+            "closed_at": "2026-03-27T05:00:00Z",
+            "labels": [{"name": "release-fix-task"}, {"name": "priority-p0"}],
+        },
     ]
     issues_json = tmp_path / "issues.json"
     issues_json.write_text(json.dumps(issues, ensure_ascii=False), encoding="utf-8")
@@ -55,6 +72,11 @@ def test_generate_weekly_gate_ops_from_local_json(tmp_path: Path, monkeypatch) -
     assert "Open Alerts | 1" in text
     assert "Open P1 Alerts | 1" in text
     assert "Open SLA Missing | 1" in text
+    assert "## Release Fix P0 Summary" in text
+    assert "Created in Window | 2" in text
+    assert "Closed in Window | 1" in text
+    assert "Open Now | 1" in text
+    assert "#301" in text
 
 
 def test_generate_weekly_gate_ops_with_failover_snapshot(tmp_path: Path, monkeypatch) -> None:

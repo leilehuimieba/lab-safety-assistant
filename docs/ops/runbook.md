@@ -592,20 +592,41 @@ python scripts/validate_release_fix_plan.py --repo-root .
 
 ```powershell
 # 实际执行（需要 GITHUB_TOKEN + GITHUB_REPOSITORY）
-python scripts/sync_release_fix_plan_issues.py --repo-root . --only-priority P0
+python scripts/sync_release_fix_plan_issues.py --repo-root . --only-priority P0 --assign-from-owner
 
 # 预演模式（不写入 GitHub）
-python scripts/sync_release_fix_plan_issues.py --repo-root . --only-priority P0 --dry-run
+python scripts/sync_release_fix_plan_issues.py --repo-root . --only-priority P0 --assign-from-owner --dry-run
 ```
 
 - 输入：`docs/ops/release_fix_plan_auto.csv`
 - 输出：
 - `docs/ops/release_fix_plan_sync_report.json`
 - `docs/ops/release_fix_plan_sync_report.md`
+- 降级策略：
+- 若 `owner` 字段包含非法用户名，自动跳过非法 token 并记录 warning
+- 若 assignee 无法绑定（非协作者/不存在），自动降级为“创建 issue 但不指派”，并记录 warning
 - 同步规则：
 - `status in [todo,in_progress,blocked]`：创建或更新 issue
 - `status in [done,wont_fix]`：关闭已关联 issue
 - `task_id` 通过 `<!-- RELEASE_FIX_TASK:{task_id} -->` 标记实现可追踪绑定
+
+逾期升级（P0）：
+
+```powershell
+# 实际执行（每日监控工作流会自动跑）
+python scripts/escalate_release_fix_overdue.py --repo-root . --priority P0
+
+# 预演模式
+python scripts/escalate_release_fix_overdue.py --repo-root . --priority P0 --dry-run
+```
+
+- 输出：
+- `docs/ops/release_fix_overdue_report.json`
+- `docs/ops/release_fix_overdue_report.md`
+- 升级动作：
+- 给逾期任务 issue 自动打 `release-fix-overdue`
+- 逾期天数达到阈值（默认 3 天）自动升级 `p1-release-fix`
+- 每日最多一条提醒评论（按 `RELEASE_FIX_OVERDUE:{task_id}:{date}` 去重）
 
 GitHub 自动监控（每日）：
 
