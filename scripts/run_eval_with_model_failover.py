@@ -57,6 +57,25 @@ def parse_args() -> argparse.Namespace:
         "--chat-preflight-timeout", type=float, default=20.0, help="Dify /chat-messages preflight timeout."
     )
     parser.add_argument("--worker-log-container", default="docker-worker-1", help="Worker container for diagnosis.")
+    parser.add_argument(
+        "--skip-health-check",
+        action="store_true",
+        help="Skip pre-run health check (Dify + embedding channel).",
+    )
+    parser.add_argument(
+        "--health-check-script",
+        default="scripts/check_live_eval_health.py",
+        help="Health check script path (relative to repo root or absolute path).",
+    )
+    parser.add_argument(
+        "--embedding-containers",
+        nargs="+",
+        default=["docker-api-1", "docker-worker-1", "docker-plugin_daemon-1"],
+        help="Containers that must reach embedding endpoint during health check.",
+    )
+    parser.add_argument("--embedding-host", default="host.docker.internal", help="Embedding host alias.")
+    parser.add_argument("--embedding-port", type=int, default=11434, help="Embedding endpoint port.")
+    parser.add_argument("--embedding-timeout", type=float, default=3.0, help="Embedding curl timeout seconds.")
     parser.add_argument("--skip-preflight", action="store_true", help="Skip /parameters preflight.")
     parser.add_argument("--skip-chat-preflight", action="store_true", help="Skip /chat-messages preflight.")
     parser.add_argument("--allow-skip-live", action="store_true", help="Allow skip when Dify creds missing.")
@@ -196,6 +215,41 @@ def run_regression(repo_root: Path, args: argparse.Namespace) -> subprocess.Comp
     return run_cmd(cmd, cwd=repo_root)
 
 
+def run_health_check(repo_root: Path, args: argparse.Namespace) -> subprocess.CompletedProcess[str]:
+    dify_base_url = args.dify_base_url.strip() or os.environ.get("DIFY_BASE_URL", "").strip()
+    dify_app_key = args.dify_app_key.strip() or os.environ.get("DIFY_APP_API_KEY", "").strip()
+    script_path = Path(args.health_check_script)
+    if not script_path.is_absolute():
+        script_path = (repo_root / script_path).resolve()
+    cmd = [
+        sys.executable,
+        str(script_path),
+        "--repo-root",
+        str(repo_root),
+        "--dify-base-url",
+        dify_base_url,
+        "--dify-app-key",
+        dify_app_key,
+        "--response-mode",
+        args.dify_response_mode,
+        "--preflight-timeout",
+        str(max(1.0, args.preflight_timeout)),
+        "--chat-preflight-timeout",
+        str(max(1.0, args.chat_preflight_timeout)),
+        "--worker-log-container",
+        args.worker_log_container.strip(),
+        "--embedding-host",
+        args.embedding_host,
+        "--embedding-port",
+        str(int(args.embedding_port)),
+        "--embedding-timeout",
+        str(max(1.0, args.embedding_timeout)),
+        "--embedding-containers",
+        *[c for c in args.embedding_containers if c.strip()],
+    ]
+    return run_cmd(cmd, cwd=repo_root)
+
+
 def write_report(report_path: Path, payload: dict) -> None:
     report_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     md_path = report_path.with_suffix(".md")
@@ -245,6 +299,19 @@ def main() -> int:
     }
 
     try:
+        if not args.skip_health_check:
+            health_result = run_health_check(repo_root, args)
+            report["health_check"] = {
+                "exit_code": health_result.returncode,
+                "stdout_tail": (health_result.stdout or "")[-3000:],
+                "stderr_tail": (health_result.stderr or "")[-2000:],
+            }
+            if health_result.returncode != 0:
+                raise RuntimeError(
+                    "Health check failed before failover eval.\n"
+                    f"{(health_result.stdout or '')[-2000:]}\n{(health_result.stderr or '')[-2000:]}"
+                )
+
         patch_workflow_model(repo_root, args.workflow_id, args.primary_model, args.temperature)
         primary_run = run_regression(repo_root, args)
         primary_merged = (primary_run.stdout or "") + "\n" + (primary_run.stderr or "")

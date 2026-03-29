@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Run eval smoke + auto review pipeline, then refresh dashboard.
 
@@ -289,7 +289,6 @@ def parse_worker_log_hints(log_text: str) -> list[str]:
     if "invokeserverunavailableerror" in lowered:
         hints.append("发现模型服务不可用异常（InvokeServerUnavailableError）。")
     return hints
-
 
 def collect_worker_log_hints(container_name: str) -> list[str]:
     if not container_name.strip():

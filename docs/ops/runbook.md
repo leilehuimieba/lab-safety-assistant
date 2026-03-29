@@ -378,6 +378,27 @@ python scripts/run_model_ab_eval.py `
 
 模型不可用自动回退（高优先级推荐）：
 
+先做运行前健康体检（推荐每次都执行）：
+
+```powershell
+set DIFY_BASE_URL=http://localhost:8080
+set DIFY_APP_API_KEY=<app-xxxx>
+python scripts/check_live_eval_health.py `
+  --repo-root . `
+  --dify-base-url %DIFY_BASE_URL% `
+  --dify-app-key %DIFY_APP_API_KEY% `
+  --response-mode streaming `
+  --embedding-containers docker-api-1 docker-worker-1 docker-plugin_daemon-1
+```
+
+若体检失败，先修复 embedding 映射后再继续：
+
+```powershell
+python scripts/fix_embedding_host_mapping.py --embed-container fake-ollama --containers docker-api-1 docker-worker-1 docker-plugin_daemon-1
+```
+
+体检通过后执行自动回退回归：
+
 ```powershell
 set DIFY_BASE_URL=http://localhost:8080
 set DIFY_APP_API_KEY=<app-xxxx>
@@ -395,6 +416,8 @@ python scripts/run_eval_with_model_failover.py `
 ```
 
 说明：
+- 默认会先调用 `check_live_eval_health.py`；若体检失败会提前退出，避免整轮长时间等待后才失败。
+- 可用 `--skip-health-check` 临时跳过体检（仅建议排障时使用）。
 - 先用主模型跑真实回归；若检测到 `model_not_found`、`InvokeServerUnavailableError`、`503` 等模型不可用特征，会自动切到备用模型再跑一轮。
 - 若主模型“返回码成功但超时占比过高”，也可按阈值触发回退（`--timeout-failover-threshold`，默认 `1.0` 表示全超时才触发）。
 - 自动输出报告到 `artifacts/model_failover_eval/run_*/model_failover_report.json`（含触发原因、主备运行目录、错误摘要）。
