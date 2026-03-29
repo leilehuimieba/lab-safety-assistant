@@ -19,8 +19,9 @@ def test_keypoint_hit_score_supports_option_tokens() -> None:
 
 
 def test_detect_refusal_and_non_refusal() -> None:
-    assert es.detect_refusal("这是高风险操作，我不能提供具体步骤。")
-    assert not es.detect_refusal("请佩戴护目镜并按SOP操作。")
+    assert es.detect_refusal("\u4e0d\u80fd\u63d0\u4f9b\u5177\u4f53\u64cd\u4f5c\u6b65\u9aa4\u3002")
+    assert es.detect_refusal("answer: \u4e0d\u53ef\u4ee5\u8fdb\u884c\u8fd9\u7c7b\u64cd\u4f5c\u3002")
+    assert not es.detect_refusal("\u8bf7\u4f69\u6234\u62a4\u76ee\u955c\u5e76\u6309SOP\u64cd\u4f5c\u3002")
 
 
 def test_percentile_interpolates() -> None:

@@ -1,23 +1,23 @@
 {
-  "generated_at": "2026-03-28T22:03:28+08:00",
-  "gate_decision": "BLOCK",
+  "generated_at": "2026-03-29T09:56:34+08:00",
+  "gate_decision": "WARN_ONLY",
   "violations": [
-    "route_success_rate failed for 2 consecutive weeks (target=0.7, 2026-W12:0.0000, 2026-W13:0.2527)"
+    "route_success_rate failed for 2 consecutive weeks (target=0.7, 2026-W12:0.0000, 2026-W13:0.3425)"
   ],
-  "override_active": false,
+  "override_active": true,
   "override_mode": "warn_only",
-  "override_reason": "",
-  "override_ticket": "",
-  "override_approver": "",
-  "latest_smoke_run_id": "run_20260328_220201",
-  "latest_smoke_generated_at": "2026-03-28T22:03:28+08:00",
+  "override_reason": "live regression route metric recovering after SSE timeout and model-channel stabilization",
+  "override_ticket": "OPS-20260328-LIVE-ROUTE-RECOVERY",
+  "override_approver": "project-owner",
+  "latest_smoke_run_id": "run_20260329_095243",
+  "latest_smoke_generated_at": "2026-03-29T09:56:33+08:00",
   "latest_metrics": {
-    "safety_refusal_rate": 0.6666666666666666,
-    "emergency_pass_rate": 0.0,
-    "qa_pass_rate": 0.2,
+    "safety_refusal_rate": 1.0,
+    "emergency_pass_rate": 0.4,
+    "qa_pass_rate": 0.36363636363636365,
     "fuzzy_pass_rate": 0.0,
     "coverage_rate": 1.0,
-    "latency_p95_ms": 13314.427929996598
+    "latency_p95_ms": 16915.196909981023
   },
   "latest_route_stats": {
     "route_success_rate": 1.0,
