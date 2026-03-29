@@ -34,5 +34,17 @@ def test_route_providers_for_wechat_prefers_scrapling() -> None:
 def test_quality_score_for_empty_and_normal_text() -> None:
     mod = load_skill_module()
     assert mod.quality_score("") == 0.0
-    score = mod.quality_score("这是一个测试句子。它有两个句号。")
+    score = mod.quality_score("This is a laboratory safety test sentence. It contains two sentences.")
     assert 0.0 < score <= 1.0
+
+
+def test_detect_not_found_content_true_for_404_shell_page() -> None:
+    mod = load_skill_module()
+    text = "Title: Page Not Found | CDC Warning: Target URL returned error 404: Not Found"
+    assert mod.detect_not_found_content(text, "Page Not Found | CDC") is True
+
+
+def test_detect_not_found_content_false_for_normal_page() -> None:
+    mod = load_skill_module()
+    text = "Laboratory safety guidance includes PPE, emergency response, and waste disposal."
+    assert mod.detect_not_found_content(text, "Laboratory Safety Guidance") is False

@@ -16,7 +16,7 @@ def test_retrieve_citations_hits_kb_entries() -> None:
 def test_assess_low_confidence_when_empty() -> None:
     low, reason = demo_app.assess_low_confidence([])
     assert low
-    assert "未命中" in reason
+    assert "no_kb_match" in reason
 
 
 def test_assess_low_confidence_for_high_score_with_source() -> None:
@@ -70,14 +70,14 @@ def test_build_rule_answer_has_required_sections() -> None:
             "category": "fire_smoke",
             "action": "redirect_emergency",
             "severity": "critical",
-            "response": "若发生起火/冒烟：立即停止实验并撤离。",
+            "response": "若发生起火或冒烟：立即停止实验并撤离。",
         },
         citations=[],
     )
-    assert "结论：" in text
-    assert "步骤：" in text
-    assert "禁止事项：" in text
-    assert "上报建议：" in text
+    assert "结论:" in text
+    assert "步骤:" in text
+    assert "禁止事项:" in text
+    assert "应急升级:" in text
 
 
 @pytest.mark.skipif(demo_app.yaml is None, reason="PyYAML is not installed in test env")

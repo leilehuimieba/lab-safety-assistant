@@ -53,6 +53,18 @@ BLOCK_HINTS_STRONG = [
     "sign in to continue",
 ]
 
+NOT_FOUND_HINTS = [
+    "warning: target url returned error 404",
+    "page not found",
+    "404 not found",
+    "status code: 404",
+    "the page you're looking for was not found",
+    "the page you were looking for has moved",
+    "页面未找到",
+    "页面不存在",
+    "404 页面",
+]
+
 
 @dataclass
 class FetchResult:
@@ -116,6 +128,20 @@ def detect_auth_wall(text: str) -> bool:
         # Soft auth hints only count on short pages.
         return len(lowered) < 1200
     return False
+
+
+def detect_not_found_content(text: str, title: str = "") -> bool:
+    lowered = re.sub(r"\s+", " ", (text or "").lower()).strip()
+    lowered_title = re.sub(r"\s+", " ", (title or "").lower()).strip()
+    if not lowered and not lowered_title:
+        return False
+    combined = f"{lowered_title} {lowered}".strip()
+    if any(token in combined for token in NOT_FOUND_HINTS):
+        return True
+    if "404" in combined and "not found" in combined:
+        return True
+    return False
+
 
 def quality_score(text: str) -> float:
     cleaned = re.sub(r"\s+", " ", (text or "").strip())
@@ -219,9 +245,12 @@ def fetch_jina(url: str, timeout: int, max_chars: int) -> FetchResult:
         )
     text = (resp.text or "").strip()
     requires_auth = detect_auth_wall(text)
+    not_found = detect_not_found_content(text, text.splitlines()[0] if text else "")
     status = "ok" if resp.status_code == 200 and text else "error"
     if requires_auth and status == "ok":
         status = "blocked"
+    if not_found and status == "ok":
+        status = "error"
     return FetchResult(
         url=url,
         status=status,
@@ -231,7 +260,11 @@ def fetch_jina(url: str, timeout: int, max_chars: int) -> FetchResult:
         quality_score=quality_score(text),
         requires_auth=requires_auth,
         http_status=resp.status_code,
-        error_reason="" if status == "ok" else f"jina_status_{resp.status_code}",
+        error_reason=(
+            ""
+            if status == "ok"
+            else ("content_not_found" if not_found else f"jina_status_{resp.status_code}")
+        ),
         fetched_at=utc_now(),
     )
 
@@ -273,9 +306,12 @@ def fetch_scrapling(url: str, timeout: int, max_chars: int) -> FetchResult:
 
     title, text = html_to_text(html)
     requires_auth = detect_auth_wall(text)
+    not_found = detect_not_found_content(text, title)
     status = "ok" if text else "error"
     if requires_auth and status == "ok":
         status = "blocked"
+    if not_found and status == "ok":
+        status = "error"
     return FetchResult(
         url=url,
         status=status,
@@ -285,7 +321,7 @@ def fetch_scrapling(url: str, timeout: int, max_chars: int) -> FetchResult:
         quality_score=quality_score(text),
         requires_auth=requires_auth,
         http_status=None,
-        error_reason="" if status == "ok" else error_reason,
+        error_reason="" if status == "ok" else ("content_not_found" if not_found else error_reason),
         fetched_at=utc_now(),
     )
 
@@ -309,9 +345,12 @@ def fetch_direct(url: str, timeout: int, max_chars: int) -> FetchResult:
 
     title, text = html_to_text(resp.text or "")
     requires_auth = detect_auth_wall(text)
+    not_found = detect_not_found_content(text, title)
     status = "ok" if resp.status_code == 200 and text else "error"
     if requires_auth and status == "ok":
         status = "blocked"
+    if not_found and status == "ok":
+        status = "error"
     return FetchResult(
         url=url,
         status=status,
@@ -321,7 +360,11 @@ def fetch_direct(url: str, timeout: int, max_chars: int) -> FetchResult:
         quality_score=quality_score(text),
         requires_auth=requires_auth,
         http_status=resp.status_code,
-        error_reason="" if status == "ok" else f"direct_status_{resp.status_code}",
+        error_reason=(
+            ""
+            if status == "ok"
+            else ("content_not_found" if not_found else f"direct_status_{resp.status_code}")
+        ),
         fetched_at=utc_now(),
     )
 

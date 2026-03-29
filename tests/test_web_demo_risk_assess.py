@@ -7,8 +7,6 @@ FASTAPI_AVAILABLE = importlib.util.find_spec("fastapi") is not None
 
 
 def test_web_demo_dependency_marker() -> None:
-    # CI/本地测试环境不一定安装 web_demo 运行依赖；
-    # 该用例保证本测试文件在任意环境都可被收集。
     assert isinstance(FASTAPI_AVAILABLE, bool)
 
 
@@ -26,7 +24,7 @@ if FASTAPI_AVAILABLE:
                     source_org="某高校",
                     source_url="https://example.com/rule",
                     risk_level="4",
-                    snippet="酸液飞溅应立即冲洗，必须佩戴护目镜和耐化学手套。",
+                    snippet="酸液飞溅应立即冲洗，并佩戴护目镜和耐化学手套。",
                     score=5.0,
                 )
             ][:top_k]
@@ -70,3 +68,31 @@ if FASTAPI_AVAILABLE:
         assert payload["model"] == "rule-engine"
         assert payload["decision"] == "rule_blocked"
         assert isinstance(payload["answer"], str) and payload["answer"].strip()
+
+    def test_chat_low_confidence_fallback_and_followup(monkeypatch) -> None:
+        citations = [
+            web_app.Citation(
+                kb_id="KB-X",
+                title="Low match item",
+                source_title="Low confidence source",
+                score=0.4,
+            )
+        ]
+        monkeypatch.setattr(web_app, "retrieve_citations", lambda _q, top_k=4: citations[:top_k])
+        monkeypatch.setattr(web_app, "match_rule", lambda _q: None)
+        monkeypatch.setattr(
+            web_app,
+            "call_upstream",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(web_app.HTTPException(status_code=502, detail="x")),
+        )
+        monkeypatch.setattr(web_app, "append_low_confidence_followup", lambda **_: True)
+
+        client = TestClient(web_app.app)
+        resp = client.post("/api/chat", json={"mode": "lab", "question": "未知新试剂泄漏怎么处理"})
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["decision"] == "llm_fallback_structured"
+        assert payload["model"] == "fallback-rule-engine"
+        assert payload["low_confidence"] is True
+        assert payload["followup_logged"] is True
+        assert "附注：" in payload["answer"]

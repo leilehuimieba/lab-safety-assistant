@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import csv
 import hashlib
-import json
 import os
 import re
 import threading
@@ -36,7 +35,7 @@ DEFAULT_LOW_CONFIDENCE_TOP_SCORE = 3.5
 
 SEVERITY_SCORE = {"critical": 5, "high": 4, "medium": 3, "low": 2}
 TERMINAL_ACTIONS = {"refuse", "redirect_emergency", "ask_for_more_info"}
-RISK_LABEL = {1: "低", 2: "低", 3: "中", 4: "高", 5: "极高"}
+RISK_LABEL = {1: "低", 2: "中低", 3: "中", 4: "高", 5: "极高"}
 
 QUEUE_HEADERS = [
     "created_at",
@@ -80,7 +79,7 @@ HAZARD_HINTS = {
     "化学": ["acid", "base", "solvent", "corrosive", "hazardous chemical", "酸", "碱", "溶剂", "危化品"],
     "生物安全": ["bio", "pathogen", "sample", "sterilization", "病原", "样本", "灭菌"],
     "电气": ["electric", "shock", "high voltage", "power", "触电", "高压电"],
-    "火灾": ["fire", "smoke", "ignition", "burn", "起火", "冒烟", "燃烧"],
+    "火灾": ["fire", "smoke", "ignition", "burn", "着火", "冒烟", "燃烧"],
     "低温": ["liquid nitrogen", "cryogenic", "frostbite", "液氮", "冻伤"],
     "机械": ["centrifuge", "rotation", "pinch", "moving parts", "离心", "旋转"],
 }
@@ -145,24 +144,15 @@ def normalize_text(text: str) -> str:
 
 def extract_tokens(text: str) -> set[str]:
     chunks = re.findall(r"[a-zA-Z0-9_]+|[\u4e00-\u9fff]+", (text or "").lower())
-    tokens: set[str] = set()
-    for chunk in chunks:
-        if len(chunk) >= 2:
-            tokens.add(chunk)
-    return tokens
-
-
-def split_items(text: str) -> list[str]:
-    return [x.strip(" -\t") for x in re.split(r"[\n;；。]+", text or "") if x.strip(" -\t")]
+    return {chunk for chunk in chunks if len(chunk) >= 2}
 
 
 def load_kb_entries() -> list[dict[str, str]]:
     if not KB_FILE.exists():
         return []
-    rows: list[dict[str, str]] = []
+    out: list[dict[str, str]] = []
     with KB_FILE.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
+        for row in csv.DictReader(f):
             blob = normalize_text(
                 " ".join(
                     [
@@ -178,7 +168,7 @@ def load_kb_entries() -> list[dict[str, str]]:
                     ]
                 )
             )
-            rows.append(
+            out.append(
                 {
                     "id": (row.get("id") or "").strip(),
                     "title": (row.get("title") or "").strip(),
@@ -195,7 +185,7 @@ def load_kb_entries() -> list[dict[str, str]]:
                     "blob": blob,
                 }
             )
-    return rows
+    return out
 
 
 def get_kb_entries() -> list[dict[str, str]]:
@@ -235,23 +225,22 @@ def retrieve_citations(question: str, top_k: int = DEFAULT_TOP_K) -> list[Citati
         for token in q_tokens:
             if token in blob:
                 score += 1.0 + min(len(token), 6) * 0.12
-        title = normalize_text(row.get("title", ""))
-        if title and title in q:
+        title_norm = normalize_text(row.get("title", ""))
+        if title_norm and title_norm in q:
             score += 2.5
         if score > 0:
             scored.append((score, row))
     scored.sort(key=lambda x: x[0], reverse=True)
-    selected: list[tuple[float, dict[str, str]]] = scored[:top_k]
+    selected = scored[: max(1, top_k)]
     if not selected:
-        # Compatibility fallback: keep search usable even when token match is sparse.
-        kb_rows = get_kb_entries()
-        kb_pref = [row for row in kb_rows if (row.get("id") or "").startswith("KB-")]
-        fallback_rows = (kb_pref or kb_rows)[:top_k]
+        fallback_rows = get_kb_entries()[: max(1, top_k)]
         selected = [(0.1, row) for row in fallback_rows]
 
     out: list[Citation] = []
     for score, row in selected:
-        snippet = " ".join(x for x in [row.get("answer", ""), row.get("steps", ""), row.get("forbidden", "")] if x)[:200]
+        snippet = " ".join(
+            part for part in [row.get("answer", ""), row.get("steps", ""), row.get("forbidden", "")] if part
+        )[:200]
         out.append(
             Citation(
                 kb_id=row.get("id", ""),
@@ -292,7 +281,7 @@ def match_rule(question: str) -> dict[str, Any] | None:
 
 def assess_low_confidence(citations: list[Citation]) -> tuple[bool, str]:
     if not citations:
-        return True, "未命中知识库条目|no_kb_match|鏈懡涓?"
+        return True, "未命中知识库条目|no_kb_match|需补充数据"
     threshold = float(os.getenv("LOW_CONFIDENCE_TOP_SCORE", str(DEFAULT_LOW_CONFIDENCE_TOP_SCORE)))
     if citations[0].score < threshold:
         return True, f"top_score_below_threshold:{citations[0].score}<{threshold}"
@@ -359,34 +348,82 @@ def append_low_confidence_followup(
     return True
 
 
+def format_citation_lines(citations: list[Citation], limit: int = 3) -> str:
+    if not citations:
+        return "- no direct KB citation"
+    lines: list[str] = []
+    for item in citations[:limit]:
+        src = item.source_title or item.title or "-"
+        lines.append(f"- {item.kb_id}: {src}")
+    return "\n".join(lines)
+
+
 def build_rule_answer(rule: dict[str, Any], citations: list[Citation]) -> str:
-    response = str(rule.get("response") or "请立即停止高风险操作并联系实验室负责人。").strip()
-    citation_lines = (
-        "\n".join([f"- {c.kb_id}: {c.title}" for c in citations[:3]]) if citations else "- 暂无直接引用"
-    )
+    response = str(rule.get("response") or "立即停止高风险操作，并按实验室应急流程处理。").strip()
     return (
-        f"结论：\n{response}\n\n"
-        f"缁撹锛?\n{response}\n\n"
-        "步骤：\n"
-        "1) 立即停止相关操作并隔离风险源。\n"
-        "2) 启动本单位SOP与应急流程。\n"
-        "3) 按要求佩戴PPE并等待授权人员处置。\n\n"
-        "姝ラ锛?\n"
-        "1) 立即停止相关操作并隔离风险源。\n"
-        "2) 启动本单位SOP与应急流程。\n"
-        "3) 按要求佩戴PPE并等待授权人员处置。\n\n"
-        "禁止事项：\n"
-        "- 禁止继续进行高风险实验。\n"
-        "- 禁止绕过审批与防护控制。\n\n"
-        "绂佹浜嬮」锛?\n"
-        "- 禁止继续进行高风险实验。\n"
-        "- 禁止绕过审批与防护控制。\n\n"
-        "上报建议：\n"
-        "- 立即通知实验室负责人和EHS管理人员。\n"
-        f"- 参考依据：\n{citation_lines}\n\n"
-        "涓婃姤寤鸿锛?\n"
-        "- 立即通知实验室负责人和EHS管理人员。"
+        "结论:\n"
+        f"{response}\n\n"
+        "步骤:\n"
+        "1) 停止当前操作并隔离风险源。\n"
+        "2) 通知实验室负责人和EHS值班人员。\n"
+        "3) 按本单位SOP执行现场处置与记录。\n\n"
+        "禁止事项:\n"
+        "- 禁止继续高风险实验。\n"
+        "- 禁止绕过审批、通风、联锁和PPE要求。\n\n"
+        "应急升级:\n"
+        "- 涉及人身伤害、火情或泄漏时，立即启动应急响应并联系校内应急电话。\n\n"
+        "参考依据:\n"
+        f"{format_citation_lines(citations)}"
     )
+
+
+def build_fallback_lab_answer(
+    question: str,
+    citations: list[Citation],
+    rule: dict[str, Any] | None = None,
+    low_confidence_reason: str = "",
+) -> str:
+    highest_risk = max(
+        [int(float(c.risk_level)) for c in citations if str(c.risk_level).replace(".", "", 1).isdigit()] or [3]
+    )
+    risk_text = RISK_LABEL.get(highest_risk, "中")
+    guard = str((rule or {}).get("response") or "").strip()
+    top_title = citations[0].title if citations else "当前知识库无直接命中"
+    notes = low_confidence_reason or "upstream unavailable"
+    return (
+        "结论:\n"
+        f"这是实验室安全场景，当前按{risk_text}风险处理。优先执行‘先隔离风险、再按SOP处置、再升级上报’。\n\n"
+        "步骤:\n"
+        "1) 立即停止可疑或高风险操作，关闭相关能量/反应源。\n"
+        "2) 穿戴并复核PPE（护目镜、实验服、手套；必要时加面屏和呼吸防护）。\n"
+        "3) 按实验室SOP进行现场控制、记录和人员分工。\n"
+        "4) 如涉及伤害、火情、泄漏或暴露，立即启动应急预案并求助。\n\n"
+        "禁止事项:\n"
+        "- 禁止在无审批或无监护条件下继续实验。\n"
+        "- 禁止绕过通风、联锁和废弃物分类要求。\n"
+        "- 禁止隐瞒异常事件或延迟上报。\n\n"
+        "应急升级:\n"
+        "- 人员伤害/疑似暴露: 立即冲洗/隔离并呼叫医疗支持。\n"
+        "- 火灾/爆炸风险: 立刻撤离并按应急流程报警。\n"
+        "- 化学品泄漏: 封控区域，按SOP和EHS要求处理。\n\n"
+        "参考依据:\n"
+        f"- top context: {top_title}\n"
+        f"{format_citation_lines(citations)}\n\n"
+        "说明:\n"
+        f"- fallback reason: {notes}\n"
+        f"- guardrail: {guard or 'N/A'}\n"
+        f"- original question: {question.strip()}"
+    )
+
+
+def append_low_confidence_followup_notice(answer: str) -> str:
+    note = "附注：该问题已自动加入低置信度待补队列，后续会补充知识条目并复检。"
+    text = (answer or "").strip()
+    if not text:
+        return note
+    if note in text:
+        return text
+    return f"{text}\n\n{note}"
 
 
 def build_system_prompt(mode: str, guardrail: str = "") -> str:
@@ -411,17 +448,22 @@ def call_upstream(mode: str, question: str, citations: list[Citation], guardrail
         "base_url": os.getenv("OPENAI_BASE_URL", DEFAULT_BASE_URL).strip(),
         "api_key": os.getenv("OPENAI_API_KEY", "").strip(),
         "model": os.getenv("OPENAI_MODEL", DEFAULT_MODEL).strip(),
-        "fallback": [x.strip() for x in os.getenv("OPENAI_FALLBACK_MODELS", DEFAULT_FALLBACK_MODELS).split(",") if x.strip()],
+        "fallback": [
+            x.strip()
+            for x in os.getenv("OPENAI_FALLBACK_MODELS", DEFAULT_FALLBACK_MODELS).split(",")
+            if x.strip()
+        ],
         "timeout": float(os.getenv("OPENAI_TIMEOUT", "60") or "60"),
     }
     if not env["api_key"]:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY is missing.")
+
     endpoint = env["base_url"].rstrip("/")
     if not endpoint.endswith("/v1"):
         endpoint += "/v1"
     endpoint += "/chat/completions"
-    models = [env["model"], *env["fallback"]]
-    models = list(dict.fromkeys(models))
+
+    models = list(dict.fromkeys([env["model"], *env["fallback"]]))
     headers = {"Authorization": f"Bearer {env['api_key']}", "Content-Type": "application/json"}
     last_error = "unknown"
     for model in models:
@@ -454,9 +496,13 @@ def call_upstream(mode: str, question: str, citations: list[Citation], guardrail
 
 def build_risk_assessment(scenario: str, citations: list[Citation], rule: dict[str, Any] | None) -> RiskAssessResponse:
     severity_score = SEVERITY_SCORE.get(str((rule or {}).get("severity", "")).lower(), 1)
-    citation_score = max([int(float(c.risk_level)) for c in citations if str(c.risk_level).replace(".", "", 1).isdigit()] or [1])
+    citation_score = max(
+        [int(float(c.risk_level)) for c in citations if str(c.risk_level).replace(".", "", 1).isdigit()] or [1]
+    )
     text_norm = normalize_text(scenario)
-    keyword_score = 5 if any(x in text_norm for x in ["fire", "shock", "explosion", "leak", "burn", "toxic"]) else 3
+    keyword_score = (
+        5 if any(x in text_norm for x in ["fire", "shock", "explosion", "leak", "burn", "toxic", "着火", "触电"]) else 3
+    )
     risk_score = max(1, min(5, max(severity_score, citation_score, keyword_score)))
 
     hazards: set[str] = set()
@@ -474,7 +520,7 @@ def build_risk_assessment(scenario: str, citations: list[Citation], rule: dict[s
     return RiskAssessResponse(
         scenario=scenario,
         risk_score=risk_score,
-        risk_level=RISK_LABEL.get(risk_score, "medium"),
+        risk_level=RISK_LABEL.get(risk_score, "中"),
         key_hazards=sorted(hazards),
         ppe=sorted(ppe),
         forbidden=[
@@ -498,7 +544,7 @@ def build_risk_assessment(scenario: str, citations: list[Citation], rule: dict[s
     )
 
 
-app = FastAPI(title="Lab Safety Assistant Demo", version="0.2.0")
+app = FastAPI(title="Lab Safety Assistant Demo", version="0.3.0")
 
 
 @app.get("/")
@@ -519,15 +565,61 @@ def chat(payload: ChatRequest) -> ChatResponse:
     rule = match_rule(question) if mode == "lab" else None
     rule_action = str((rule or {}).get("action") or "")
     decision = "llm_answer"
+    followup_logged = False
+
     if rule and rule_action in TERMINAL_ACTIONS:
-        decision = "rule_blocked" if rule_action == "refuse" else "emergency_redirect" if rule_action == "redirect_emergency" else "need_more_info"
-        answer = (rule.get("response") or "Operation blocked by safety policy. Please contact supervisor.").strip()
-        return ChatResponse(answer=answer, mode=mode, model="rule-engine", decision=decision, citations=citations)
+        decision = (
+            "rule_blocked"
+            if rule_action == "refuse"
+            else "emergency_redirect"
+            if rule_action == "redirect_emergency"
+            else "need_more_info"
+        )
+        return ChatResponse(
+            answer=build_rule_answer(rule, citations),
+            mode=mode,
+            model="rule-engine",
+            decision=decision,
+            risk_level=str((rule or {}).get("severity") or ""),
+            matched_rule_id=str((rule or {}).get("id") or ""),
+            matched_rule_action=rule_action,
+            citations=citations,
+        )
 
     low_confidence, low_reason = assess_low_confidence(citations) if mode == "lab" else (False, "")
     if low_confidence:
         decision = "llm_low_confidence"
-    answer, model = call_upstream(mode, question, citations, guardrail=str((rule or {}).get("response") or ""))
+
+    guardrail = str((rule or {}).get("response") or "")
+    model = "fallback-rule-engine"
+    try:
+        answer, model = call_upstream(mode, question, citations, guardrail=guardrail)
+    except HTTPException:
+        if mode == "lab":
+            decision = "llm_fallback_structured"
+            answer = build_fallback_lab_answer(
+                question=question,
+                citations=citations,
+                rule=rule,
+                low_confidence_reason=low_reason,
+            )
+        else:
+            raise
+
+    if mode == "lab" and low_confidence:
+        followup_logged = append_low_confidence_followup(
+            question=question,
+            mode=mode,
+            decision=decision,
+            risk_level=str((rule or {}).get("severity") or ""),
+            matched_rule_id=str((rule or {}).get("id") or ""),
+            matched_rule_action=rule_action,
+            low_confidence_reason=low_reason,
+            citations=citations,
+        )
+        if followup_logged:
+            answer = append_low_confidence_followup_notice(answer)
+
     return ChatResponse(
         answer=answer or "No answer returned.",
         mode=mode,
@@ -538,6 +630,7 @@ def chat(payload: ChatRequest) -> ChatResponse:
         matched_rule_action=rule_action,
         low_confidence=low_confidence,
         low_confidence_reason=low_reason,
+        followup_logged=followup_logged,
         citations=citations,
     )
 
