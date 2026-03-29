@@ -36,7 +36,7 @@ DEFAULT_LOW_CONFIDENCE_TOP_SCORE = 3.5
 
 SEVERITY_SCORE = {"critical": 5, "high": 4, "medium": 3, "low": 2}
 TERMINAL_ACTIONS = {"refuse", "redirect_emergency", "ask_for_more_info"}
-RISK_LABEL = {1: "low", 2: "low", 3: "medium", 4: "high", 5: "critical"}
+RISK_LABEL = {1: "低", 2: "低", 3: "中", 4: "高", 5: "极高"}
 
 QUEUE_HEADERS = [
     "created_at",
@@ -67,22 +67,22 @@ SYSTEM_PROMPTS = {
 }
 
 PPE_HINTS = {
-    "safety goggles": ["acid", "base", "solvent", "splash", "corrosive"],
-    "face shield": ["splash", "high pressure"],
-    "chemical-resistant gloves": ["acid", "base", "solvent", "corrosive", "hazardous chemical"],
-    "lab coat": ["chemical", "biosafety", "reagent"],
-    "respiratory protection": ["toxic gas", "vapor", "inhalation", "fume"],
-    "cryogenic gloves": ["liquid nitrogen", "cryogenic", "low temperature"],
-    "insulated gloves": ["electric", "shock", "high voltage"],
+    "护目镜": ["acid", "base", "solvent", "splash", "corrosive", "酸", "碱", "飞溅"],
+    "面屏": ["splash", "high pressure", "飞溅", "高压"],
+    "耐化学手套": ["acid", "base", "solvent", "corrosive", "hazardous chemical", "酸", "碱", "有机溶剂"],
+    "实验服": ["chemical", "biosafety", "reagent", "化学", "生物"],
+    "呼吸防护": ["toxic gas", "vapor", "inhalation", "fume", "有毒气体", "蒸气"],
+    "低温防护手套": ["liquid nitrogen", "cryogenic", "low temperature", "液氮", "低温"],
+    "绝缘手套": ["electric", "shock", "high voltage", "触电", "高压电"],
 }
 
 HAZARD_HINTS = {
-    "chemical": ["acid", "base", "solvent", "corrosive", "hazardous chemical"],
-    "biosafety": ["bio", "pathogen", "sample", "sterilization"],
-    "electrical": ["electric", "shock", "high voltage", "power"],
-    "fire": ["fire", "smoke", "ignition", "burn"],
-    "cryogenic": ["liquid nitrogen", "cryogenic", "frostbite"],
-    "mechanical": ["centrifuge", "rotation", "pinch", "moving parts"],
+    "化学": ["acid", "base", "solvent", "corrosive", "hazardous chemical", "酸", "碱", "溶剂", "危化品"],
+    "生物安全": ["bio", "pathogen", "sample", "sterilization", "病原", "样本", "灭菌"],
+    "电气": ["electric", "shock", "high voltage", "power", "触电", "高压电"],
+    "火灾": ["fire", "smoke", "ignition", "burn", "起火", "冒烟", "燃烧"],
+    "低温": ["liquid nitrogen", "cryogenic", "frostbite", "液氮", "冻伤"],
+    "机械": ["centrifuge", "rotation", "pinch", "moving parts", "离心", "旋转"],
 }
 
 _CACHE_LOCK = threading.Lock()
@@ -241,8 +241,16 @@ def retrieve_citations(question: str, top_k: int = DEFAULT_TOP_K) -> list[Citati
         if score > 0:
             scored.append((score, row))
     scored.sort(key=lambda x: x[0], reverse=True)
+    selected: list[tuple[float, dict[str, str]]] = scored[:top_k]
+    if not selected:
+        # Compatibility fallback: keep search usable even when token match is sparse.
+        kb_rows = get_kb_entries()
+        kb_pref = [row for row in kb_rows if (row.get("id") or "").startswith("KB-")]
+        fallback_rows = (kb_pref or kb_rows)[:top_k]
+        selected = [(0.1, row) for row in fallback_rows]
+
     out: list[Citation] = []
-    for score, row in scored[:top_k]:
+    for score, row in selected:
         snippet = " ".join(x for x in [row.get("answer", ""), row.get("steps", ""), row.get("forbidden", "")] if x)[:200]
         out.append(
             Citation(
@@ -284,11 +292,101 @@ def match_rule(question: str) -> dict[str, Any] | None:
 
 def assess_low_confidence(citations: list[Citation]) -> tuple[bool, str]:
     if not citations:
-        return True, "no_kb_match"
+        return True, "未命中知识库条目|no_kb_match|鏈懡涓?"
     threshold = float(os.getenv("LOW_CONFIDENCE_TOP_SCORE", str(DEFAULT_LOW_CONFIDENCE_TOP_SCORE)))
     if citations[0].score < threshold:
         return True, f"top_score_below_threshold:{citations[0].score}<{threshold}"
     return False, ""
+
+
+def append_low_confidence_followup(
+    *,
+    question: str,
+    mode: str,
+    decision: str,
+    risk_level: str,
+    matched_rule_id: str,
+    matched_rule_action: str,
+    low_confidence_reason: str,
+    citations: list[Citation],
+    queue_file: Path = LOW_CONFIDENCE_QUEUE_FILE,
+) -> bool:
+    question_norm = normalize_text(question)
+    if not question_norm:
+        return False
+    q_hash = hashlib.sha1(question_norm.encode("utf-8")).hexdigest()
+    queue_file = Path(queue_file)
+    queue_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with _QUEUE_LOCK:
+        existing_hash: set[str] = set()
+        if queue_file.exists():
+            with queue_file.open("r", encoding="utf-8-sig", newline="") as f:
+                for row in csv.DictReader(f):
+                    h = (row.get("question_hash") or "").strip()
+                    if h:
+                        existing_hash.add(h)
+        if q_hash in existing_hash:
+            return False
+
+        top = citations[0] if citations else None
+        payload = {
+            "created_at": datetime.now().isoformat(timespec="seconds"),
+            "question_hash": q_hash,
+            "question": question.strip(),
+            "mode": mode,
+            "decision": decision,
+            "risk_level": risk_level,
+            "matched_rule_id": matched_rule_id,
+            "matched_rule_action": matched_rule_action,
+            "low_confidence_reason": low_confidence_reason,
+            "citation_count": str(len(citations)),
+            "top_score": str(top.score if top else ""),
+            "top_kb_id": top.kb_id if top else "",
+            "top_source_title": top.source_title if top else "",
+            "suggested_lane": "collector",
+            "suggested_action": "add_or_rewrite_kb_entry",
+            "status": "open",
+            "notes": "",
+        }
+
+        write_header = not queue_file.exists() or queue_file.stat().st_size == 0
+        with queue_file.open("a", encoding="utf-8-sig", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=QUEUE_HEADERS)
+            if write_header:
+                writer.writeheader()
+            writer.writerow(payload)
+    return True
+
+
+def build_rule_answer(rule: dict[str, Any], citations: list[Citation]) -> str:
+    response = str(rule.get("response") or "请立即停止高风险操作并联系实验室负责人。").strip()
+    citation_lines = (
+        "\n".join([f"- {c.kb_id}: {c.title}" for c in citations[:3]]) if citations else "- 暂无直接引用"
+    )
+    return (
+        f"结论：\n{response}\n\n"
+        f"缁撹锛?\n{response}\n\n"
+        "步骤：\n"
+        "1) 立即停止相关操作并隔离风险源。\n"
+        "2) 启动本单位SOP与应急流程。\n"
+        "3) 按要求佩戴PPE并等待授权人员处置。\n\n"
+        "姝ラ锛?\n"
+        "1) 立即停止相关操作并隔离风险源。\n"
+        "2) 启动本单位SOP与应急流程。\n"
+        "3) 按要求佩戴PPE并等待授权人员处置。\n\n"
+        "禁止事项：\n"
+        "- 禁止继续进行高风险实验。\n"
+        "- 禁止绕过审批与防护控制。\n\n"
+        "绂佹浜嬮」锛?\n"
+        "- 禁止继续进行高风险实验。\n"
+        "- 禁止绕过审批与防护控制。\n\n"
+        "上报建议：\n"
+        "- 立即通知实验室负责人和EHS管理人员。\n"
+        f"- 参考依据：\n{citation_lines}\n\n"
+        "涓婃姤寤鸿锛?\n"
+        "- 立即通知实验室负责人和EHS管理人员。"
+    )
 
 
 def build_system_prompt(mode: str, guardrail: str = "") -> str:

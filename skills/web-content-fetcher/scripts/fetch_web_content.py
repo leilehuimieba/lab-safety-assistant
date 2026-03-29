@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Multi-channel webpage content fetcher:
 - jina reader
@@ -39,15 +39,18 @@ DEFAULT_MAX_CHARS = 30000
 DEFAULT_PROVIDERS = ["jina", "scrapling", "direct"]
 SCRAPLING_FIRST_DOMAINS = ("weixin.qq.com", "mp.weixin.qq.com", "xiaohongshu.com")
 
-BLOCK_HINTS = [
-    "登录",
-    "sign in",
+BLOCK_HINTS_STRONG = [
+    "access denied",
+    "403 forbidden",
     "forbidden",
-    "访问受限",
-    "需要登录",
-    "验证",
     "captcha",
-    "权限不足",
+    "human verification",
+    "verify you are human",
+    "authentication required",
+    "login required",
+    "please log in",
+    "please sign in",
+    "sign in to continue",
 ]
 
 
@@ -66,7 +69,7 @@ class FetchResult:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Fetch webpage正文 with provider fallback.")
+    parser = argparse.ArgumentParser(description="Fetch webpage姝ｆ枃 with provider fallback.")
     parser.add_argument("--url", action="append", default=[], help="Target URL (repeatable).")
     parser.add_argument("--url-file", default="", help="CSV file containing URLs.")
     parser.add_argument("--url-column", default="url", help="URL column name in CSV file.")
@@ -103,16 +106,23 @@ def clip_text(text: str, max_chars: int) -> str:
 
 
 def detect_auth_wall(text: str) -> bool:
-    lowered = (text or "").lower()
-    return any(token in lowered for token in BLOCK_HINTS)
-
+    lowered = re.sub(r"\s+", " ", (text or "").lower()).strip()
+    if not lowered:
+        return False
+    if any(token in lowered for token in BLOCK_HINTS_STRONG):
+        # Long documents can include incidental auth terms in nav/footer.
+        return len(lowered) < 5000
+    if re.search(r"\b(sign in|log in|login)\b", lowered):
+        # Soft auth hints only count on short pages.
+        return len(lowered) < 1200
+    return False
 
 def quality_score(text: str) -> float:
     cleaned = re.sub(r"\s+", " ", (text or "").strip())
     if not cleaned:
         return 0.0
     length_score = min(len(cleaned) / 3500.0, 1.0)
-    sentence_count = len(re.findall(r"[。！？.!?]", cleaned))
+    sentence_count = len(re.findall(r"[銆傦紒锛?!?]", cleaned))
     sentence_score = min(sentence_count / 35.0, 1.0)
     alpha_count = len(re.findall(r"[A-Za-z\u4e00-\u9fff]", cleaned))
     density = alpha_count / max(len(cleaned), 1)
@@ -395,7 +405,8 @@ def main() -> int:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     output = json.dumps(payload, ensure_ascii=False)
-    # Windows 默认控制台编码可能是 gbk，遇到特殊字符时直接 print 会抛 UnicodeEncodeError。
+    # Some Windows terminals still default to legacy encodings.
+    # Keep a UTF-8 fallback in case print() cannot encode characters.
     if args.pretty:
         output = json.dumps(payload, ensure_ascii=False, indent=2)
     try:
