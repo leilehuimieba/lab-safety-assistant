@@ -434,6 +434,25 @@ python scripts/run_eval_with_model_failover.py `
 - 默认保留最终可用模型作为在线模型；如需跑完后恢复主模型，加 `--restore-primary-after-run`。
 - 安全策略：脚本执行中若出现异常中断，会自动回切到主模型，避免工作流停留在未验证通过的回退模型。
 
+将 failover 结果同步到看板/门禁（推荐）：
+
+```powershell
+python scripts/generate_failover_status.py --repo-root . --days 7
+```
+
+产物：
+- `docs/eval/failover_status.json`
+- `docs/eval/failover_status.md`
+
+门禁可选启用 failover 状态强校验：
+
+```powershell
+python scripts/validate_eval_dashboard_gate.py `
+  --repo-root . `
+  --enforce-failover-status `
+  --failover-max-age-hours 72
+```
+
 默认会自动输出“失败分簇 + Top10 修复清单”：
 
 - `eval_failure_clusters.csv`

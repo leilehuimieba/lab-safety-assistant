@@ -197,3 +197,138 @@ def test_override_absent_keeps_gate_failure(tmp_path: Path, monkeypatch) -> None
         ],
     )
     assert veg.main() == 1
+
+
+def test_gate_failover_enforcement_blocks_on_fail_status(tmp_path: Path, monkeypatch) -> None:
+    docs_eval = tmp_path / "docs" / "eval"
+    docs_eval.mkdir(parents=True, exist_ok=True)
+    (docs_eval / "eval_dashboard_gate_enabled.flag").write_text("", encoding="utf-8")
+    (docs_eval / "eval_dashboard_data.json").write_text(
+        json.dumps(
+            {
+                "weekly": {
+                    "smoke": [
+                        {
+                            "week": "2026-W11",
+                            "run_count": 1,
+                            "safety_refusal_rate": 0.99,
+                            "emergency_pass_rate": 0.95,
+                            "qa_pass_rate": 0.90,
+                            "coverage_rate": 0.95,
+                            "latency_p95_ms": 1200.0,
+                            "route_success_rate": 0.90,
+                            "route_timeout_rate": 0.05,
+                        },
+                        {
+                            "week": "2026-W12",
+                            "run_count": 1,
+                            "safety_refusal_rate": 0.99,
+                            "emergency_pass_rate": 0.95,
+                            "qa_pass_rate": 0.90,
+                            "coverage_rate": 0.95,
+                            "latency_p95_ms": 1200.0,
+                            "route_success_rate": 0.90,
+                            "route_timeout_rate": 0.05,
+                        },
+                    ]
+                },
+                "smoke_runs": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    (docs_eval / "failover_status.json").write_text(
+        json.dumps(
+            {
+                "latest": {
+                    "generated_at": "2099-01-01T00:00:00+00:00",
+                    "result": "fail",
+                }
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "validate_eval_dashboard_gate.py",
+            "--repo-root",
+            str(tmp_path),
+            "--quiet",
+            "--enforce-failover-status",
+            "--failover-status-json",
+            "docs/eval/failover_status.json",
+        ],
+    )
+    assert veg.main() == 1
+
+
+def test_gate_failover_enforcement_pass_with_allow_degraded(tmp_path: Path, monkeypatch) -> None:
+    docs_eval = tmp_path / "docs" / "eval"
+    docs_eval.mkdir(parents=True, exist_ok=True)
+    (docs_eval / "eval_dashboard_gate_enabled.flag").write_text("", encoding="utf-8")
+    (docs_eval / "eval_dashboard_data.json").write_text(
+        json.dumps(
+            {
+                "weekly": {
+                    "smoke": [
+                        {
+                            "week": "2026-W11",
+                            "run_count": 1,
+                            "safety_refusal_rate": 0.99,
+                            "emergency_pass_rate": 0.95,
+                            "qa_pass_rate": 0.90,
+                            "coverage_rate": 0.95,
+                            "latency_p95_ms": 1200.0,
+                            "route_success_rate": 0.90,
+                            "route_timeout_rate": 0.05,
+                        },
+                        {
+                            "week": "2026-W12",
+                            "run_count": 1,
+                            "safety_refusal_rate": 0.99,
+                            "emergency_pass_rate": 0.95,
+                            "qa_pass_rate": 0.90,
+                            "coverage_rate": 0.95,
+                            "latency_p95_ms": 1200.0,
+                            "route_success_rate": 0.90,
+                            "route_timeout_rate": 0.05,
+                        },
+                    ]
+                },
+                "smoke_runs": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    (docs_eval / "failover_status.json").write_text(
+        json.dumps(
+            {
+                "latest": {
+                    "generated_at": "2099-01-01T00:00:00+00:00",
+                    "result": "degraded",
+                }
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "validate_eval_dashboard_gate.py",
+            "--repo-root",
+            str(tmp_path),
+            "--quiet",
+            "--enforce-failover-status",
+            "--failover-allow-degraded",
+            "--failover-status-json",
+            "docs/eval/failover_status.json",
+        ],
+    )
+    assert veg.main() == 0

@@ -15,7 +15,7 @@ import argparse
 import json
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 
@@ -117,6 +117,27 @@ def parse_args() -> argparse.Namespace:
         "--quiet",
         action="store_true",
         help="Print concise output.",
+    )
+    parser.add_argument(
+        "--enforce-failover-status",
+        action="store_true",
+        help="Enforce latest failover status produced by generate_failover_status.py.",
+    )
+    parser.add_argument(
+        "--failover-status-json",
+        default="docs/eval/failover_status.json",
+        help="Path to failover status json.",
+    )
+    parser.add_argument(
+        "--failover-max-age-hours",
+        type=float,
+        default=72.0,
+        help="Max acceptable age for latest failover status when enforcement is enabled.",
+    )
+    parser.add_argument(
+        "--failover-allow-degraded",
+        action="store_true",
+        help="Allow degraded failover result to pass when failover enforcement is enabled.",
     )
     return parser.parse_args()
 
@@ -260,6 +281,60 @@ def load_dashboard_weekly(path: Path) -> tuple[list[WeeklyRow], dict[str, float]
     return rows, targets
 
 
+def parse_iso_dt(raw: str) -> datetime | None:
+    value = (raw or "").strip()
+    if not value:
+        return None
+    try:
+        if value.endswith("Z"):
+            value = value[:-1] + "+00:00"
+        return datetime.fromisoformat(value).astimezone(timezone.utc)
+    except ValueError:
+        return None
+
+
+def evaluate_failover_status(
+    *,
+    status_path: Path,
+    max_age_hours: float,
+    allow_degraded: bool,
+) -> list[str]:
+    violations: list[str] = []
+    if not status_path.exists():
+        return [f"failover status missing: {status_path}"]
+
+    try:
+        payload = json.loads(status_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        return [f"failover status unreadable: {exc}"]
+    if not isinstance(payload, dict):
+        return ["failover status invalid: root is not object"]
+
+    latest = payload.get("latest")
+    if not isinstance(latest, dict) or not latest:
+        return ["failover status invalid: latest record missing"]
+
+    generated_at = parse_iso_dt(str(latest.get("generated_at", "") or ""))
+    if generated_at is None:
+        violations.append("failover status invalid: latest.generated_at missing/invalid")
+    else:
+        age_hours = (datetime.now(timezone.utc) - generated_at).total_seconds() / 3600
+        if age_hours > max(1.0, float(max_age_hours)):
+            violations.append(
+                f"failover status stale: age={age_hours:.1f}h > max_age_hours={max(1.0, float(max_age_hours)):.1f}"
+            )
+
+    result = str(latest.get("result", "") or "").strip().lower()
+    if result == "fail":
+        violations.append("latest failover result is fail")
+    elif result == "degraded" and not allow_degraded:
+        violations.append("latest failover result is degraded")
+    elif result not in {"pass", "degraded", "fail"}:
+        violations.append(f"latest failover result unknown: {result or 'empty'}")
+
+    return violations
+
+
 def main() -> int:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
@@ -272,6 +347,9 @@ def main() -> int:
     override_path = Path(args.override_config)
     if not override_path.is_absolute():
         override_path = repo_root / override_path
+    failover_path = Path(args.failover_status_json)
+    if not failover_path.is_absolute():
+        failover_path = repo_root / failover_path
 
     if not gate_flag.exists():
         if not args.quiet:
@@ -303,6 +381,13 @@ def main() -> int:
     )
 
     violations = [*route_violations, *quality_violations]
+    if args.enforce_failover_status:
+        failover_violations = evaluate_failover_status(
+            status_path=failover_path,
+            max_age_hours=max(1.0, float(args.failover_max_age_hours)),
+            allow_degraded=bool(args.failover_allow_degraded),
+        )
+        violations.extend(failover_violations)
     override = load_override_config(override_path)
     override_active = is_override_active(override, today=date.today())
 

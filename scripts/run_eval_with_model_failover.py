@@ -375,6 +375,8 @@ def main() -> int:
         "workflow_id": args.workflow_id,
         "primary_model": args.primary_model,
         "fallback_model": args.fallback_model,
+        "result": "running",
+        "error": "",
         "failover_triggered": False,
         "failover_reason": "",
         "active_model_final": args.primary_model,
@@ -539,7 +541,13 @@ def main() -> int:
         else:
             report["active_model_final"] = args.primary_model
             current_model = args.primary_model
+        final_run = (report.get("runs", {}) or {}).get("fallback") or (report.get("runs", {}) or {}).get("primary") or {}
+        final_fetch_errors = int(final_run.get("fetch_error_count", 0) or 0)
+        report["result"] = "pass" if final_fetch_errors == 0 else "degraded"
     except Exception:
+        exc_type, exc_value, _ = sys.exc_info()
+        report["result"] = "fail"
+        report["error"] = f"{exc_type.__name__ if exc_type else 'Exception'}: {exc_value}" if exc_value else "unknown"
         run_failed = True
         raise
     finally:

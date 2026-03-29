@@ -38,12 +38,20 @@ jobs:
         run: |
           python scripts/generate_release_risk_note.py --repo-root .
 
+      - name: Generate Failover Status
+        run: |
+          python scripts/generate_failover_status.py --repo-root . --days 7
+
       - name: Validate Eval Dashboard Gate
         id: gate
         shell: bash
         run: |
           set +e
-          python scripts/validate_eval_dashboard_gate.py --repo-root . > gate_output.txt 2>&1
+          python scripts/validate_eval_dashboard_gate.py \
+            --repo-root . \
+            --enforce-failover-status \
+            --failover-max-age-hours 72 \
+            > gate_output.txt 2>&1
           code=$?
           cat gate_output.txt
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
@@ -64,6 +72,8 @@ jobs:
             docs/eval/release_risk_note_auto.md
             docs/eval/release_risk_note_auto.json
             docs/eval/eval_dashboard_data.json
+            docs/eval/failover_status.json
+            docs/eval/failover_status.md
 
       - name: Create or Update Same-Day Gate Alert Issue
         if: steps.gate.outputs.status == 'fail'
