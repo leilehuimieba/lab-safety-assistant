@@ -554,6 +554,8 @@ python scripts/validate_release_policy.py `
 
 - 策略文件：`docs/eval/release_policy_v5.json`
 - 支持 profile：`demo`、`prod`
+- `prod` 关键质量阈值（硬门禁）：`emergency_pass_rate >= 0.90`、`coverage_rate >= 0.85`、`qa_pass_rate >= 0.85`
+- `demo` 关键质量阈值（演示门槛）：`emergency_pass_rate >= 0.80`、`coverage_rate >= 0.75`
 - 输出：
 - `docs/eval/release_policy_check_demo.json/.md`
 - `docs/eval/release_policy_check_prod.json/.md`

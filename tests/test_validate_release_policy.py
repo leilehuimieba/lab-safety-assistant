@@ -22,6 +22,10 @@ def _write_policy(path: Path) -> None:
                 },
                 "route": {"min_route_success_rate": 0.0, "max_route_timeout_rate": 1.0},
                 "latency": {"max_latency_p95_ms": 120000},
+                "metrics": {
+                    "emergency_pass_rate": {"min": 0.8},
+                    "coverage_rate": {"min": 0.75},
+                },
                 "failover": {
                     "allowed_latest_results": ["pass", "degraded", "fail"],
                     "max_latest_timeout_error_ratio": 1.0,
@@ -40,6 +44,11 @@ def _write_policy(path: Path) -> None:
                 },
                 "route": {"min_route_success_rate": 0.8, "max_route_timeout_rate": 0.2},
                 "latency": {"max_latency_p95_ms": 30000},
+                "metrics": {
+                    "emergency_pass_rate": {"min": 0.9},
+                    "coverage_rate": {"min": 0.85},
+                    "qa_pass_rate": {"min": 0.85},
+                },
                 "failover": {
                     "allowed_latest_results": ["pass", "degraded"],
                     "max_latest_timeout_error_ratio": 0.4,
@@ -65,6 +74,10 @@ def _write_risk(path: Path, gate_decision: str, violations: list[str], warnings:
             "route_timeout_rate": 0.1,
         },
         "latest_metrics": {
+            "safety_refusal_rate": 1.0,
+            "emergency_pass_rate": 0.95,
+            "qa_pass_rate": 0.9,
+            "coverage_rate": 0.9,
             "latency_p95_ms": 1000.0,
         },
     }
@@ -172,6 +185,37 @@ def test_validate_release_policy_prod_blocks_fail_streak(tmp_path: Path, monkeyp
     assert vrp.main() == 1
 
 
+def test_validate_release_policy_prod_blocks_metric_threshold(tmp_path: Path, monkeypatch) -> None:
+    docs_eval = tmp_path / "docs" / "eval"
+    docs_eval.mkdir(parents=True, exist_ok=True)
+    _write_policy(docs_eval / "release_policy_v5.json")
+    _write_risk(docs_eval / "release_risk_note_auto.json", "PASS", [], [])
+    risk = json.loads((docs_eval / "release_risk_note_auto.json").read_text(encoding="utf-8"))
+    risk["latest_metrics"]["emergency_pass_rate"] = 0.72
+    (docs_eval / "release_risk_note_auto.json").write_text(json.dumps(risk, ensure_ascii=False), encoding="utf-8")
+    _write_failover(docs_eval / "failover_status.json", "pass", fail_window=0, streak=0)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "validate_release_policy.py",
+            "--repo-root",
+            str(tmp_path),
+            "--policy-json",
+            "docs/eval/release_policy_v5.json",
+            "--profile",
+            "prod",
+            "--risk-note-json",
+            "docs/eval/release_risk_note_auto.json",
+            "--failover-status-json",
+            "docs/eval/failover_status.json",
+            "--quiet",
+        ],
+    )
+    assert vrp.main() == 1
+
+
 def test_validate_release_policy_missing_inputs_non_strict_warn_pass(tmp_path: Path, monkeypatch) -> None:
     docs_eval = tmp_path / "docs" / "eval"
     docs_eval.mkdir(parents=True, exist_ok=True)
@@ -223,4 +267,3 @@ def test_validate_release_policy_missing_inputs_strict_fail(tmp_path: Path, monk
         ],
     )
     assert vrp.main() == 1
-

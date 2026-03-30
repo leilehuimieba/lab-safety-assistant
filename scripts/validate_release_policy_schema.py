@@ -22,6 +22,8 @@ REQUIRED_PROFILE_KEYS = {
     "failover",
 }
 
+ALLOWED_METRIC_RULE_KEYS = {"min", "max"}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate release policy schema.")
@@ -116,6 +118,36 @@ def validate_profile(profile_name: str, profile: Any, errors: list[str]) -> None
         if is_number(ratio) and not (0 <= float(ratio) <= 1):
             errors.append(f"profile {profile_name}.failover.max_latest_timeout_error_ratio must be in [0, 1]")
 
+    metrics = profile.get("metrics")
+    if metrics is not None:
+        if not isinstance(metrics, dict):
+            errors.append(f"profile {profile_name}.metrics must be object when present")
+        else:
+            for metric_name, rule in metrics.items():
+                if not isinstance(rule, dict):
+                    errors.append(f"profile {profile_name}.metrics.{metric_name} must be object")
+                    continue
+                extra = sorted(set(rule.keys()) - ALLOWED_METRIC_RULE_KEYS)
+                if extra:
+                    errors.append(
+                        f"profile {profile_name}.metrics.{metric_name} contains unsupported keys: {extra}"
+                    )
+                if "min" not in rule and "max" not in rule:
+                    errors.append(
+                        f"profile {profile_name}.metrics.{metric_name} requires at least one of [min, max]"
+                    )
+                for bound in ("min", "max"):
+                    if bound in rule and not is_number(rule.get(bound)):
+                        errors.append(
+                            f"profile {profile_name}.metrics.{metric_name}.{bound} must be number"
+                        )
+                min_value = rule.get("min")
+                max_value = rule.get("max")
+                if is_number(min_value) and is_number(max_value) and float(min_value) > float(max_value):
+                    errors.append(
+                        f"profile {profile_name}.metrics.{metric_name} invalid: min > max"
+                    )
+
 
 def main() -> int:
     args = parse_args()
@@ -166,4 +198,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

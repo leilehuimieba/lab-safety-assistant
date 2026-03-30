@@ -19,6 +19,10 @@ def _valid_policy() -> dict:
                 "freshness": {"max_risk_note_age_hours": 72, "max_failover_status_age_hours": 72},
                 "route": {"min_route_success_rate": 0.0, "max_route_timeout_rate": 1.0},
                 "latency": {"max_latency_p95_ms": 120000},
+                "metrics": {
+                    "emergency_pass_rate": {"min": 0.8},
+                    "coverage_rate": {"min": 0.75},
+                },
                 "failover": {
                     "allowed_latest_results": ["pass", "degraded", "fail"],
                     "max_latest_timeout_error_ratio": 1.0,
@@ -34,6 +38,11 @@ def _valid_policy() -> dict:
                 "freshness": {"max_risk_note_age_hours": 24, "max_failover_status_age_hours": 24},
                 "route": {"min_route_success_rate": 0.8, "max_route_timeout_rate": 0.2},
                 "latency": {"max_latency_p95_ms": 30000},
+                "metrics": {
+                    "emergency_pass_rate": {"min": 0.9},
+                    "coverage_rate": {"min": 0.85},
+                    "qa_pass_rate": {"min": 0.85},
+                },
                 "failover": {
                     "allowed_latest_results": ["pass", "degraded"],
                     "max_latest_timeout_error_ratio": 0.4,
@@ -87,3 +96,17 @@ def test_validate_release_policy_schema_fail_invalid_ratio(tmp_path: Path, monke
     )
     assert vps.main() == 1
 
+
+def test_validate_release_policy_schema_fail_invalid_metric_rule(tmp_path: Path, monkeypatch) -> None:
+    docs_eval = tmp_path / "docs" / "eval"
+    docs_eval.mkdir(parents=True, exist_ok=True)
+    payload = _valid_policy()
+    payload["profiles"]["prod"]["metrics"]["emergency_pass_rate"] = {"target": 0.9}
+    (docs_eval / "release_policy_v5.json").write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["validate_release_policy_schema.py", "--repo-root", str(tmp_path), "--quiet"],
+    )
+    assert vps.main() == 1

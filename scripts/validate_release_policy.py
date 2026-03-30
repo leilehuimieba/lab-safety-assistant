@@ -94,6 +94,13 @@ def to_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def to_float_or_none(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def count_latest_fail_streak(recent_runs: list[dict[str, Any]]) -> int:
     streak = 0
     for item in reversed(recent_runs):
@@ -260,6 +267,34 @@ def main() -> int:
             if latency_p95 > max_latency:
                 violations.append(f"latency_p95_ms too high: {latency_p95:.2f} > max_latency_p95_ms={max_latency:.2f}")
 
+    metric_policy = profile.get("metrics")
+    if isinstance(metric_policy, dict):
+        latest_metrics = risk.get("latest_metrics")
+        if not isinstance(latest_metrics, dict):
+            message = "latest_metrics missing in risk note while profile.metrics is configured"
+            if args.strict:
+                violations.append(message)
+            else:
+                warnings.append(message)
+        else:
+            for metric_name, rule in metric_policy.items():
+                if not isinstance(rule, dict):
+                    violations.append(f"profile metric rule invalid: {metric_name} must be object")
+                    continue
+
+                actual = to_float_or_none(latest_metrics.get(metric_name))
+                if actual is None:
+                    violations.append(f"metric missing/invalid in latest_metrics: {metric_name}")
+                    continue
+
+                min_value = to_float_or_none(rule.get("min"))
+                max_value = to_float_or_none(rule.get("max"))
+
+                if min_value is not None and actual < min_value:
+                    violations.append(f"metric {metric_name} too low: {actual:.4f} < min={min_value:.4f}")
+                if max_value is not None and actual > max_value:
+                    violations.append(f"metric {metric_name} too high: {actual:.4f} > max={max_value:.4f}")
+
     failover_policy = profile.get("failover")
     if isinstance(failover_policy, dict):
         latest = failover.get("latest")
@@ -372,4 +407,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
