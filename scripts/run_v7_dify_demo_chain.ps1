@@ -6,6 +6,8 @@ param(
   [string]$DatasetName = "实验室安全知识库",
   [string]$AppApiKey = "",
   [int]$EvalLimit = 20,
+  [switch]$WaitIndexing = $true,
+  [int]$WaitIndexingTimeoutSec = 1800,
   [switch]$SkipImport = $false,
   [switch]$AutoDetectDataset = $true,
   [switch]$AutoProvisionDatasetToken = $true,
@@ -51,6 +53,9 @@ if (-not $SkipImport) {
   if ($DatasetApiKey) { $importArgs += @("--dataset-api-key", $DatasetApiKey) }
   if ($AutoDetectDataset) { $importArgs += "--auto-detect-dataset" }
   if ($AutoProvisionDatasetToken) { $importArgs += "--auto-provision-token" }
+  if ($WaitIndexing) {
+    $importArgs += @("--wait-indexing", "--wait-timeout-sec", "$WaitIndexingTimeoutSec")
+  }
   & $PythonExe @importArgs
   if ($LASTEXITCODE -ne 0) { throw "Dify dataset import failed." }
 }

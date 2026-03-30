@@ -19,7 +19,14 @@ powershell -File scripts/run_v7_dify_demo_chain.ps1
 - 自动使用 `release_exports/v7/knowledge_base_import_ready.csv`
 - 自动从本机 Dify 数据库识别数据集 `实验室安全知识库`
 - 自动创建 dataset token（仅本机自部署 Dify 场景）
+- 默认启用 `-WaitIndexing`（导入后等待索引完成再进入评测）
 - 自动抓取最新 app token 并执行 `eval_smoke --use-dify --limit 20`
+
+如需关闭等待索引（不推荐）：
+
+```powershell
+powershell -File scripts/run_v7_dify_demo_chain.ps1 -WaitIndexing:$false
+```
 
 产物：
 
