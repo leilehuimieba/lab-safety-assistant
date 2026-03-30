@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-30T11:18:37+08:00",
+  "generated_at": "2026-03-30T21:03:46+08:00",
   "overall": "PASS",
   "summary": {
     "blockers": 0,
@@ -29,7 +29,7 @@
       "key": "release_oneclick",
       "ok": true,
       "level": "info",
-      "detail": "latest status=success (run_20260330_105950)"
+      "detail": "latest status=success (/root/lab-safe-assistant-github/artifacts/release_stability_check/run_20260330_210012/round_01/run_20260330_210012/eval_release_oneclick_report.json)"
     },
     {
       "key": "release_policy_demo",

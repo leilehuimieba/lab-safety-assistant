@@ -808,6 +808,7 @@ powershell -File scripts/run_v8_1_release.ps1
 - `docs/ops/dify_provider_recovery_and_smoke_cn.md`
 - `docs/ops/dify_provider_recovery_acceptance_20260330.md`
 - `docs/ops/server_go_live_bundle_cn.md`
+- `docs/ops/go_live_bundle_cron_cn.md`
 - `docs/pipeline/data_source_plan.md`
 - `eval_set_v1.csv`
 - `eval_criteria.md`

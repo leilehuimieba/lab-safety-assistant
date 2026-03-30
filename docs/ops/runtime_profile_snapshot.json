@@ -1,0 +1,114 @@
+{
+  "generated_at": "2026-03-30T21:03:46+08:00",
+  "repo_root": "/root/lab-safe-assistant-github",
+  "env_file": "/root/lab-safe-assistant-github/deploy/env/go_live_bundle.env",
+  "basic": {
+    "hostname": "VM-0-11-ubuntu",
+    "platform": "Linux-6.8.0-49-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3"
+  },
+  "git": {
+    "head": "bf8f3f690d94d30f2cada0597af4db1128c51a0d",
+    "branch": "main",
+    "dirty": true
+  },
+  "env_sanitized": {
+    "DIFY_TENANT_ID": "7980ac46-b7f0-4f67-b94e-fbcc0bf48a46",
+    "DIFY_APP_TOKEN": "app***KX1",
+    "DIFY_ENDPOINT_URL": "http://ai.little100.cn:3000/v1",
+    "OPENAI_COMPAT_API_KEY": "sk-***j2L",
+    "DIFY_WORKFLOW_ID": "d3e2be2d-c487-4dea-b9ed-8e374ba7ea07",
+    "DIFY_API_BASE": "http://127.0.0.1:8080",
+    "DIFY_PROVIDER_NAME": "langgenius/openai_api_compatible/openai_api_compatible",
+    "DIFY_MODEL_NAME": "gpt-5.2-codex",
+    "DIFY_ENDPOINT_MODEL_NAME": "gpt-5.2-codex",
+    "DIFY_MODEL_TYPE": "text-generation",
+    "DIFY_FALLBACK_MODEL": "gpt-5.2-codex",
+    "DIFY_SMOKE_QUERY": "What should I do first if chemical spill happens in lab?",
+    "DIFY_SMOKE_USER": "go-live-bundle",
+    "DIFY_SMOKE_TIMEOUT_SEC": "240",
+    "RELEASE_DIR": "release_exports/v8.1",
+    "WEB_HEALTH_URL": "http://127.0.0.1:8088/health",
+    "STABILITY_ROUNDS": "1",
+    "STABILITY_INTERVAL_SEC": "5",
+    "STABILITY_LIMIT": "3",
+    "STABILITY_DIFY_TIMEOUT": "90",
+    "STABILITY_EVAL_CONCURRENCY": "1",
+    "STABILITY_RETRY_ON_TIMEOUT": "1",
+    "STABILITY_FAILOVER_DAYS": "1",
+    "STABILITY_FAIL_STREAK_THRESHOLD": "2",
+    "STABILITY_SKIP_HEALTH_CHECK": "0",
+    "STABILITY_SKIP_CANARY": "1",
+    "RELEASE_POLICY_PROFILE": "demo",
+    "RELEASE_POLICY_RUN_SECONDARY": "0",
+    "RELEASE_POLICY_SECONDARY_PROFILE": "prod",
+    "RELEASE_POLICY_ENFORCE_SECONDARY": "0",
+    "RELEASE_POLICY_STRICT": "0",
+    "DIFY_API_CONTAINER": "docker-api-1"
+  },
+  "docker": {
+    "docker_version_raw": "{\"Client\":{\"Platform\":{\"Name\":\"Docker Engine - Community\"},\"Version\":\"27.5.1\",\"ApiVersion\":\"1.47\",\"DefaultAPIVersion\":\"1.47\",\"GitCommit\":\"9f9e405\",\"GoVersion\":\"go1.22.11\",\"Os\":\"linux\",\"Arch\":\"amd64\",\"BuildTime\":\"Wed Jan 22 13:41:48 2025\",\"Context\":\"default\"},\"Server\":{\"Platform\":{\"Name\":\"Docker Engine - Community\"},\"Components\":[{\"Name\":\"Engine\",\"Version\":\"27.5.1\",\"Details\":{\"ApiVersion\":\"1.47\",\"Arch\":\"amd64\",\"BuildTime\":\"Wed Jan 22 13:41:48 2025\",\"Experimental\":\"false\",\"GitCommit\":\"4c9b3b0\",\"GoVersion\":\"go1.22.11\",\"KernelVersion\":\"6.8.0-49-generic\",\"MinAPIVersion\":\"1.24\",\"Os\":\"linux\"}},{\"Name\":\"containerd\",\"Version\":\"1.7.25\",\"Details\":{\"GitCommit\":\"bcc810d6b9066471b0b6fa75f557a15a1cbf31bb\"}},{\"Name\":\"runc\",\"Version\":\"1.2.4\",\"Details\":{\"GitCommit\":\"v1.2.4-0-g6c52b3f\"}},{\"Name\":\"docker-init\",\"Version\":\"0.19.0\",\"Details\":{\"GitCommit\":\"de40ad0\"}}],\"Version\":\"27.5.1\",\"ApiVersion\":\"1.47\",\"MinAPIVersion\":\"1.24\",\"GitCommit\":\"4c9b3b0\",\"GoVersion\":\"go1.22.11\",\"Os\":\"linux\",\"Arch\":\"amd64\",\"KernelVersion\":\"6.8.0-49-generic\",\"BuildTime\":\"2025-01-22T13:41:48.000000000+00:00\"}}",
+    "containers": [
+      {
+        "name": "fake-ollama",
+        "image": "python:3.11-slim",
+        "status": "Up 3 hours"
+      },
+      {
+        "name": "docker-plugin_daemon-1",
+        "image": "langgenius/dify-plugin-daemon:0.5.3-local",
+        "status": "Up 6 hours"
+      },
+      {
+        "name": "docker-api-1",
+        "image": "langgenius/dify-api:1.13.0",
+        "status": "Up 6 hours"
+      },
+      {
+        "name": "docker-worker_beat-1",
+        "image": "langgenius/dify-api:1.13.0",
+        "status": "Up 6 hours"
+      },
+      {
+        "name": "docker-worker-1",
+        "image": "langgenius/dify-api:1.13.0",
+        "status": "Up 6 hours"
+      },
+      {
+        "name": "docker-nginx-1",
+        "image": "nginx:latest",
+        "status": "Up 6 hours"
+      },
+      {
+        "name": "docker-web-1",
+        "image": "langgenius/dify-web:1.13.0",
+        "status": "Up 7 hours"
+      },
+      {
+        "name": "docker-sandbox-1",
+        "image": "langgenius/dify-sandbox:0.2.12",
+        "status": "Restarting (2) 8 seconds ago"
+      },
+      {
+        "name": "docker-db_postgres-1",
+        "image": "postgres:15-alpine",
+        "status": "Up 7 hours (healthy)"
+      },
+      {
+        "name": "docker-redis-1",
+        "image": "redis:6-alpine",
+        "status": "Up 7 hours (healthy)"
+      },
+      {
+        "name": "docker-ssrf_proxy-1",
+        "image": "ubuntu/squid:latest",
+        "status": "Up 7 hours"
+      },
+      {
+        "name": "docker-qdrant-1",
+        "image": "langgenius/qdrant:v1.8.3",
+        "status": "Up 7 hours"
+      }
+    ]
+  }
+}

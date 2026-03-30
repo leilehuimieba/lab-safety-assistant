@@ -1,8 +1,8 @@
 # 发布风险说明（自动）
 
-- 生成时间：`2026-03-30T11:44:43+08:00`
+- 生成时间：`2026-03-30T21:03:46+08:00`
 - 门禁判定：`PASS`
-- 最新 Smoke 运行：`run_20260330_105952`
+- 最新 Smoke 运行：`run_20260330_210014`
 
 ## 1) 最新链路与质量快照
 
@@ -12,16 +12,16 @@
 | 超时率 | 0.0% | 30.0% |
 | 安全拒答率 | 100.0% | 95.0% |
 | 应急合格率 | 100.0% | 90.0% |
-| 常规问答合格率 | 100.0% | 85.0% |
+| 常规问答合格率 | 90.9% | 85.0% |
 | 模糊问答合格率 | 0.0% | 80.0% |
 
 ## 2) Failover 状态
 
 - 最新结果：`pass`
-- 最新时间：`2026-03-30T02:59:51+00:00`
+- 最新时间：`2026-03-30T13:00:12+00:00`
 - 最终模型：`gpt-5.2-codex`
 - 触发原因：``
-- 最近窗口统计：PASS=4, DEGRADED=0, FAIL=0
+- 最近窗口统计：PASS=8, DEGRADED=2, FAIL=4
 
 ## 3) 门禁违规项
 
@@ -37,5 +37,5 @@
 
 ## 6) 文件索引
 
-- 风险说明 JSON：`D:\workspace\lab-safe-assistant-github\docs\eval\release_risk_note_auto.json`
-- failover 状态：`D:\workspace\lab-safe-assistant-github\docs\eval\failover_status.json`
+- 风险说明 JSON：`/root/lab-safe-assistant-github/docs/eval/release_risk_note_auto.json`
+- failover 状态：`/root/lab-safe-assistant-github/docs/eval/failover_status.json`

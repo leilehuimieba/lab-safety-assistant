@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-03-30T21:03:46+08:00",
+  "overall": "PASS",
+  "summary": {
+    "bundle_overall": "PASS",
+    "go_live_overall": "PASS",
+    "stability_overall": "PASS",
+    "blocker_count": 0,
+    "warning_count": 0
+  },
+  "blockers": [],
+  "warnings": [],
+  "signals": {
+    "latest_oneclick_report": "/root/lab-safe-assistant-github/artifacts/release_stability_check/run_20260330_210012/round_01/run_20260330_210012/eval_release_oneclick_report.json",
+    "latest_oneclick_status": "success",
+    "latest_oneclick_stdout_tail": "Failover report: /root/lab-safe-assistant-github/artifacts/model_failover_eval/run_20260330_210012/model_failover_report.json\nPrimary model healthy. final_model=gpt-5.2-codex",
+    "latest_oneclick_stderr_tail": "",
+    "latest_health_report": "/root/lab-safe-assistant-github/artifacts/live_health/run_20260330_210013/health_check_report.json",
+    "latest_health_pass_effective": true
+  },
+  "next_actions": [
+    "当前无阻塞项，可继续执行发布流程。"
+  ]
+}

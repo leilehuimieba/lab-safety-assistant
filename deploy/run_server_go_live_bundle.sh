@@ -27,6 +27,7 @@ for var in \
   DIFY_TENANT_ID DIFY_APP_TOKEN DIFY_ENDPOINT_URL OPENAI_COMPAT_API_KEY \
   DIFY_WORKFLOW_ID DIFY_API_BASE DIFY_PROVIDER_NAME DIFY_MODEL_NAME \
   DIFY_ENDPOINT_MODEL_NAME DIFY_MODEL_TYPE DIFY_FALLBACK_MODEL \
+  DIFY_FORCE_ROTATE_KEY \
   AUTO_FIX_EMBEDDING_CHANNEL EMBEDDING_TARGET_CONTAINERS \
   DIFY_SMOKE_QUERY DIFY_SMOKE_USER DIFY_SMOKE_TIMEOUT_SEC \
   RELEASE_DIR WEB_HEALTH_URL STABILITY_ROUNDS STABILITY_INTERVAL_SEC \
@@ -69,11 +70,15 @@ RECOVERY_LOG="$OUT_DIR/01_provider_recovery.log"
 EMBEDDING_LOG="$OUT_DIR/02_embedding_channel.log"
 STABILITY_LOG="$OUT_DIR/03_release_stability.log"
 PREFLIGHT_LOG="$OUT_DIR/04_go_live_preflight.log"
+DIGEST_LOG="$OUT_DIR/05_failure_digest.log"
+SNAPSHOT_LOG="$OUT_DIR/06_runtime_snapshot.log"
 
 RECOVERY_EXIT=0
 EMBEDDING_EXIT=0
 PREFLIGHT_EXIT=0
 STABILITY_EXIT=0
+DIGEST_EXIT=0
+SNAPSHOT_EXIT=0
 
 run_with_log() {
   local log_file="$1"
@@ -89,7 +94,7 @@ echo "[bundle] run tag: $RUN_TAG"
 echo "[bundle] output dir: $OUT_DIR"
 echo "[bundle] env file: $ENV_FILE"
 
-echo "[bundle] step1/3 provider recovery + workflow smoke"
+echo "[bundle] step1/4 provider recovery + workflow smoke"
 if run_with_log "$RECOVERY_LOG" "$ROOT_DIR/scripts/run_dify_provider_recovery_and_smoke.sh" "$ENV_FILE"; then
   RECOVERY_EXIT=0
 else
@@ -167,8 +172,22 @@ else
   PREFLIGHT_EXIT=$?
 fi
 
+echo "[bundle] diagnostics: failure digest"
+if run_with_log "$DIGEST_LOG" python3 scripts/release/generate_go_live_failure_digest.py --repo-root .; then
+  DIGEST_EXIT=0
+else
+  DIGEST_EXIT=$?
+fi
+
+echo "[bundle] diagnostics: runtime profile snapshot"
+if run_with_log "$SNAPSHOT_LOG" python3 scripts/release/generate_runtime_profile_snapshot.py --repo-root . --env-file "$ENV_FILE"; then
+  SNAPSHOT_EXIT=0
+else
+  SNAPSHOT_EXIT=$?
+fi
+
 echo "[bundle] finalize summary"
-python3 - "$ROOT_DIR" "$OUT_DIR" "$RECOVERY_EXIT" "$EMBEDDING_EXIT" "$PREFLIGHT_EXIT" "$STABILITY_EXIT" <<'PY'
+python3 - "$ROOT_DIR" "$OUT_DIR" "$RECOVERY_EXIT" "$EMBEDDING_EXIT" "$PREFLIGHT_EXIT" "$STABILITY_EXIT" "$DIGEST_EXIT" "$SNAPSHOT_EXIT" <<'PY'
 from __future__ import annotations
 import json
 from datetime import datetime
@@ -181,6 +200,8 @@ recovery_exit = int(sys.argv[3])
 embedding_exit = int(sys.argv[4])
 preflight_exit = int(sys.argv[5])
 stability_exit = int(sys.argv[6])
+digest_exit = int(sys.argv[7])
+snapshot_exit = int(sys.argv[8])
 
 def load_json(path: Path) -> dict:
     if not path.exists():
@@ -223,6 +244,8 @@ payload = {
             "ok": stability_exit == 0,
             "overall": stability_overall or "UNKNOWN",
         },
+        "failure_digest": {"exit_code": digest_exit, "ok": digest_exit == 0},
+        "runtime_profile_snapshot": {"exit_code": snapshot_exit, "ok": snapshot_exit == 0},
     },
     "artifacts": {
         "bundle_output_dir": str(out_dir),
@@ -230,6 +253,10 @@ payload = {
         "go_live_readiness_md": str(root / "docs/ops/go_live_readiness.md"),
         "release_stability_json": str(root / "docs/eval/release_stability_check.json"),
         "release_stability_md": str(root / "docs/eval/release_stability_check.md"),
+        "failure_digest_json": str(root / "docs/ops/go_live_failure_digest_latest.json"),
+        "failure_digest_md": str(root / "docs/ops/go_live_failure_digest_latest.md"),
+        "runtime_profile_snapshot_json": str(root / "docs/ops/runtime_profile_snapshot.json"),
+        "runtime_profile_snapshot_md": str(root / "docs/ops/runtime_profile_snapshot.md"),
     },
 }
 
@@ -258,6 +285,9 @@ md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 print(json.dumps(payload, ensure_ascii=False, indent=2))
 PY
+
+# Re-sync digest with the latest bundle summary just written above.
+python3 scripts/release/generate_go_live_failure_digest.py --repo-root . >/dev/null 2>&1 || true
 
 FINAL_OVERALL="$(python3 - <<'PY'
 import json
