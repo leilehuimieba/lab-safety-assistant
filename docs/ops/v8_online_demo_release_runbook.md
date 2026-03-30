@@ -20,12 +20,19 @@ powershell -File scripts/run_v7_dify_demo_chain.ps1
 - 自动从本机 Dify 数据库识别数据集 `实验室安全知识库`
 - 自动创建 dataset token（仅本机自部署 Dify 场景）
 - 默认启用 `-WaitIndexing`（导入后等待索引完成再进入评测）
-- 自动抓取最新 app token 并执行 `eval_smoke --use-dify --limit 20`
+- 自动抓取最新 app token，并在评测前执行健康门禁（Dify 可达性）
+- 评测默认启用 `--retry-on-timeout 1`，降低单题偶发超时对指标的影响
 
 如需关闭等待索引（不推荐）：
 
 ```powershell
 powershell -File scripts/run_v7_dify_demo_chain.ps1 -WaitIndexing:$false
+```
+
+如需临时关闭健康门禁（仅排障时）：
+
+```powershell
+powershell -File scripts/run_v7_dify_demo_chain.ps1 -SkipHealthGate
 ```
 
 产物：

@@ -6,6 +6,12 @@ param(
   [string]$DatasetName = "实验室安全知识库",
   [string]$AppApiKey = "",
   [int]$EvalLimit = 20,
+  [switch]$SkipHealthGate = $false,
+  [switch]$SkipEmbeddingHealthCheck = $true,
+  [switch]$AllowChatTimeoutPass = $false,
+  [double]$HealthPreflightTimeout = 8.0,
+  [double]$HealthChatPreflightTimeout = 20.0,
+  [int]$RetryOnTimeout = 1,
   [switch]$WaitIndexing = $true,
   [int]$WaitIndexingTimeoutSec = 1800,
   [switch]$SkipImport = $false,
@@ -35,6 +41,36 @@ if (-not (Test-Path $CsvPath)) {
   throw "Missing CSV: $CsvPath"
 }
 
+if (-not $AppApiKey -and $AutoFetchAppKeyFromDb) {
+  $AppApiKey = Get-LatestAppTokenFromDb -Container $DbContainer -User $DbUser -Database $DbName
+}
+
+if (-not $SkipHealthGate) {
+  if (-not $AppApiKey) {
+    throw "Health gate enabled but AppApiKey is missing. Provide -AppApiKey or enable -AutoFetchAppKeyFromDb."
+  }
+  Write-Host "=== Precheck: Live health gate (Dify) ===" -ForegroundColor Cyan
+  $healthArgs = @(
+    "scripts\check_live_eval_health.py",
+    "--dify-base-url", $DifyBaseUrl,
+    "--dify-app-key", $AppApiKey,
+    "--response-mode", "streaming",
+    "--preflight-timeout", "$HealthPreflightTimeout",
+    "--chat-preflight-timeout", "$HealthChatPreflightTimeout",
+    "--output-dir", "artifacts/eval_health_gate_v7"
+  )
+  if ($SkipEmbeddingHealthCheck) {
+    $healthArgs += "--skip-embedding-check"
+  }
+  if ($AllowChatTimeoutPass) {
+    $healthArgs += "--allow-chat-timeout-pass"
+  }
+  & $PythonExe @healthArgs
+  if ($LASTEXITCODE -ne 0) {
+    throw "Live health gate failed. Abort v7 demo chain."
+  }
+}
+
 if (-not $SkipImport) {
   Write-Host "=== Step 1/2: Import v7 CSV into Dify Dataset ===" -ForegroundColor Cyan
   $importArgs = @(
@@ -60,9 +96,6 @@ if (-not $SkipImport) {
   if ($LASTEXITCODE -ne 0) { throw "Dify dataset import failed." }
 }
 
-if (-not $AppApiKey -and $AutoFetchAppKeyFromDb) {
-  $AppApiKey = Get-LatestAppTokenFromDb -Container $DbContainer -User $DbUser -Database $DbName
-}
 if (-not $AppApiKey) {
   throw "Missing app api key. Provide -AppApiKey or keep -AutoFetchAppKeyFromDb enabled."
 }
@@ -74,6 +107,7 @@ Write-Host "=== Step 2/2: Run live 20-question regression via Dify App API ===" 
   --dify-app-key $AppApiKey `
   --dify-response-mode streaming `
   --dify-timeout 180 `
+  --retry-on-timeout $RetryOnTimeout `
   --concurrency 1 `
   --limit $EvalLimit `
   --output-dir artifacts/eval_smoke_v7_demo_chain
