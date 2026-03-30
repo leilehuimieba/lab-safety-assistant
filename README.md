@@ -15,8 +15,8 @@
 1. 已有主知识库：`knowledge_base_curated.csv`
 2. 已有规则库：`safety_rules.yaml`
 3. 已有评测集：`eval_set_v1.csv`
-4. 已完成最新发布批次：`release_exports/v7/knowledge_base_import_ready.csv`
-5. 已提供一键发布脚本：`scripts/run_v7_release.ps1`
+4. 已完成最新发布批次：`release_exports/v8.1/knowledge_base_import_ready.csv`
+5. 已提供发布/门禁脚本：`scripts/run_v8_1_release.ps1`、`scripts/run_eval_release_oneclick.ps1`
 6. `web_demo` 已支持：
    - 规则命中拦截
    - 低置信度入队
@@ -36,7 +36,8 @@ lab-safe-assistant-github/
 │  ├─ reports/                   # 项目阶段报告
 │  └─ word/                      # 可直接分发的 Word 执行手册
 ├─ release_exports/
-│  └─ v7/                        # 当前正式发布包
+│  ├─ v8/                        # 历史发布包
+│  └─ v8.1/                      # 当前正式发布包
 ├─ scripts/                      # 自动化脚本（抓取、清洗、评测、发布）
 ├─ skills/                       # 本地技能（含 web-content-fetcher）
 ├─ tests/                        # 回归测试
@@ -48,10 +49,10 @@ lab-safe-assistant-github/
 
 ## 4. 关键入口
 
-1. `release_exports/v7/knowledge_base_import_ready.csv`  
+1. `release_exports/v8.1/knowledge_base_import_ready.csv`  
    直接可导入知识库的正式数据包。
 
-2. `scripts/run_v7_release.ps1`  
+2. `scripts/run_v8_1_release.ps1`  
    一键执行：抓取 -> 状态 -> 报告 -> 低质重写 -> 打包 -> 发布。
 
 3. `web_demo/app.py`  
@@ -66,10 +67,10 @@ pip install -r scripts/requirements-web-ingest.txt
 pip install fastapi uvicorn pyyaml requests pydantic
 ```
 
-### 5.2 运行 V7 一键发布
+### 5.2 运行 V8.1 一键发布
 
 ```powershell
-powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts/run_v7_release.ps1
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts/run_v8_1_release.ps1
 ```
 
 ### 5.3 运行演示服务
@@ -94,16 +95,33 @@ python scripts/quality_gate.py --repo-root . --skip-secret-scan
 2. [演示脚本](docs/ops/demo_script.md)
 3. [服务器部署说明](docs/ops/server_deploy_guide_cn.md)
 4. [上线差距与推进计划](docs/ops/go_live_gap_and_next_actions_20260330.md)
+5. [Systemd 常驻部署](docs/ops/systemd_web_demo_guide_cn.md)
+6. [反向代理与 HTTPS](docs/ops/reverse_proxy_https_guide_cn.md)
 
 发布前建议执行一键体检：
 
 ```bash
 python scripts/release/go_live_preflight.py --repo-root .
 ```
-4. [统一入库流程](docs/pipeline/unified_ingestion_pipeline.md)
-5. [网页入库流程](docs/pipeline/web_ingestion_pipeline.md)
-6. [评测看板](docs/eval/eval_dashboard.md)
-7. [发布审核日志](docs/eval/release_review_log.md)
+
+发布前建议执行稳定性验收（3轮）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run_release_stability_check.ps1 `
+  -RepoRoot . `
+  -Rounds 3 `
+  -IntervalSec 30 `
+  -WorkflowId <workflow_id> `
+  -DifyBaseUrl http://localhost:8080 `
+  -DifyAppKey <app_key> `
+  -SkipHealthCheck `
+  -SkipCanary
+```
+
+7. [统一入库流程](docs/pipeline/unified_ingestion_pipeline.md)
+8. [网页入库流程](docs/pipeline/web_ingestion_pipeline.md)
+9. [评测看板](docs/eval/eval_dashboard.md)
+10. [发布审核日志](docs/eval/release_review_log.md)
 
 ## 7. 说明
 

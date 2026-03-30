@@ -146,3 +146,18 @@ chmod +x deploy/start_public_tunnel.sh deploy/stop_public_tunnel.sh deploy/statu
 - 增加 Nginx/Caddy 反向代理（443 + 域名）
 - 增加 Basic Auth 登录保护
 - 接入 Dify App API，切换为“知识库驱动”的正式问答链路
+
+## 6. 推荐生产化增强（新增）
+
+1. systemd 常驻运行（用户态）  
+   参考：`docs/ops/systemd_web_demo_guide_cn.md`  
+   可用脚本：`deploy/install_web_demo_systemd.sh`
+
+2. 反向代理与 HTTPS  
+   参考：`docs/ops/reverse_proxy_https_guide_cn.md`  
+   模板：
+   - `deploy/nginx/lab-safe-assistant.conf.template`
+   - `deploy/caddy/Caddyfile.template`
+
+3. 上线前稳定性验收（连续 3 轮）  
+   参考：`scripts/run_release_stability_check.ps1`

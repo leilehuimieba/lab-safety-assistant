@@ -1,6 +1,6 @@
 # Release Policy Check
 
-- Generated: `2026-03-30T11:05:25+08:00`
+- Generated: `2026-03-30T11:44:43+08:00`
 - Profile: `demo`
 - Status: `PASS`
 - Strict: `True`

@@ -609,6 +609,33 @@ GitHub 手动预检工作流：
 - `.github/workflows/go-live-preflight.yml`
 - 支持在 Actions 页面指定 `release_dir`，并可按需跳过 web health（CI 场景常用）。
 
+发布稳定性验收（连续多轮）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run_release_stability_check.ps1 `
+  -RepoRoot . `
+  -Rounds 3 `
+  -IntervalSec 30 `
+  -WorkflowId <workflow_id> `
+  -DifyBaseUrl http://localhost:8080 `
+  -DifyAppKey <app_key> `
+  -SkipHealthCheck `
+  -SkipCanary
+```
+
+- 输出：
+- `docs/eval/release_stability_check.json/.md`
+- `artifacts/release_stability_check/run_*/`
+- 返回码：
+- `0`：稳定性验收通过（全部轮次 PASS）
+- `2`：稳定性验收失败（至少一轮 BLOCK/FAIL）
+
+GitHub 手动稳定性工作流：
+
+- `.github/workflows/release-stability-check.yml`
+- 默认 `skip_failover_eval=true`（适合 CI 做“策略层稳定性”）
+- 若要做真实链路稳定性，请在自有 runner/服务器执行本地脚本。
+
 生成低置信队列看板（建议与发布看板同时刷新）：
 
 ```powershell

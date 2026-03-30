@@ -1,0 +1,63 @@
+name: Release Stability Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: "Stability rounds"
+        required: true
+        default: "3"
+      interval_sec:
+        description: "Interval seconds between rounds"
+        required: true
+        default: "30"
+      skip_failover_eval:
+        description: "Skip failover eval stage (artifact-only check)"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: read
+
+jobs:
+  stability:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Stability Check
+        run: |
+          EXTRA_FLAGS=""
+          if [ "${{ github.event.inputs.skip_failover_eval }}" = "true" ]; then
+            EXTRA_FLAGS="--skip-failover-eval"
+          fi
+          python scripts/release/run_release_stability_check.py \
+            --repo-root . \
+            --rounds "${{ github.event.inputs.rounds }}" \
+            --interval-sec "${{ github.event.inputs.interval_sec }}" \
+            --release-policy-profile demo \
+            --release-policy-run-secondary \
+            --release-policy-secondary-profile prod \
+            --release-policy-enforce-secondary \
+            --release-policy-strict \
+            ${EXTRA_FLAGS}
+
+      - name: Upload Stability Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-stability-${{ github.run_id }}
+          path: |
+            docs/eval/release_stability_check.json
+            docs/eval/release_stability_check.md
+            artifacts/release_stability_check

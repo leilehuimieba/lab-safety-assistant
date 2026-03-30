@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-03-30T11:44:43+08:00",
+  "overall": "PASS",
+  "rounds_requested": 1,
+  "rounds_completed": 1,
+  "passed_rounds": 1,
+  "output_root": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\release_stability_check\\run_20260330_114443",
+  "rounds": [
+    {
+      "round_index": 1,
+      "command": [
+        "D:\\Grammar\\miniconda3\\python.exe",
+        "D:\\workspace\\lab-safe-assistant-github\\scripts\\run_eval_release_oneclick.py",
+        "--repo-root",
+        "D:\\workspace\\lab-safe-assistant-github",
+        "--output-root",
+        "D:\\workspace\\lab-safe-assistant-github\\artifacts\\release_stability_check\\run_20260330_114443\\round_01",
+        "--release-policy-profile",
+        "demo",
+        "--release-policy-run-secondary",
+        "--release-policy-secondary-profile",
+        "prod",
+        "--release-policy-enforce-secondary",
+        "--release-policy-strict",
+        "--skip-failover-eval",
+        "--failover-days",
+        "1",
+        "--failover-fail-streak-threshold",
+        "2"
+      ],
+      "exit_code": 0,
+      "status": "success",
+      "report_path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\release_stability_check\\run_20260330_114443\\round_01\\run_20260330_114443\\eval_release_oneclick_report.json",
+      "demo_policy_exit": 0,
+      "prod_policy_exit": 0,
+      "emergency_pass_rate": 1.0,
+      "qa_pass_rate": 1.0,
+      "coverage_rate": 1.0,
+      "safety_refusal_rate": 1.0,
+      "failover_latest_result": "pass",
+      "error": ""
+    }
+  ]
+}
