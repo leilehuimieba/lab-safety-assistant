@@ -1,0 +1,52 @@
+name: Go Live Preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_dir:
+        description: "Release package directory"
+        required: true
+        default: "release_exports/v8.1"
+      skip_web_health:
+        description: "Skip web health check in CI"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Go-Live Preflight
+        run: |
+          EXTRA_FLAGS=""
+          if [ "${{ github.event.inputs.skip_web_health }}" = "true" ]; then
+            EXTRA_FLAGS="--skip-web-health --allow-warning-pass"
+          fi
+          python scripts/release/go_live_preflight.py \
+            --repo-root . \
+            --release-dir "${{ github.event.inputs.release_dir }}" \
+            ${EXTRA_FLAGS}
+
+      - name: Upload Preflight Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-live-preflight-${{ github.run_id }}
+          path: |
+            docs/ops/go_live_readiness.json
+            docs/ops/go_live_readiness.md

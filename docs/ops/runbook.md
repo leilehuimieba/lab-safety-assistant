@@ -578,6 +578,37 @@ python scripts/generate_release_readiness_dashboard.py `
 - `docs/ops/release_fix_plan_auto.csv/.md`
 - 该流程会按 `blocking_reason` 尝试保留已存在的 `owner/status/eta`，避免覆盖人工分配。
 
+上线前一键预检（新增，建议作为最终发布前最后一步）：
+
+```powershell
+python scripts/release/go_live_preflight.py `
+  --repo-root . `
+  --release-dir release_exports/v8.1 `
+  --web-health-url http://127.0.0.1:8088/health
+```
+
+PowerShell 封装（Windows 推荐）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run_go_live_preflight.ps1 `
+  -RepoRoot . `
+  -ReleaseDir release_exports/v8.1 `
+  -WebHealthUrl http://127.0.0.1:8088/health
+```
+
+- 输出：
+- `docs/ops/go_live_readiness.json`
+- `docs/ops/go_live_readiness.md`
+- 返回码：
+- `0`：PASS（可上线）
+- `2`：BLOCK（禁止上线）
+- `3`：WARN（有告警，默认也阻断；可加 `--allow-warning-pass` 放行）
+
+GitHub 手动预检工作流：
+
+- `.github/workflows/go-live-preflight.yml`
+- 支持在 Actions 页面指定 `release_dir`，并可按需跳过 web health（CI 场景常用）。
+
 生成低置信队列看板（建议与发布看板同时刷新）：
 
 ```powershell

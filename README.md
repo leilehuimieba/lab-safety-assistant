@@ -93,6 +93,13 @@ python scripts/quality_gate.py --repo-root . --skip-secret-scan
 1. [运行手册](docs/ops/runbook.md)
 2. [演示脚本](docs/ops/demo_script.md)
 3. [服务器部署说明](docs/ops/server_deploy_guide_cn.md)
+4. [上线差距与推进计划](docs/ops/go_live_gap_and_next_actions_20260330.md)
+
+发布前建议执行一键体检：
+
+```bash
+python scripts/release/go_live_preflight.py --repo-root .
+```
 4. [统一入库流程](docs/pipeline/unified_ingestion_pipeline.md)
 5. [网页入库流程](docs/pipeline/web_ingestion_pipeline.md)
 6. [评测看板](docs/eval/eval_dashboard.md)

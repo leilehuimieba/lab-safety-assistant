@@ -97,6 +97,24 @@ chmod +x deploy/*.sh
 tail -f logs/web_demo.log
 ```
 
+上线前一键体检（推荐每次发布前执行）：
+
+```bash
+chmod +x deploy/go_live_preflight.sh
+./deploy/go_live_preflight.sh
+```
+
+体检报告产物：
+
+- `docs/ops/go_live_readiness.json`
+- `docs/ops/go_live_readiness.md`
+
+判断规则：
+
+- `overall=PASS`：可进入发布窗口。
+- `overall=WARN`：建议先处理告警再发布。
+- `overall=BLOCK`：禁止发布，先处理阻断项。
+
 ## 3.1 公网端口未放行时的临时方案（推荐演示用）
 如果你暂时不能开安全组端口（如 8088），可以使用 Cloudflare 临时隧道：
 
