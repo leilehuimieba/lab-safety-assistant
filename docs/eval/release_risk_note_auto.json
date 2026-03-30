@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-03-29T16:00:50+08:00",
+  "generated_at": "2026-03-30T09:41:40+08:00",
   "gate_decision": "WARN_ONLY",
   "violations": [
     "route_success_rate failed for 2 consecutive weeks (target=0.7, 2026-W12:0.0000, 2026-W13:0.5475)",
-    "latest failover result is fail with streak=9 (threshold=2)"
+    "failover status invalid: latest record missing"
   ],
   "warnings": [],
   "route_violations": [
@@ -11,7 +11,7 @@
   ],
   "quality_violations": [],
   "failover_violations": [
-    "latest failover result is fail with streak=9 (threshold=2)"
+    "failover status invalid: latest record missing"
   ],
   "failover_warnings": [],
   "override_active": true,
@@ -46,20 +46,11 @@
     "route_timeout_rate": 0.3
   },
   "failover_status_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\failover_status.json",
-  "failover_latest": {
-    "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_144210\\model_failover_report.json",
-    "generated_at": "2026-03-29T06:42:10+00:00",
-    "result": "fail",
-    "failover_triggered": true,
-    "failover_reason": "primary canary timeout ratio reached threshold (1.00 >= 1.00)",
-    "active_model_final": "gpt-5.2-codex",
-    "fetch_error_count": 1,
-    "timeout_error_ratio": 1.0
-  },
+  "failover_latest": null,
   "failover_window_counts": {
     "pass": 0,
     "degraded": 0,
-    "fail": 9,
-    "failover_triggered": 5
+    "fail": 0,
+    "failover_triggered": 0
   }
 }

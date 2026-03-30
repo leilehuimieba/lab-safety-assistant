@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-03-30T09:25:54+08:00",
+  "generated_at": "2026-03-30T09:44:38+08:00",
   "overall_status": "BLOCK",
   "profiles": [
     {
-      "generated_at": "2026-03-30T09:25:54+08:00",
+      "generated_at": "2026-03-30T09:44:38+08:00",
       "profile": "demo",
       "policy_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_v5.json",
       "risk_note_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_risk_note_auto.json",
@@ -23,7 +23,7 @@
       "exit_code": 1
     },
     {
-      "generated_at": "2026-03-30T09:25:54+08:00",
+      "generated_at": "2026-03-30T09:44:38+08:00",
       "profile": "prod",
       "policy_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_v5.json",
       "risk_note_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_risk_note_auto.json",
@@ -39,11 +39,7 @@
         "latency_p95_ms too high: 60139.45 > max_latency_p95_ms=30000.00",
         "metric emergency_pass_rate too low: 0.0000 < min=0.9000",
         "metric coverage_rate too low: 0.0000 < min=0.8500",
-        "metric qa_pass_rate too low: 0.0000 < min=0.8500",
-        "failover latest result not allowed: fail not in ['degraded', 'pass']",
-        "failover latest timeout ratio too high: 1.0000 > max_latest_timeout_error_ratio=0.4000",
-        "failover window fail count exceeded: 9 > max_fail_window=1",
-        "failover fail streak exceeded: 9 > max_fail_streak=1"
+        "metric qa_pass_rate too low: 0.0000 < min=0.8500"
       ],
       "warnings": [],
       "risk_gate_decision": "WARN_ONLY",

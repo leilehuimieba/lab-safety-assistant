@@ -1,9 +1,9 @@
 # Release Policy Check
 
-- Generated: `2026-03-29T16:00:50+08:00`
+- Generated: `2026-03-30T09:41:40+08:00`
 - Profile: `demo`
-- Status: `PASS`
-- Strict: `False`
+- Status: `BLOCK`
+- Strict: `True`
 
 ## Snapshot
 - gate_decision: `WARN_ONLY`
@@ -12,7 +12,8 @@
 - override: `active=True, mode=warn_only`
 
 ## Violations
-- none
+- metric emergency_pass_rate too low: 0.0000 < min=0.8000
+- metric coverage_rate too low: 0.0000 < min=0.7500
 
 ## Warnings
 - none

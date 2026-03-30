@@ -1,6 +1,6 @@
 # 发布风险说明（自动）
 
-- 生成时间：`2026-03-29T16:00:50+08:00`
+- 生成时间：`2026-03-30T09:41:40+08:00`
 - 门禁判定：`WARN_ONLY`
 - 最新 Smoke 运行：`run_20260329_130447`
 
@@ -17,16 +17,12 @@
 
 ## 2) Failover 状态
 
-- 最新结果：`fail`
-- 最新时间：`2026-03-29T06:42:10+00:00`
-- 最终模型：`gpt-5.2-codex`
-- 触发原因：`primary canary timeout ratio reached threshold (1.00 >= 1.00)`
-- 最近窗口统计：PASS=0, DEGRADED=0, FAIL=9
+- 未读取到 failover 状态文件或内容为空。
 
 ## 3) 门禁违规项
 
 - route_success_rate failed for 2 consecutive weeks (target=0.7, 2026-W12:0.0000, 2026-W13:0.5475)
-- latest failover result is fail with streak=9 (threshold=2)
+- failover status invalid: latest record missing
 
 ## 4) 临时豁免信息
 

@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-03-30T09:43:28+08:00",
+  "output_csv": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\import_bundle_v8_1\\knowledge_base_import_ready.csv",
+  "total_rows": 368,
+  "empty_id_skipped": 0,
+  "sources": [
+    {
+      "name": "curated",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\knowledge_base_curated.csv",
+      "input_rows": 81
+    },
+    {
+      "name": "v8_1_web_rewritten",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\web_seed_v8_1_prefetch\\knowledge_base_web_rewritten.csv",
+      "input_rows": 18
+    },
+    {
+      "name": "v7_previous_release",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\release_exports\\v7\\knowledge_base_import_ready.csv",
+      "input_rows": 350
+    }
+  ],
+  "selected_rows_by_source": {
+    "curated": 81,
+    "v8_1_web_rewritten": 18,
+    "v7_previous_release": 269
+  },
+  "duplicate_skips_by_source": {
+    "v7_previous_release": 81
+  },
+  "distribution": {
+    "category": {
+      "化学": 51,
+      "危化品": 7,
+      "电气": 6,
+      "生物": 11,
+      "通用": 29,
+      "辐射": 2,
+      "lab_management": 10,
+      "training": 6,
+      "standard": 7,
+      "biosafety": 14,
+      "chemical": 6,
+      "emergency": 1,
+      "制度": 17,
+      "培训": 4,
+      "标准": 15,
+      "实验室管理": 29,
+      "SDS": 2,
+      "实验设备": 12,
+      "电气安全": 11,
+      "专项安全": 4,
+      "设备安全": 52,
+      "实验室设备安全": 29,
+      "危险源管理": 5,
+      "检测方法": 38
+    },
+    "source_type": {
+      "SOP": 11,
+      "MSDS": 8,
+      "制度": 16,
+      "应急预案": 8,
+      "网页": 146,
+      "政策": 1,
+      "SDS指南": 1,
+      "PDF": 177
+    },
+    "language": {
+      "zh-CN": 308,
+      "en": 50,
+      "en-US": 10
+    },
+    "risk_level": {
+      "2": 22,
+      "3": 155,
+      "5": 28,
+      "4": 161,
+      "1": 2
+    }
+  }
+}

@@ -163,7 +163,7 @@ def resolve_skill_script_path(raw_path: str = "") -> Path:
         if path.exists():
             return path.resolve()
     return (
-        Path(__file__).resolve().parents[1]
+        Path(__file__).resolve().parents[2]
         / "skills"
         / "web-content-fetcher"
         / "scripts"

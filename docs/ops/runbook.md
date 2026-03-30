@@ -717,6 +717,18 @@ python skills/web-content-fetcher/scripts/fetch_web_content.py `
   --out-json artifacts/web_fetch_output.json
 ```
 
+## 第十一步：生成 V8.1 可用数据包（skill 抓取链路）
+
+```powershell
+powershell -File scripts/run_v8_1_release.ps1
+```
+
+- 产物目录：`release_exports/v8.1/`
+- 关键文件：
+- `release_exports/v8.1/knowledge_base_import_ready.csv`
+- `release_exports/v8.1/web_seed_urls_v8_1_prefetch_status.csv`
+- `release_exports/v8.1/web_seed_v8_1_prefetch_report.md`
+
 合规要求请先阅读：
 
 - `docs/ops/web_content_fetch_skill_合规说明_v1.md`

@@ -1,114 +1,14 @@
 {
-  "generated_at": "2026-03-29T08:00:50+00:00",
+  "generated_at": "2026-03-30T01:41:40+00:00",
   "window_days": 7,
-  "total_runs_all_time": 9,
-  "total_runs_window": 9,
+  "total_runs_all_time": 0,
+  "total_runs_window": 0,
   "window_counts": {
     "pass": 0,
     "degraded": 0,
-    "fail": 9,
-    "failover_triggered": 5
+    "fail": 0,
+    "failover_triggered": 0
   },
-  "latest": {
-    "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_144210\\model_failover_report.json",
-    "generated_at": "2026-03-29T06:42:10+00:00",
-    "result": "fail",
-    "failover_triggered": true,
-    "failover_reason": "primary canary timeout ratio reached threshold (1.00 >= 1.00)",
-    "active_model_final": "gpt-5.2-codex",
-    "fetch_error_count": 1,
-    "timeout_error_ratio": 1.0
-  },
-  "recent_runs": [
-    {
-      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_134752\\model_failover_report.json",
-      "generated_at": "2026-03-29T05:47:52+00:00",
-      "result": "fail",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "gpt-5.2-codex",
-      "fetch_error_count": 3,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_135403\\model_failover_report.json",
-      "generated_at": "2026-03-29T05:54:03+00:00",
-      "result": "fail",
-      "failover_triggered": true,
-      "failover_reason": "primary run completed but timeout ratio reached threshold (1.00 >= 1.00)",
-      "active_model_final": "MiniMax-M2.5",
-      "fetch_error_count": 3,
-      "timeout_error_ratio": 1.0
-    },
-    {
-      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_141635\\model_failover_report.json",
-      "generated_at": "2026-03-29T06:16:35+00:00",
-      "result": "fail",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "gpt-5.2-codex",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_142710\\model_failover_report.json",
-      "generated_at": "2026-03-29T06:27:10+00:00",
-      "result": "fail",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "gpt-5.2-codex",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_142841\\model_failover_report.json",
-      "generated_at": "2026-03-29T06:28:41+00:00",
-      "result": "fail",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "gpt-5.2-codex",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_143049\\model_failover_report.json",
-      "generated_at": "2026-03-29T06:30:49+00:00",
-      "result": "fail",
-      "failover_triggered": true,
-      "failover_reason": "primary run completed but timeout ratio reached threshold (1.00 >= 1.00)",
-      "active_model_final": "gpt-5.2-codex",
-      "fetch_error_count": 2,
-      "timeout_error_ratio": 1.0
-    },
-    {
-      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_143625\\model_failover_report.json",
-      "generated_at": "2026-03-29T06:36:25+00:00",
-      "result": "fail",
-      "failover_triggered": true,
-      "failover_reason": "primary run completed but timeout ratio reached threshold (1.00 >= 1.00)",
-      "active_model_final": "gpt-5.2-codex",
-      "fetch_error_count": 1,
-      "timeout_error_ratio": 1.0
-    },
-    {
-      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_143919\\model_failover_report.json",
-      "generated_at": "2026-03-29T06:39:19+00:00",
-      "result": "fail",
-      "failover_triggered": true,
-      "failover_reason": "primary canary timeout ratio reached threshold (1.00 >= 1.00)",
-      "active_model_final": "gpt-5.2-codex",
-      "fetch_error_count": 1,
-      "timeout_error_ratio": 1.0
-    },
-    {
-      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260329_144210\\model_failover_report.json",
-      "generated_at": "2026-03-29T06:42:10+00:00",
-      "result": "fail",
-      "failover_triggered": true,
-      "failover_reason": "primary canary timeout ratio reached threshold (1.00 >= 1.00)",
-      "active_model_final": "gpt-5.2-codex",
-      "fetch_error_count": 1,
-      "timeout_error_ratio": 1.0
-    }
-  ]
+  "latest": null,
+  "recent_runs": []
 }

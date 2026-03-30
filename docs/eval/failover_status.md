@@ -1,9 +1,9 @@
 # Failover Status
 
-- Generated At: `2026-03-29T08:00:50+00:00`
+- Generated At: `2026-03-30T01:41:40+00:00`
 - Window Days: `7`
-- Total Runs (All): `9`
-- Total Runs (Window): `9`
+- Total Runs (All): `0`
+- Total Runs (Window): `0`
 
 ## Window Summary
 
@@ -11,16 +11,9 @@
 |---|---:|
 | PASS | 0 |
 | DEGRADED | 0 |
-| FAIL | 9 |
-| Failover Triggered | 5 |
+| FAIL | 0 |
+| Failover Triggered | 0 |
 
 ## Latest
 
-- Result: `fail`
-- Generated At: `2026-03-29T06:42:10+00:00`
-- Final Model: `gpt-5.2-codex`
-- Failover Triggered: `True`
-- Failover Reason: `primary canary timeout ratio reached threshold (1.00 >= 1.00)`
-- Fetch Error Count: `1`
-- Timeout Error Ratio: `1.0000`
-- Report Path: `D:\workspace\lab-safe-assistant-github\artifacts\model_failover_eval\run_20260329_144210\model_failover_report.json`
+- No failover reports found.
