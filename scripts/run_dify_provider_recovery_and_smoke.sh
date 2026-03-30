@@ -20,6 +20,30 @@ else
   echo "[WARN] env file not found: ${ENV_FILE}; fallback to current shell env"
 fi
 
+strip_cr_var() {
+  local name="$1"
+  local value="${!name-}"
+  value="${value//$'\r'/}"
+  printf -v "$name" "%s" "$value"
+}
+
+for var in \
+  DIFY_TENANT_ID \
+  DIFY_ENDPOINT_URL \
+  DIFY_ENDPOINT_MODEL_NAME \
+  OPENAI_COMPAT_API_KEY \
+  DIFY_APP_TOKEN \
+  DIFY_API_BASE \
+  DIFY_PROVIDER_NAME \
+  DIFY_MODEL_NAME \
+  DIFY_MODEL_TYPE \
+  DIFY_SMOKE_QUERY \
+  DIFY_SMOKE_USER \
+  DIFY_SMOKE_TIMEOUT_SEC \
+  DIFY_API_CONTAINER; do
+  strip_cr_var "$var"
+done
+
 python3 "${PY_SCRIPT}" \
   --tenant-id "${DIFY_TENANT_ID:?DIFY_TENANT_ID is required}" \
   --endpoint-url "${DIFY_ENDPOINT_URL:?DIFY_ENDPOINT_URL is required}" \

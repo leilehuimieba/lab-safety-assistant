@@ -282,9 +282,9 @@ def to_markdown(
     lines.append("")
     lines.append("## Release Suggestion")
     if overall == "PASS":
-        lines.append("1. 连续稳定通过，可进入发布窗口。")
+        lines.append("1. Release stability passed in all rounds, ready for release window.")
     else:
-        lines.append("1. 未通过稳定性验收，建议先修复后重跑。")
+        lines.append("1. Release stability check failed, fix issues and rerun before release.")
     return "\n".join(lines) + "\n"
 
 

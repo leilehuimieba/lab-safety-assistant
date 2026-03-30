@@ -16,6 +16,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -78,6 +79,7 @@ def run_fix_in_api_container(
     endpoint_url: str,
     endpoint_model_name: str,
     api_key: str,
+    force_rotate_key: bool,
 ) -> dict:
     container_script = r"""
 import base64
@@ -98,6 +100,7 @@ MODEL_TYPE = os.environ["MODEL_TYPE"]
 ENDPOINT_URL = os.environ["ENDPOINT_URL"]
 ENDPOINT_MODEL_NAME = os.environ["ENDPOINT_MODEL_NAME"]
 API_KEY = os.environ["API_KEY"]
+FORCE_ROTATE_KEY = os.environ.get("FORCE_ROTATE_KEY", "0").strip() in {"1", "true", "TRUE", "yes", "YES"}
 
 app = create_app()
 
@@ -106,9 +109,21 @@ with app.app_context():
     if not tenant:
         raise RuntimeError(f"tenant not found: {TENANT_ID}")
 
-    # Recreate key pair, persist private key to storage, and update public key in DB.
-    new_public_key = generate_key_pair(TENANT_ID)
-    tenant.encrypt_public_key = new_public_key
+    priv_path = f"privkeys/{TENANT_ID}/private.pem"
+    private_exists = True
+    try:
+        storage.load(priv_path)
+    except FileNotFoundError:
+        private_exists = False
+
+    key_rotated = False
+    if FORCE_ROTATE_KEY or (not private_exists) or (not tenant.encrypt_public_key):
+        # Recreate key pair only when forced or key material is missing.
+        new_public_key = generate_key_pair(TENANT_ID)
+        tenant.encrypt_public_key = new_public_key
+        key_rotated = True
+    else:
+        new_public_key = tenant.encrypt_public_key
 
     encrypted_api_key = base64.b64encode(encrypt(API_KEY, new_public_key)).decode()
 
@@ -215,7 +230,6 @@ with app.app_context():
 
     db.session.commit()
 
-    priv_path = f"privkeys/{TENANT_ID}/private.pem"
     private_pem = storage.load(priv_path)
 
     print(
@@ -227,6 +241,7 @@ with app.app_context():
                 "provider_credential_created": created_provider_credential,
                 "model_credential_created": created_model_credential,
                 "provider_row_created": created_provider_row,
+                "key_rotated": key_rotated,
                 "private_key_bytes": len(private_pem),
             },
             ensure_ascii=False,
@@ -252,6 +267,8 @@ with app.app_context():
         f"ENDPOINT_MODEL_NAME={endpoint_model_name}",
         "-e",
         f"API_KEY={api_key}",
+        "-e",
+        f"FORCE_ROTATE_KEY={'1' if force_rotate_key else '0'}",
         api_container,
         "python",
         "-",
@@ -365,6 +382,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--query", default=os.getenv("DIFY_SMOKE_QUERY", DEFAULT_QUERY))
     parser.add_argument("--user", default=os.getenv("DIFY_SMOKE_USER", "recovery-smoke"))
     parser.add_argument("--timeout-sec", type=int, default=int(os.getenv("DIFY_SMOKE_TIMEOUT_SEC", "240")))
+    parser.add_argument("--smoke-retries", type=int, default=int(os.getenv("DIFY_SMOKE_RETRIES", "3")))
+    parser.add_argument(
+        "--smoke-retry-interval-sec",
+        type=float,
+        default=float(os.getenv("DIFY_SMOKE_RETRY_INTERVAL_SEC", "3")),
+    )
+    parser.add_argument(
+        "--force-rotate-key",
+        action="store_true",
+        default=str(os.getenv("DIFY_FORCE_ROTATE_KEY", "0")).strip() in {"1", "true", "TRUE", "yes", "YES"},
+        help="Force rotate tenant RSA key pair before rewriting credentials.",
+    )
     return parser.parse_args()
 
 
@@ -393,6 +422,7 @@ def main() -> int:
             endpoint_url=args.endpoint_url,
             endpoint_model_name=args.endpoint_model_name,
             api_key=args.api_key,
+            force_rotate_key=bool(args.force_rotate_key),
         )
     except Exception as e:
         print(f"[ERROR] provider recovery failed: {e}", file=sys.stderr)
@@ -401,13 +431,28 @@ def main() -> int:
     print("[INFO] provider recovery result:")
     print(json.dumps(fix_result, ensure_ascii=False, indent=2))
 
-    smoke = run_workflow_smoke(
-        base_url=args.api_base,
-        app_token=args.app_token,
-        query=args.query,
-        user=args.user,
-        timeout_sec=args.timeout_sec,
-    )
+    retries = max(1, int(args.smoke_retries))
+    smoke: Optional[SmokeResult] = None
+    for idx in range(1, retries + 1):
+        smoke = run_workflow_smoke(
+            base_url=args.api_base,
+            app_token=args.app_token,
+            query=args.query,
+            user=args.user,
+            timeout_sec=args.timeout_sec,
+        )
+        ok_status = (smoke.workflow_status or "").lower() in {"success", "succeeded"}
+        has_answer = bool(smoke.answer.strip())
+        print(
+            f"[INFO] smoke attempt {idx}/{retries}: "
+            f"http={smoke.http_status}, status={smoke.workflow_status}, has_answer={has_answer}"
+        )
+        if smoke.http_status == 200 and ok_status and has_answer:
+            break
+        if idx < retries:
+            time.sleep(max(0.5, float(args.smoke_retry_interval_sec)))
+
+    assert smoke is not None
 
     print("[INFO] workflow smoke result:")
     print(

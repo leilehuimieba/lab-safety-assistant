@@ -37,6 +37,12 @@ vi deploy/env/dify_provider_recovery.env
 - `DIFY_ENDPOINT_URL`
 - `OPENAI_COMPAT_API_KEY`
 
+可选增强（建议）：
+
+- `DIFY_SMOKE_RETRIES=3`
+- `DIFY_SMOKE_RETRY_INTERVAL_SEC=3`
+- `DIFY_FORCE_ROTATE_KEY=0`（默认不轮转密钥，仅缺失时补齐）
+
 执行：
 
 ```bash

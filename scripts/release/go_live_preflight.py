@@ -33,6 +33,16 @@ def parse_args() -> argparse.Namespace:
         help="Release package directory to verify.",
     )
     parser.add_argument(
+        "--release-oneclick-root",
+        default="artifacts/eval_release_oneclick",
+        help="Primary one-click report root.",
+    )
+    parser.add_argument(
+        "--release-stability-root",
+        default="artifacts/release_stability_check",
+        help="Fallback stability report root (contains nested one-click reports).",
+    )
+    parser.add_argument(
         "--web-health-url",
         default="http://127.0.0.1:8088/health",
         help="Web demo health endpoint.",
@@ -165,22 +175,22 @@ def check_risk_note(path: Path) -> CheckResult:
     )
 
 
-def check_latest_release_oneclick(reports_root: Path) -> CheckResult:
-    if not reports_root.exists():
-        return CheckResult(
-            key="release_oneclick",
-            ok=False,
-            level="warning",
-            detail=f"missing dir: {reports_root}",
-        )
-    reports = sorted(reports_root.glob("run_*/eval_release_oneclick_report.json"))
+def check_latest_release_oneclick(reports_root: Path, stability_root: Path) -> CheckResult:
+    reports: list[Path] = []
+    if reports_root.exists():
+        reports.extend(sorted(reports_root.glob("run_*/eval_release_oneclick_report.json")))
+    if stability_root.exists():
+        reports.extend(sorted(stability_root.glob("run_*/round_*/run_*/eval_release_oneclick_report.json")))
+
     if not reports:
         return CheckResult(
             key="release_oneclick",
             ok=False,
             level="warning",
-            detail="no oneclick report found",
+            detail=f"no oneclick report found under {reports_root} or {stability_root}",
         )
+
+    reports = sorted(reports, key=lambda p: str(p))
     latest = reports[-1]
     payload = load_json(latest)
     status = str(payload.get("status", "")).lower()
@@ -189,13 +199,13 @@ def check_latest_release_oneclick(reports_root: Path) -> CheckResult:
             key="release_oneclick",
             ok=False,
             level="blocker",
-            detail=f"latest status={status or 'unknown'} ({latest.parent.name})",
+            detail=f"latest status={status or 'unknown'} ({latest})",
         )
     return CheckResult(
         key="release_oneclick",
         ok=True,
         level="info",
-        detail=f"latest status=success ({latest.parent.name})",
+        detail=f"latest status=success ({latest})",
     )
 
 
@@ -306,11 +316,11 @@ def to_markdown(
     lines.append("")
     lines.append("## Next Actions")
     if blockers:
-        lines.append("1. 先处理所有 blocker，再重跑 go-live preflight。")
+        lines.append("1. Fix all blockers first, then rerun go-live preflight.")
     elif warnings:
-        lines.append("1. 建议处理 warning 项后再发版。")
+        lines.append("1. Resolve warning items before final release.")
     else:
-        lines.append("1. 可进入上线窗口并执行发布。")
+        lines.append("1. Ready for release window.")
     return "\n".join(lines) + "\n"
 
 
@@ -319,12 +329,14 @@ def main() -> int:
     repo_root = Path(args.repo_root).resolve()
 
     release_dir = resolve(repo_root, args.release_dir)
+    oneclick_root = resolve(repo_root, args.release_oneclick_root)
+    stability_root = resolve(repo_root, args.release_stability_root)
     output_json = resolve(repo_root, args.output_json)
     output_md = resolve(repo_root, args.output_md)
 
     checks: list[CheckResult] = []
     checks.extend(check_release_package(release_dir))
-    checks.append(check_latest_release_oneclick(repo_root / "artifacts" / "eval_release_oneclick"))
+    checks.append(check_latest_release_oneclick(oneclick_root, stability_root))
     checks.append(check_release_policy(repo_root / "docs" / "eval" / "release_policy_check.json", "demo"))
     checks.append(check_release_policy(repo_root / "docs" / "eval" / "release_policy_check_prod.json", "prod"))
     checks.append(check_risk_note(repo_root / "docs" / "eval" / "release_risk_note_auto.json"))

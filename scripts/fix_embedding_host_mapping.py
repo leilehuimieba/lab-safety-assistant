@@ -5,6 +5,7 @@ import argparse
 import json
 import shlex
 import subprocess
+import time
 from dataclasses import dataclass
 
 
@@ -57,6 +58,8 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip post-patch curl verification inside each container.",
     )
+    parser.add_argument("--verify-retries", type=int, default=8, help="Verify retries per container.")
+    parser.add_argument("--verify-interval", type=float, default=1.0, help="Seconds between verify retries.")
     return parser.parse_args()
 
 
@@ -127,9 +130,21 @@ def main() -> int:
         return 0
 
     for container in args.containers:
-        body = verify_endpoint(container=container, target_host=args.target_host, target_port=args.target_port)
-        preview = body[:160].replace("\n", " ")
-        print(f"Verify OK: {container} -> {preview}")
+        last_error: Exception | None = None
+        for attempt in range(1, max(1, int(args.verify_retries)) + 1):
+            try:
+                body = verify_endpoint(container=container, target_host=args.target_host, target_port=args.target_port)
+                preview = body[:160].replace("\n", " ")
+                print(f"Verify OK: {container} -> {preview}")
+                last_error = None
+                break
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                if attempt >= max(1, int(args.verify_retries)):
+                    break
+                time.sleep(max(0.1, float(args.verify_interval)))
+        if last_error:
+            raise last_error
 
     return 0
 
