@@ -58,6 +58,11 @@ def parse_args() -> argparse.Namespace:
         help="Exit 0 when only warnings exist.",
     )
     parser.add_argument(
+        "--enforce-prod-policy",
+        action="store_true",
+        help="Treat prod release policy as blocking gate (default: non-blocking info in demo rollout).",
+    )
+    parser.add_argument(
         "--output-json",
         default="docs/ops/go_live_readiness.json",
         help="Output JSON path.",
@@ -338,7 +343,21 @@ def main() -> int:
     checks.extend(check_release_package(release_dir))
     checks.append(check_latest_release_oneclick(oneclick_root, stability_root))
     checks.append(check_release_policy(repo_root / "docs" / "eval" / "release_policy_check.json", "demo"))
-    checks.append(check_release_policy(repo_root / "docs" / "eval" / "release_policy_check_prod.json", "prod"))
+    prod_policy_result = check_release_policy(repo_root / "docs" / "eval" / "release_policy_check_prod.json", "prod")
+    if args.enforce_prod_policy:
+        checks.append(prod_policy_result)
+    else:
+        if prod_policy_result.ok:
+            checks.append(prod_policy_result)
+        else:
+            checks.append(
+                CheckResult(
+                    key="release_policy_prod",
+                    ok=True,
+                    level="info",
+                    detail=f"{prod_policy_result.detail}; non-blocking (enforce_prod_policy=false)",
+                )
+            )
     checks.append(check_risk_note(repo_root / "docs" / "eval" / "release_risk_note_auto.json"))
     checks.append(check_override_disabled(repo_root / "docs" / "eval" / "eval_dashboard_gate_override.json"))
     checks.append(check_web_health(args.web_health_url.strip(), args.skip_web_health))

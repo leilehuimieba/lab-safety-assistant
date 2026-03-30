@@ -1,6 +1,6 @@
 # Go Live Bundle Result
 
-- Generated: `2026-03-30T21:03:46+08:00`
+- Generated: `2026-03-30T22:11:25+08:00`
 - Overall: `PASS`
 
 ## Step Status
@@ -12,7 +12,7 @@
 - runtime_profile_snapshot: exit=0 ok=True
 
 ## Artifacts
-- bundle_output_dir: `/root/lab-safe-assistant-github/artifacts/go_live_bundle/run_20260330_205951`
+- bundle_output_dir: `/root/lab-safe-assistant-github/artifacts/go_live_bundle/run_20260330_220656`
 - go_live_readiness_json: `/root/lab-safe-assistant-github/docs/ops/go_live_readiness.json`
 - go_live_readiness_md: `/root/lab-safe-assistant-github/docs/ops/go_live_readiness.md`
 - release_stability_json: `/root/lab-safe-assistant-github/docs/eval/release_stability_check.json`

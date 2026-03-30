@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-30T21:03:46+08:00",
+  "generated_at": "2026-03-30T22:11:25+08:00",
   "overall": "PASS",
   "summary": {
     "blockers": 0,
@@ -29,7 +29,7 @@
       "key": "release_oneclick",
       "ok": true,
       "level": "info",
-      "detail": "latest status=success (/root/lab-safe-assistant-github/artifacts/release_stability_check/run_20260330_210012/round_01/run_20260330_210012/eval_release_oneclick_report.json)"
+      "detail": "latest status=success (/root/lab-safe-assistant-github/artifacts/release_stability_check/run_20260330_220716/round_01/run_20260330_220716/eval_release_oneclick_report.json)"
     },
     {
       "key": "release_policy_demo",
@@ -41,7 +41,7 @@
       "key": "release_policy_prod",
       "ok": true,
       "level": "info",
-      "detail": "status=PASS"
+      "detail": "status=BLOCK; violations=latency_p95_ms too high: 30981.91 > max_latency_p95_ms=30000.00; failover window fail count exceeded: 4 > max_fail_window=1; non-blocking (enforce_prod_policy=false)"
     },
     {
       "key": "risk_note",

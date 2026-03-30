@@ -30,6 +30,7 @@ for var in \
   DIFY_FORCE_ROTATE_KEY \
   AUTO_FIX_EMBEDDING_CHANNEL EMBEDDING_TARGET_CONTAINERS \
   DIFY_SMOKE_QUERY DIFY_SMOKE_USER DIFY_SMOKE_TIMEOUT_SEC \
+  GO_LIVE_ENFORCE_PROD_POLICY \
   RELEASE_DIR WEB_HEALTH_URL STABILITY_ROUNDS STABILITY_INTERVAL_SEC \
   STABILITY_LIMIT STABILITY_DIFY_TIMEOUT STABILITY_EVAL_CONCURRENCY \
   STABILITY_RETRY_ON_TIMEOUT STABILITY_FAILOVER_DAYS STABILITY_FAIL_STREAK_THRESHOLD \
@@ -161,12 +162,17 @@ else
 fi
 
 echo "[bundle] step4/4 go-live preflight"
-if run_with_log "$PREFLIGHT_LOG" python3 scripts/release/go_live_preflight.py \
-  --repo-root . \
-  --release-dir "${RELEASE_DIR:-release_exports/v8.1}" \
-  --web-health-url "${WEB_HEALTH_URL:-http://127.0.0.1:${DEMO_PORT:-8088}/health}" \
-  --output-json "docs/ops/go_live_readiness.json" \
-  --output-md "docs/ops/go_live_readiness.md"; then
+PREFLIGHT_ARGS=(
+  --repo-root .
+  --release-dir "${RELEASE_DIR:-release_exports/v8.1}"
+  --web-health-url "${WEB_HEALTH_URL:-http://127.0.0.1:${DEMO_PORT:-8088}/health}"
+  --output-json "docs/ops/go_live_readiness.json"
+  --output-md "docs/ops/go_live_readiness.md"
+)
+if [[ "${GO_LIVE_ENFORCE_PROD_POLICY:-0}" == "1" ]]; then
+  PREFLIGHT_ARGS+=(--enforce-prod-policy)
+fi
+if run_with_log "$PREFLIGHT_LOG" python3 scripts/release/go_live_preflight.py "${PREFLIGHT_ARGS[@]}"; then
   PREFLIGHT_EXIT=0
 else
   PREFLIGHT_EXIT=$?

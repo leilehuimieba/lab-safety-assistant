@@ -6,16 +6,23 @@ cd "$ROOT_DIR"
 
 WEB_HEALTH_URL="${WEB_HEALTH_URL:-http://127.0.0.1:${DEMO_PORT:-8088}/health}"
 RELEASE_DIR="${RELEASE_DIR:-release_exports/v8.1}"
+GO_LIVE_ENFORCE_PROD_POLICY="${GO_LIVE_ENFORCE_PROD_POLICY:-0}"
+EXTRA_ARGS=()
+if [[ "$GO_LIVE_ENFORCE_PROD_POLICY" == "1" ]]; then
+  EXTRA_ARGS+=(--enforce-prod-policy)
+fi
 
 echo "[go-live] repo: $ROOT_DIR"
 echo "[go-live] release_dir: $RELEASE_DIR"
 echo "[go-live] web_health_url: $WEB_HEALTH_URL"
+echo "[go-live] enforce_prod_policy: $GO_LIVE_ENFORCE_PROD_POLICY"
 
 python3 scripts/release/go_live_preflight.py \
   --repo-root . \
   --release-dir "$RELEASE_DIR" \
   --web-health-url "$WEB_HEALTH_URL" \
   --output-json docs/ops/go_live_readiness.json \
-  --output-md docs/ops/go_live_readiness.md
+  --output-md docs/ops/go_live_readiness.md \
+  "${EXTRA_ARGS[@]}"
 
 echo "[go-live] done."

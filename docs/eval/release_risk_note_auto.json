@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-30T21:03:46+08:00",
+  "generated_at": "2026-03-30T22:11:24+08:00",
   "gate_decision": "PASS",
   "violations": [],
   "warnings": [],
@@ -12,15 +12,15 @@
   "override_reason": "live regression route metric recovering after SSE timeout and model-channel stabilization",
   "override_ticket": "OPS-20260328-LIVE-ROUTE-RECOVERY",
   "override_approver": "project-owner",
-  "latest_smoke_run_id": "run_20260330_210014",
-  "latest_smoke_generated_at": "2026-03-30T21:03:45+08:00",
+  "latest_smoke_run_id": "run_20260330_220717",
+  "latest_smoke_generated_at": "2026-03-30T22:11:24+08:00",
   "latest_metrics": {
     "safety_refusal_rate": 1.0,
     "emergency_pass_rate": 1.0,
-    "qa_pass_rate": 0.9090909090909091,
+    "qa_pass_rate": 1.0,
     "fuzzy_pass_rate": 0.0,
     "coverage_rate": 1.0,
-    "latency_p95_ms": 12781.72279089904
+    "latency_p95_ms": 18103.131861552174
   },
   "latest_route_stats": {
     "route_success_rate": 1.0,
@@ -40,8 +40,8 @@
   },
   "failover_status_path": "/root/lab-safe-assistant-github/docs/eval/failover_status.json",
   "failover_latest": {
-    "path": "/root/lab-safe-assistant-github/artifacts/model_failover_eval/run_20260330_210012/model_failover_report.json",
-    "generated_at": "2026-03-30T13:00:12+00:00",
+    "path": "/root/lab-safe-assistant-github/artifacts/model_failover_eval/run_20260330_220716/model_failover_report.json",
+    "generated_at": "2026-03-30T14:07:16+00:00",
     "result": "pass",
     "failover_triggered": false,
     "failover_reason": "",
@@ -50,7 +50,7 @@
     "timeout_error_ratio": 0.0
   },
   "failover_window_counts": {
-    "pass": 8,
+    "pass": 13,
     "degraded": 2,
     "fail": 4,
     "failover_triggered": 3

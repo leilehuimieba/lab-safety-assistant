@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-30T21:03:46+08:00",
+  "generated_at": "2026-03-30T22:11:25+08:00",
   "repo_root": "/root/lab-safe-assistant-github",
   "env_file": "/root/lab-safe-assistant-github/deploy/env/go_live_bundle.env",
   "basic": {
@@ -52,62 +52,62 @@
       {
         "name": "fake-ollama",
         "image": "python:3.11-slim",
-        "status": "Up 3 hours"
+        "status": "Up 4 hours"
       },
       {
         "name": "docker-plugin_daemon-1",
         "image": "langgenius/dify-plugin-daemon:0.5.3-local",
-        "status": "Up 6 hours"
+        "status": "Up 7 hours"
       },
       {
         "name": "docker-api-1",
         "image": "langgenius/dify-api:1.13.0",
-        "status": "Up 6 hours"
+        "status": "Up 7 hours"
       },
       {
         "name": "docker-worker_beat-1",
         "image": "langgenius/dify-api:1.13.0",
-        "status": "Up 6 hours"
+        "status": "Up 7 hours"
       },
       {
         "name": "docker-worker-1",
         "image": "langgenius/dify-api:1.13.0",
-        "status": "Up 6 hours"
+        "status": "Up 7 hours"
       },
       {
         "name": "docker-nginx-1",
         "image": "nginx:latest",
-        "status": "Up 6 hours"
+        "status": "Up 7 hours"
       },
       {
         "name": "docker-web-1",
         "image": "langgenius/dify-web:1.13.0",
-        "status": "Up 7 hours"
+        "status": "Up 8 hours"
       },
       {
         "name": "docker-sandbox-1",
         "image": "langgenius/dify-sandbox:0.2.12",
-        "status": "Restarting (2) 8 seconds ago"
+        "status": "Restarting (2) 18 seconds ago"
       },
       {
         "name": "docker-db_postgres-1",
         "image": "postgres:15-alpine",
-        "status": "Up 7 hours (healthy)"
+        "status": "Up 8 hours (healthy)"
       },
       {
         "name": "docker-redis-1",
         "image": "redis:6-alpine",
-        "status": "Up 7 hours (healthy)"
+        "status": "Up 8 hours (healthy)"
       },
       {
         "name": "docker-ssrf_proxy-1",
         "image": "ubuntu/squid:latest",
-        "status": "Up 7 hours"
+        "status": "Up 8 hours"
       },
       {
         "name": "docker-qdrant-1",
         "image": "langgenius/qdrant:v1.8.3",
-        "status": "Up 7 hours"
+        "status": "Up 8 hours"
       }
     ]
   }
