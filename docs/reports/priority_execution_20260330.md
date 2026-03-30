@@ -33,7 +33,7 @@
   - `docs/pipeline/web_seed_v8_prefetch_report.md`
   - `data_sources/web_seed_urls_v8_prefetch_status.csv`
 - 本次统计：
-  - 预抓取：`30/30` 成功
+  - 预抓取：`0/30` 可抓取，`30/30` 被拦截（主要为 403）
   - 生成知识条目：`109`
   - 导入包总条目：`459`
 
@@ -71,4 +71,3 @@
    - `powershell -File scripts/run_v7_dify_demo_chain.ps1 -SkipImport -EvalLimit 20`
 3. 重跑发布看板：
    - `python scripts/generate_release_readiness_dashboard.py --repo-root . --profiles demo,prod --strict-profiles demo,prod`
-

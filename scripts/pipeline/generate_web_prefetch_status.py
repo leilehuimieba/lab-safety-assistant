@@ -38,11 +38,50 @@ def read_fetch_results(path: Path) -> dict[str, dict]:
     return mapping
 
 
-def normalize_status(fetch_status: str, status: str, error: str) -> str:
+def parse_int(raw: str | int | float | None) -> int | None:
+    if raw is None:
+        return None
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, float):
+        return int(raw)
+    text = str(raw).strip()
+    if not text:
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
+def parse_float(raw: str | int | float | None, default: float = 0.0) -> float:
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_status(fetch_status: str, status: str, error: str, status_code: int | None, quality_score: float) -> str:
     fs = (fetch_status or "").strip().lower()
     st = (status or "").strip().lower()
     err = (error or "").strip().lower()
+    sc = status_code if status_code is not None else 0
+
+    if sc in {401, 403, 407}:
+        return "blocked"
+    if sc in {404, 410}:
+        return "not_found"
+    if sc >= 500:
+        return "error"
+    if sc >= 400:
+        return "error"
+
     if fs in {"ok", "success"} and st == "success":
+        # Guard against false-positive success pages with no useful body.
+        if quality_score <= 0.0:
+            return "blocked"
         return "ok"
     if fs in {"blocked"}:
         return "blocked"
@@ -79,6 +118,8 @@ def main() -> int:
             quality_text = f"{float(quality_score):.4f}"
         elif isinstance(quality_score, str) and quality_score.strip():
             quality_text = quality_score.strip()
+        status_code = parse_int(info.get("status_code") if info else None)
+        quality_value = parse_float(quality_score if info else 0.0, default=0.0)
 
         output_rows.append(
             {
@@ -89,12 +130,14 @@ def main() -> int:
                     str(info.get("fetch_status") or ""),
                     str(info.get("status") or ""),
                     str(info.get("error") or ""),
+                    status_code,
+                    quality_value,
                 )
                 if info
                 else "not_fetched",
                 "fetch_status": str(info.get("fetch_status") or ""),
                 "provider": str(info.get("provider") or ""),
-                "status_code": str(info.get("status_code") or ""),
+                "status_code": str(status_code or ""),
                 "quality_score": quality_text,
                 "error": str(info.get("error") or ""),
                 "final_url": str(info.get("final_url") or ""),
@@ -131,4 +174,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

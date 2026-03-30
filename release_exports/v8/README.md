@@ -1,10 +1,10 @@
 ﻿# Release Export v8
 
-- generated_at: 2026-03-30 09:19:14
+- generated_at: 2026-03-30 09:30:11
 - import_ready_rows: 459
 - prefetch_total: 30
-- prefetch_ok: 30
-- prefetch_blocked: 0
+- prefetch_ok: 0
+- prefetch_blocked: 30
 - prefetch_failed: 0
 - low_quality_before_rewrite: 30
 - source_priority: curated > v8_web_rewritten > v7_previous_release(optional)

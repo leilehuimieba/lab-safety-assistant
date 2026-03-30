@@ -1,6 +1,6 @@
 # Import Bundle Build Report
 
-- Generated at: `2026-03-30T09:19:14+08:00`
+- Generated at: `2026-03-30T09:30:11+08:00`
 - Output CSV: `D:\workspace\lab-safe-assistant-github\artifacts\import_bundle_v8\knowledge_base_import_ready.csv`
 - Total merged rows: `459`
 - Empty IDs skipped: `0`
