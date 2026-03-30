@@ -62,6 +62,10 @@ jobs:
         run: |
           python scripts/generate_release_readiness_dashboard.py --repo-root . --profiles demo,prod --strict-profiles demo,prod
 
+      - name: Generate Low-Confidence Dashboard
+        run: |
+          python scripts/generate_low_confidence_dashboard.py --repo-root .
+
       - name: Validate Release Fix Plan
         run: |
           python scripts/validate_release_fix_plan.py --repo-root .
@@ -92,6 +96,7 @@ jobs:
             - Refreshed release policy checks at `docs/eval/release_policy_check_demo.md` and `docs/eval/release_policy_check_prod.md`
             - Refreshed release readiness dashboard at `docs/eval/release_readiness_dashboard.md`
             - Refreshed blocker TopN at `docs/eval/release_blocker_topn.md`
+            - Refreshed low-confidence queue dashboard at `docs/eval/low_confidence_dashboard.md`
             - Refreshed auto fix plan at `docs/ops/release_fix_plan_auto.md`
             - Included release-fix P0 weekly stats (created/closed/open/stale) in `docs/eval/weekly_gate_ops.md`
             - Generated weekly report under `docs/weekly_reports/`

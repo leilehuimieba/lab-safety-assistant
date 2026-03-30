@@ -1,7 +1,7 @@
 ﻿# Release Export v8
 
-- generated_at: 2026-03-29 20:00:49
-- import_ready_rows: 2920
+- generated_at: 2026-03-30 09:19:14
+- import_ready_rows: 459
 - prefetch_total: 30
 - prefetch_ok: 30
 - prefetch_blocked: 0

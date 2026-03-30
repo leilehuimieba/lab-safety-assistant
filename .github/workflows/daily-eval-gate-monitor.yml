@@ -113,6 +113,10 @@ jobs:
         run: |
           python scripts/generate_release_readiness_dashboard.py --repo-root . --profiles demo,prod --strict-profiles demo,prod
 
+      - name: Generate Low-Confidence Dashboard
+        run: |
+          python scripts/generate_low_confidence_dashboard.py --repo-root .
+
       - name: Validate Release Fix Plan
         id: fix_plan
         shell: bash
@@ -200,6 +204,8 @@ jobs:
             docs/eval/release_readiness_dashboard.json
             docs/eval/release_blocker_topn.md
             docs/eval/release_blocker_topn.csv
+            docs/eval/low_confidence_dashboard.md
+            docs/eval/low_confidence_dashboard.json
             docs/ops/release_fix_plan_auto.md
             docs/ops/release_fix_plan_auto.csv
             docs/ops/release_fix_plan_sync_report.md

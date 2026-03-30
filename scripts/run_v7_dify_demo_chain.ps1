@@ -36,18 +36,36 @@ function Get-LatestAppTokenFromDb {
   return ($token | Out-String).Trim()
 }
 
+function Test-DockerApiAvailable {
+  try {
+    docker version --format "{{.Server.Version}}" *> $null
+    return ($LASTEXITCODE -eq 0)
+  }
+  catch {
+    return $false
+  }
+}
+
 $CsvPath = "release_exports\v7\knowledge_base_import_ready.csv"
 if (-not (Test-Path $CsvPath)) {
   throw "Missing CSV: $CsvPath"
 }
 
+if (-not $AppApiKey) {
+  $AppApiKey = $env:DIFY_APP_API_KEY
+}
+
 if (-not $AppApiKey -and $AutoFetchAppKeyFromDb) {
-  $AppApiKey = Get-LatestAppTokenFromDb -Container $DbContainer -User $DbUser -Database $DbName
+  if (Test-DockerApiAvailable) {
+    $AppApiKey = Get-LatestAppTokenFromDb -Container $DbContainer -User $DbUser -Database $DbName
+  } else {
+    Write-Host "Docker API unavailable, skip auto-fetch app key from DB." -ForegroundColor Yellow
+  }
 }
 
 if (-not $SkipHealthGate) {
   if (-not $AppApiKey) {
-    throw "Health gate enabled but AppApiKey is missing. Provide -AppApiKey or enable -AutoFetchAppKeyFromDb."
+    throw "Health gate enabled but AppApiKey is missing. Set DIFY_APP_API_KEY env or pass -AppApiKey."
   }
   Write-Host "=== Precheck: Live health gate (Dify) ===" -ForegroundColor Cyan
   $healthArgs = @(
@@ -97,7 +115,7 @@ if (-not $SkipImport) {
 }
 
 if (-not $AppApiKey) {
-  throw "Missing app api key. Provide -AppApiKey or keep -AutoFetchAppKeyFromDb enabled."
+  throw "Missing app api key. Set DIFY_APP_API_KEY env or pass -AppApiKey."
 }
 
 Write-Host "=== Step 2/2: Run live 20-question regression via Dify App API ===" -ForegroundColor Cyan

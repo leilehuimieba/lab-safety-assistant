@@ -247,7 +247,47 @@ def build_action_plan_rows(
     blocker_rows: list[dict[str, str]],
     existing_by_reason: dict[str, dict[str, str]],
 ) -> list[dict[str, str]]:
+    def parse_task_num(task_id: str) -> int | None:
+        text = str(task_id or "").strip().upper()
+        if not text.startswith("REL-FIX-"):
+            return None
+        raw = text.replace("REL-FIX-", "", 1).strip()
+        if not raw.isdigit():
+            return None
+        try:
+            return int(raw)
+        except ValueError:
+            return None
+
     rows: list[dict[str, str]] = []
+    used_task_ids: set[str] = set()
+    next_task_num = 1
+
+    for record in existing_by_reason.values():
+        existing_task_id = str(record.get("task_id", "")).strip()
+        if not existing_task_id:
+            continue
+        parsed = parse_task_num(existing_task_id)
+        if parsed is not None:
+            next_task_num = max(next_task_num, parsed + 1)
+
+    def alloc_task_id(preferred: str) -> str:
+        nonlocal next_task_num
+        candidate = str(preferred or "").strip()
+        if candidate and candidate not in used_task_ids:
+            used_task_ids.add(candidate)
+            parsed = parse_task_num(candidate)
+            if parsed is not None:
+                next_task_num = max(next_task_num, parsed + 1)
+            return candidate
+        while True:
+            candidate = f"REL-FIX-{next_task_num:02d}"
+            next_task_num += 1
+            if candidate in used_task_ids:
+                continue
+            used_task_ids.add(candidate)
+            return candidate
+
     for item in blocker_rows:
         rank = str(item.get("rank", "")).strip()
         reason = str(item.get("reason", "")).strip()
@@ -257,7 +297,10 @@ def build_action_plan_rows(
         existing = existing_by_reason.get(reason, {})
         existing_status = str(existing.get("status", "todo")).strip().lower()
         status = existing_status if existing_status in ALLOWED_ACTION_STATUS else "todo"
-        task_id = str(existing.get("task_id", "")).strip() or (f"REL-FIX-{rank.zfill(2)}" if rank.isdigit() else "REL-FIX-XX")
+        preferred_task_id = str(existing.get("task_id", "")).strip()
+        if not preferred_task_id:
+            preferred_task_id = f"REL-FIX-{rank.zfill(2)}" if rank.isdigit() else ""
+        task_id = alloc_task_id(preferred_task_id)
         rows.append(
             {
                 "task_id": task_id,

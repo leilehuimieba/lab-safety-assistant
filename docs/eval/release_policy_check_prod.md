@@ -1,6 +1,6 @@
 # Release Policy Check
 
-- Generated: `2026-03-29T16:24:42+08:00`
+- Generated: `2026-03-30T09:25:54+08:00`
 - Profile: `prod`
 - Status: `BLOCK`
 - Strict: `True`
@@ -18,6 +18,9 @@
 - route_success_rate too low: 0.0000 < min_route_success_rate=0.8000
 - route_timeout_rate too high: 1.0000 > max_route_timeout_rate=0.2000
 - latency_p95_ms too high: 60139.45 > max_latency_p95_ms=30000.00
+- metric emergency_pass_rate too low: 0.0000 < min=0.9000
+- metric coverage_rate too low: 0.0000 < min=0.8500
+- metric qa_pass_rate too low: 0.0000 < min=0.8500
 - failover latest result not allowed: fail not in ['degraded', 'pass']
 - failover latest timeout ratio too high: 1.0000 > max_latest_timeout_error_ratio=0.4000
 - failover window fail count exceeded: 9 > max_fail_window=1

@@ -1,12 +1,15 @@
 {
-  "generated_at": "2026-03-29T16:24:42+08:00",
+  "generated_at": "2026-03-30T09:25:54+08:00",
   "profile": "demo",
   "policy_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_v5.json",
   "risk_note_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_risk_note_auto.json",
   "failover_status_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\failover_status.json",
   "strict": true,
-  "status": "PASS",
-  "violations": [],
+  "status": "BLOCK",
+  "violations": [
+    "metric emergency_pass_rate too low: 0.0000 < min=0.8000",
+    "metric coverage_rate too low: 0.0000 < min=0.7500"
+  ],
   "warnings": [],
   "risk_gate_decision": "WARN_ONLY",
   "risk_violation_count": 2,

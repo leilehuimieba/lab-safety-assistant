@@ -578,6 +578,16 @@ python scripts/generate_release_readiness_dashboard.py `
 - `docs/ops/release_fix_plan_auto.csv/.md`
 - 该流程会按 `blocking_reason` 尝试保留已存在的 `owner/status/eta`，避免覆盖人工分配。
 
+生成低置信队列看板（建议与发布看板同时刷新）：
+
+```powershell
+python scripts/generate_low_confidence_dashboard.py --repo-root .
+```
+
+- 输出：
+- `docs/eval/low_confidence_dashboard.json/.md`
+- 输入队列默认：`artifacts/low_confidence_followups/data_gap_queue.csv`
+
 发布策略 schema 校验（建议提交前执行）：
 
 ```powershell
@@ -677,6 +687,15 @@ GitHub 自动监控（每日）：
 - 输出文件：`docs/eval/weekly_gate_ops.md`
 - 生成脚本：`scripts/generate_weekly_gate_ops.py`
 - 自动触发：`.github/workflows/weekly-report.yml`（每周自动 PR）
+
+周度数据扩容（V8）自动化：
+
+- 工作流：`.github/workflows/weekly-v8-data-refresh.yml`
+- 触发：每周 UTC 周三 01:20（可手动 `workflow_dispatch`）
+- 行为：
+- 执行 `scripts/run_v8_release.ps1`
+- 校验 `data_sources` 结构
+- 自动提交周度数据刷新 PR（`bot/weekly-v8-data-refresh`）
 
 ## 第十步：使用网页提取 Skill（可选）
 

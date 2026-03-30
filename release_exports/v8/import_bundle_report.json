@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-29T20:00:49+08:00",
+  "generated_at": "2026-03-30T09:19:14+08:00",
   "output_csv": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\import_bundle_v8\\knowledge_base_import_ready.csv",
-  "total_rows": 2920,
+  "total_rows": 459,
   "empty_id_skipped": 0,
   "sources": [
     {
@@ -12,7 +12,7 @@
     {
       "name": "v8_web_rewritten",
       "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\web_seed_v8_prefetch\\knowledge_base_web_rewritten.csv",
-      "input_rows": 2570
+      "input_rows": 109
     },
     {
       "name": "v7_previous_release",
@@ -22,7 +22,7 @@
   ],
   "selected_rows_by_source": {
     "curated": 81,
-    "v8_web_rewritten": 2570,
+    "v8_web_rewritten": 109,
     "v7_previous_release": 269
   },
   "duplicate_skips_by_source": {
@@ -36,14 +36,13 @@
       "生物": 11,
       "通用": 29,
       "辐射": 2,
-      "standard": 1299,
-      "training": 17,
-      "equipment": 37,
-      "biosafety": 248,
-      "electrical": 903,
+      "standard": 16,
+      "training": 9,
+      "equipment": 1,
+      "biosafety": 18,
+      "electrical": 1,
       "lab_management": 11,
-      "chemical": 80,
-      "emergency": 1,
+      "chemical": 79,
       "制度": 17,
       "培训": 4,
       "标准": 15,
@@ -62,21 +61,21 @@
       "MSDS": 8,
       "制度": 16,
       "应急预案": 8,
-      "网页": 2698,
+      "网页": 237,
       "政策": 1,
       "SDS指南": 1,
       "PDF": 177
     },
     "language": {
       "zh-CN": 308,
-      "en": 2602,
+      "en": 141,
       "en-US": 10
     },
     "risk_level": {
       "2": 22,
-      "3": 162,
+      "3": 158,
       "5": 30,
-      "4": 2704,
+      "4": 247,
       "1": 2
     }
   }

@@ -1,26 +1,29 @@
 {
-  "generated_at": "2026-03-29T16:24:42+08:00",
+  "generated_at": "2026-03-30T09:25:54+08:00",
   "overall_status": "BLOCK",
   "profiles": [
     {
-      "generated_at": "2026-03-29T16:24:42+08:00",
+      "generated_at": "2026-03-30T09:25:54+08:00",
       "profile": "demo",
       "policy_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_v5.json",
       "risk_note_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_risk_note_auto.json",
       "failover_status_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\failover_status.json",
       "strict": true,
-      "status": "PASS",
-      "violations": [],
+      "status": "BLOCK",
+      "violations": [
+        "metric emergency_pass_rate too low: 0.0000 < min=0.8000",
+        "metric coverage_rate too low: 0.0000 < min=0.7500"
+      ],
       "warnings": [],
       "risk_gate_decision": "WARN_ONLY",
       "risk_violation_count": 2,
       "risk_warning_count": 0,
       "override_active": true,
       "override_mode": "warn_only",
-      "exit_code": 0
+      "exit_code": 1
     },
     {
-      "generated_at": "2026-03-29T16:24:42+08:00",
+      "generated_at": "2026-03-30T09:25:54+08:00",
       "profile": "prod",
       "policy_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_v5.json",
       "risk_note_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_risk_note_auto.json",
@@ -34,6 +37,9 @@
         "route_success_rate too low: 0.0000 < min_route_success_rate=0.8000",
         "route_timeout_rate too high: 1.0000 > max_route_timeout_rate=0.2000",
         "latency_p95_ms too high: 60139.45 > max_latency_p95_ms=30000.00",
+        "metric emergency_pass_rate too low: 0.0000 < min=0.9000",
+        "metric coverage_rate too low: 0.0000 < min=0.8500",
+        "metric qa_pass_rate too low: 0.0000 < min=0.8500",
         "failover latest result not allowed: fail not in ['degraded', 'pass']",
         "failover latest timeout ratio too high: 1.0000 > max_latest_timeout_error_ratio=0.4000",
         "failover window fail count exceeded: 9 > max_fail_window=1",
@@ -51,6 +57,22 @@
   "blocker_topn": [
     {
       "rank": "1",
+      "reason": "metric emergency_pass_rate too low: 0.0000 < min=0.8000",
+      "count": "1",
+      "profiles": "demo",
+      "priority": "P2",
+      "recommended_action": "Fix listed blockers and rerun one-click release validation."
+    },
+    {
+      "rank": "2",
+      "reason": "metric coverage_rate too low: 0.0000 < min=0.7500",
+      "count": "1",
+      "profiles": "demo",
+      "priority": "P2",
+      "recommended_action": "Fix listed blockers and rerun one-click release validation."
+    },
+    {
+      "rank": "3",
       "reason": "gate_decision not allowed: WARN_ONLY not in ['PASS', 'WARN']",
       "count": "1",
       "profiles": "prod",
@@ -58,7 +80,7 @@
       "recommended_action": "Fix listed blockers and rerun one-click release validation."
     },
     {
-      "rank": "2",
+      "rank": "4",
       "reason": "risk violation count exceeded: 2 > max_violation_count=0",
       "count": "1",
       "profiles": "prod",
@@ -66,7 +88,7 @@
       "recommended_action": "Fix listed blockers and rerun one-click release validation."
     },
     {
-      "rank": "3",
+      "rank": "5",
       "reason": "override mode not allowed for profile prod: warn_only not in []",
       "count": "1",
       "profiles": "prod",
@@ -74,7 +96,7 @@
       "recommended_action": "Disable temporary override or switch to an allowed release profile before release."
     },
     {
-      "rank": "4",
+      "rank": "6",
       "reason": "route_success_rate too low: 0.0000 < min_route_success_rate=0.8000",
       "count": "1",
       "profiles": "prod",
@@ -82,7 +104,7 @@
       "recommended_action": "Recover primary route availability first; check Dify gateway, model routing, and network path."
     },
     {
-      "rank": "5",
+      "rank": "7",
       "reason": "route_timeout_rate too high: 1.0000 > max_route_timeout_rate=0.2000",
       "count": "1",
       "profiles": "prod",
@@ -90,7 +112,7 @@
       "recommended_action": "Reduce concurrency and investigate SSE timeout path; enable fallback channel and rerun canary."
     },
     {
-      "rank": "6",
+      "rank": "8",
       "reason": "latency_p95_ms too high: 60139.45 > max_latency_p95_ms=30000.00",
       "count": "1",
       "profiles": "prod",
@@ -98,42 +120,26 @@
       "recommended_action": "Optimize prompt and retrieval path, reduce latency, and tune rate limits."
     },
     {
-      "rank": "7",
-      "reason": "failover latest result not allowed: fail not in ['degraded', 'pass']",
-      "count": "1",
-      "profiles": "prod",
-      "priority": "P0",
-      "recommended_action": "Identify why primary model is unavailable; require two consecutive healthy regressions before release."
-    },
-    {
-      "rank": "8",
-      "reason": "failover latest timeout ratio too high: 1.0000 > max_latest_timeout_error_ratio=0.4000",
-      "count": "1",
-      "profiles": "prod",
-      "priority": "P0",
-      "recommended_action": "Improve request stability (timeout budget, retry policy, model channel) to prevent repeated failover."
-    },
-    {
       "rank": "9",
-      "reason": "failover window fail count exceeded: 9 > max_fail_window=1",
+      "reason": "metric emergency_pass_rate too low: 0.0000 < min=0.9000",
       "count": "1",
       "profiles": "prod",
-      "priority": "P0",
+      "priority": "P2",
       "recommended_action": "Fix listed blockers and rerun one-click release validation."
     },
     {
       "rank": "10",
-      "reason": "failover fail streak exceeded: 9 > max_fail_streak=1",
+      "reason": "metric coverage_rate too low: 0.0000 < min=0.8500",
       "count": "1",
       "profiles": "prod",
-      "priority": "P0",
-      "recommended_action": "Identify why primary model is unavailable; require two consecutive healthy regressions before release."
+      "priority": "P2",
+      "recommended_action": "Fix listed blockers and rerun one-click release validation."
     }
   ],
   "steps": [
     {
       "profile": "demo",
-      "exit_code": 0,
+      "exit_code": 1,
       "stdout_tail": "",
       "stderr_tail": "",
       "output_json": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_check_demo.json",

@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-03-30T09:23:22+08:00",
+  "queue_csv": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\low_confidence_followups\\data_gap_queue.csv",
+  "total": 0,
+  "open": 0,
+  "closed": 0,
+  "other": 0,
+  "stale_days_threshold": 7,
+  "stale_open": 0,
+  "latest_created_at": "",
+  "top_mode": [],
+  "top_status": [],
+  "top_decision": [],
+  "top_reason": [],
+  "top_suggested_lane": [],
+  "top_source_title": []
+}
