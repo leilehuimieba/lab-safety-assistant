@@ -1,7 +1,7 @@
 # Low-Confidence Queue Dashboard
 
-- Generated: `2026-03-30T09:23:22+08:00`
-- Queue CSV: `D:\workspace\lab-safe-assistant-github\artifacts\low_confidence_followups\data_gap_queue.csv`
+- Generated: `2026-03-30T03:57:01+00:00`
+- Queue CSV: `/home/runner/work/lab-safety-assistant/lab-safety-assistant/artifacts/low_confidence_followups/data_gap_queue.csv`
 - Total: `0`
 - Open: `0`
 - Closed: `0`

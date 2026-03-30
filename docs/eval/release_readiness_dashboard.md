@@ -1,14 +1,14 @@
 # Release Readiness Dashboard
 
-- Generated: `2026-03-30T09:44:38+08:00`
-- Overall Status: `BLOCK`
+- Generated: `2026-03-30T03:57:01+00:00`
+- Overall Status: `PASS`
 
 ## Profile Matrix
 
 | Profile | Status | Violations | Warnings | Override Active |
 |---|---|---:|---:|---|
-| demo | BLOCK | 2 | 0 | True |
-| prod | BLOCK | 9 | 0 | True |
+| demo | PASS | 0 | 0 | False |
+| prod | PASS | 0 | 0 | False |
 
 ## Blocker TopN
 

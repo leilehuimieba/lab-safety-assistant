@@ -1,25 +1,24 @@
 # Release Policy Check
 
-- Generated: `2026-03-30T09:44:38+08:00`
+- Generated: `2026-03-30T03:57:01+00:00`
 - Profile: `demo`
-- Status: `BLOCK`
+- Status: `PASS`
 - Strict: `True`
 
 ## Snapshot
-- gate_decision: `WARN_ONLY`
-- risk violations: `2`
+- gate_decision: `PASS`
+- risk violations: `0`
 - risk warnings: `0`
-- override: `active=True, mode=warn_only`
+- override: `active=False, mode=warn_only`
 
 ## Violations
-- metric emergency_pass_rate too low: 0.0000 < min=0.8000
-- metric coverage_rate too low: 0.0000 < min=0.7500
+- none
 
 ## Warnings
 - none
 
 ## Files
-- policy: `D:\workspace\lab-safe-assistant-github\docs\eval\release_policy_v5.json`
-- risk note: `D:\workspace\lab-safe-assistant-github\docs\eval\release_risk_note_auto.json`
-- failover status: `D:\workspace\lab-safe-assistant-github\docs\eval\failover_status.json`
-- output json: `D:\workspace\lab-safe-assistant-github\docs\eval\release_policy_check_demo.json`
+- policy: `/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_policy_v5.json`
+- risk note: `/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_risk_note_auto.json`
+- failover status: `/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/failover_status.json`
+- output json: `/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_policy_check_demo.json`

@@ -1,6 +1,6 @@
 # Release Policy Check
 
-- Generated: `2026-03-30T11:44:43+08:00`
+- Generated: `2026-03-30T03:57:01+00:00`
 - Profile: `prod`
 - Status: `PASS`
 - Strict: `True`
@@ -18,7 +18,7 @@
 - none
 
 ## Files
-- policy: `D:\workspace\lab-safe-assistant-github\docs\eval\release_policy_v5.json`
-- risk note: `D:\workspace\lab-safe-assistant-github\docs\eval\release_risk_note_auto.json`
-- failover status: `D:\workspace\lab-safe-assistant-github\docs\eval\failover_status.json`
-- output json: `D:\workspace\lab-safe-assistant-github\docs\eval\release_policy_check_prod.json`
+- policy: `/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_policy_v5.json`
+- risk note: `/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_risk_note_auto.json`
+- failover status: `/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/failover_status.json`
+- output json: `/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_policy_check_prod.json`
