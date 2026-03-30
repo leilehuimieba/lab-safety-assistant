@@ -30,3 +30,4 @@ artifacts/
 
 # Server-side runtime env files (keep only example templates in git)
 deploy/env/*.env
+!deploy/env/*.example.env
