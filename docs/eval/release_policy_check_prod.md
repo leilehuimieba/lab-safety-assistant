@@ -1,21 +1,18 @@
 # Release Policy Check
 
-- Generated: `2026-03-30T10:06:00+08:00`
+- Generated: `2026-03-30T11:05:25+08:00`
 - Profile: `prod`
-- Status: `BLOCK`
+- Status: `PASS`
 - Strict: `True`
 
 ## Snapshot
-- gate_decision: `WARN_ONLY`
-- risk violations: `1`
+- gate_decision: `PASS`
+- risk violations: `0`
 - risk warnings: `0`
-- override: `active=True, mode=warn_only`
+- override: `active=False, mode=warn_only`
 
 ## Violations
-- gate_decision not allowed: WARN_ONLY not in ['PASS', 'WARN']
-- risk violation count exceeded: 1 > max_violation_count=0
-- override mode not allowed for profile prod: warn_only not in []
-- metric emergency_pass_rate too low: 0.8000 < min=0.9000
+- none
 
 ## Warnings
 - none

@@ -1,14 +1,64 @@
 {
-  "generated_at": "2026-03-30T02:05:59+00:00",
-  "window_days": 7,
-  "total_runs_all_time": 0,
-  "total_runs_window": 0,
+  "generated_at": "2026-03-30T03:05:25+00:00",
+  "window_days": 1,
+  "total_runs_all_time": 4,
+  "total_runs_window": 4,
   "window_counts": {
-    "pass": 0,
+    "pass": 4,
     "degraded": 0,
     "fail": 0,
     "failover_triggered": 0
   },
-  "latest": null,
-  "recent_runs": []
+  "latest": {
+    "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260330_105951\\model_failover_report.json",
+    "generated_at": "2026-03-30T02:59:51+00:00",
+    "result": "pass",
+    "failover_triggered": false,
+    "failover_reason": "",
+    "active_model_final": "gpt-5.2-codex",
+    "fetch_error_count": 0,
+    "timeout_error_ratio": 0.0
+  },
+  "recent_runs": [
+    {
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260330_103639\\model_failover_report.json",
+      "generated_at": "2026-03-30T02:36:39+00:00",
+      "result": "pass",
+      "failover_triggered": false,
+      "failover_reason": "",
+      "active_model_final": "gpt-5.2-codex",
+      "fetch_error_count": 0,
+      "timeout_error_ratio": 0.0
+    },
+    {
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260330_104251\\model_failover_report.json",
+      "generated_at": "2026-03-30T02:42:51+00:00",
+      "result": "pass",
+      "failover_triggered": false,
+      "failover_reason": "",
+      "active_model_final": "gpt-5.2-codex",
+      "fetch_error_count": 0,
+      "timeout_error_ratio": 0.0
+    },
+    {
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260330_105006\\model_failover_report.json",
+      "generated_at": "2026-03-30T02:50:06+00:00",
+      "result": "pass",
+      "failover_triggered": false,
+      "failover_reason": "",
+      "active_model_final": "gpt-5.2-codex",
+      "fetch_error_count": 0,
+      "timeout_error_ratio": 0.0
+    },
+    {
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260330_105951\\model_failover_report.json",
+      "generated_at": "2026-03-30T02:59:51+00:00",
+      "result": "pass",
+      "failover_triggered": false,
+      "failover_reason": "",
+      "active_model_final": "gpt-5.2-codex",
+      "fetch_error_count": 0,
+      "timeout_error_ratio": 0.0
+    }
+  ]
 }
