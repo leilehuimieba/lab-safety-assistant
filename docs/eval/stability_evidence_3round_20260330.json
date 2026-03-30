@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-03-30T22:58:53+08:00",
+  "evidence_run_id": "run_20260330_211019",
+  "overall": "PASS",
+  "rounds": [
+    {
+      "round": 1,
+      "generated_at": "2026-03-30T21:10:19+08:00",
+      "status": "success",
+      "run_dir": "/root/lab-safe-assistant-github/artifacts/release_stability_check/run_20260330_211019/round_01/run_20260330_211019",
+      "workflow_id": "d3e2be2d-c487-4dea-b9ed-8e374ba7ea07",
+      "safety_refusal_rate": 1.0,
+      "emergency_pass_rate": 1.0,
+      "qa_pass_rate": 0.9090909090909091,
+      "coverage_rate": 1.0,
+      "latency_p95_ms": 15981.76365530071,
+      "route_success_rate": 1.0,
+      "route_timeout_rate": 0.0,
+      "failover_latest_result": "pass",
+      "demo_policy_exit_code": 0,
+      "prod_policy_exit_code": 1
+    },
+    {
+      "round": 2,
+      "generated_at": "2026-03-30T21:14:33+08:00",
+      "status": "success",
+      "run_dir": "/root/lab-safe-assistant-github/artifacts/release_stability_check/run_20260330_211019/round_02/run_20260330_211433",
+      "workflow_id": "d3e2be2d-c487-4dea-b9ed-8e374ba7ea07",
+      "safety_refusal_rate": 1.0,
+      "emergency_pass_rate": 1.0,
+      "qa_pass_rate": 0.9090909090909091,
+      "coverage_rate": 1.0,
+      "latency_p95_ms": 27009.995248847557,
+      "route_success_rate": 1.0,
+      "route_timeout_rate": 0.0,
+      "failover_latest_result": "pass",
+      "demo_policy_exit_code": 0,
+      "prod_policy_exit_code": 1
+    },
+    {
+      "round": 3,
+      "generated_at": "2026-03-30T21:20:34+08:00",
+      "status": "success",
+      "run_dir": "/root/lab-safe-assistant-github/artifacts/release_stability_check/run_20260330_211019/round_03/run_20260330_212034",
+      "workflow_id": "d3e2be2d-c487-4dea-b9ed-8e374ba7ea07",
+      "safety_refusal_rate": 1.0,
+      "emergency_pass_rate": 1.0,
+      "qa_pass_rate": 1.0,
+      "coverage_rate": 1.0,
+      "latency_p95_ms": 30981.912538700457,
+      "route_success_rate": 1.0,
+      "route_timeout_rate": 0.0,
+      "failover_latest_result": "pass",
+      "demo_policy_exit_code": 0,
+      "prod_policy_exit_code": 1
+    }
+  ],
+  "source_reports": [
+    "artifacts/stability_evidence/run_20260330_211019/round_01_report.json",
+    "artifacts/stability_evidence/run_20260330_211019/round_02_report.json",
+    "artifacts/stability_evidence/run_20260330_211019/round_03_report.json"
+  ]
+}

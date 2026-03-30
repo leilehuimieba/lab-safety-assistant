@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-03-30T22:56:58+08:00",
+  "requested_pages": 30,
+  "fetched_successfully": 30,
+  "blocked_pages": 0,
+  "providers": {
+    "jina": 30
+  },
+  "clean_documents": 30,
+  "knowledge_rows": 30
+}

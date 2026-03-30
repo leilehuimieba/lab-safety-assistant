@@ -1,9 +1,9 @@
 # Release Policy Check
 
-- Generated: `2026-03-30T11:44:43+08:00`
+- Generated: `2026-03-30T23:35:23+08:00`
 - Profile: `prod`
-- Status: `PASS`
-- Strict: `True`
+- Status: `BLOCK`
+- Strict: `False`
 
 ## Snapshot
 - gate_decision: `PASS`
@@ -12,13 +12,13 @@
 - override: `active=False, mode=warn_only`
 
 ## Violations
-- none
+- failover window fail count exceeded: 4 > max_fail_window=1
 
 ## Warnings
 - none
 
 ## Files
-- policy: `D:\workspace\lab-safe-assistant-github\docs\eval\release_policy_v5.json`
-- risk note: `D:\workspace\lab-safe-assistant-github\docs\eval\release_risk_note_auto.json`
-- failover status: `D:\workspace\lab-safe-assistant-github\docs\eval\failover_status.json`
-- output json: `D:\workspace\lab-safe-assistant-github\docs\eval\release_policy_check_prod.json`
+- policy: `/root/lab-safe-assistant-github/docs/eval/release_policy_v5.json`
+- risk note: `/root/lab-safe-assistant-github/docs/eval/release_risk_note_auto.json`
+- failover status: `/root/lab-safe-assistant-github/docs/eval/failover_status.json`
+- output json: `/root/lab-safe-assistant-github/docs/eval/release_policy_check_prod.json`

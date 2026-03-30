@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-03-30T22:59:32+08:00",
+  "demo_mode": {
+    "overall": "PASS",
+    "blockers": 0,
+    "prod_policy_detail": "status=BLOCK; violations=latency_p95_ms too high: 30981.91 > max_latency_p95_ms=30000.00; failover window fail count exceeded: 4 > max_fail_window=1; non-blocking (enforce_prod_policy=false)"
+  },
+  "prod_enforced_mode": {
+    "overall": "BLOCK",
+    "blockers": 1,
+    "prod_policy_detail": "status=BLOCK; violations=latency_p95_ms too high: 30981.91 > max_latency_p95_ms=30000.00; failover window fail count exceeded: 4 > max_fail_window=1"
+  },
+  "difference": {
+    "overall_changed": true,
+    "blocker_count_changed": true
+  }
+}
