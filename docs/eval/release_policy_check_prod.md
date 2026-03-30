@@ -1,26 +1,21 @@
 # Release Policy Check
 
-- Generated: `2026-03-30T09:44:38+08:00`
+- Generated: `2026-03-30T10:06:00+08:00`
 - Profile: `prod`
 - Status: `BLOCK`
 - Strict: `True`
 
 ## Snapshot
 - gate_decision: `WARN_ONLY`
-- risk violations: `2`
+- risk violations: `1`
 - risk warnings: `0`
 - override: `active=True, mode=warn_only`
 
 ## Violations
 - gate_decision not allowed: WARN_ONLY not in ['PASS', 'WARN']
-- risk violation count exceeded: 2 > max_violation_count=0
+- risk violation count exceeded: 1 > max_violation_count=0
 - override mode not allowed for profile prod: warn_only not in []
-- route_success_rate too low: 0.0000 < min_route_success_rate=0.8000
-- route_timeout_rate too high: 1.0000 > max_route_timeout_rate=0.2000
-- latency_p95_ms too high: 60139.45 > max_latency_p95_ms=30000.00
-- metric emergency_pass_rate too low: 0.0000 < min=0.9000
-- metric coverage_rate too low: 0.0000 < min=0.8500
-- metric qa_pass_rate too low: 0.0000 < min=0.8500
+- metric emergency_pass_rate too low: 0.8000 < min=0.9000
 
 ## Warnings
 - none
