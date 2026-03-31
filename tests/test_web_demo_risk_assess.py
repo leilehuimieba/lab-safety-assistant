@@ -41,9 +41,9 @@ if FASTAPI_AVAILABLE:
         assert resp.status_code == 200
         payload = resp.json()
         assert payload["risk_score"] >= 4
-        assert payload["risk_level"] in {"高", "极高"}
-        assert "化学" in payload["key_hazards"]
-        assert "护目镜" in payload["ppe"]
+        assert payload["risk_level"] in {"高", "极高", "High", "Critical"}
+        assert any(item in payload["key_hazards"] for item in {"化学", "Chemical"})
+        assert any(item in payload["ppe"] for item in {"护目镜", "Splash goggles"})
         assert len(payload["recommended_steps"]) > 0
         assert len(payload["forbidden"]) > 0
         assert len(payload["emergency_actions"]) > 0

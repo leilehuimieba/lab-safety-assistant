@@ -14,6 +14,10 @@ if FASTAPI_AVAILABLE:
     from fastapi.testclient import TestClient
     import app as web_app
 
+    def test_sanitize_llm_output_removes_think_block() -> None:
+        raw = "<think>internal reasoning</think>\nConclusion:\nUse the approved SOP."
+        assert web_app.sanitize_llm_output(raw) == "Conclusion:\nUse the approved SOP."
+
     def test_chat_llm_guarded_path(monkeypatch) -> None:
         citations = [
             web_app.Citation(
@@ -70,4 +74,3 @@ if FASTAPI_AVAILABLE:
         assert payload["query"] == "acid splash"
         assert payload["count"] == 1
         assert payload["citations"][0]["kb_id"] == "KB-S-1"
-

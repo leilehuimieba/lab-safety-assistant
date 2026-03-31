@@ -143,22 +143,33 @@ SYSTEM_PROMPTS = {
 }
 
 PPE_HINTS = {
-    "Splash goggles": ["acid", "base", "solvent", "splash", "corrosive", "etchant"],
-    "Face shield": ["splash", "high pressure", "flying debris", "pressurized"],
-    "Chemical resistant gloves": ["acid", "base", "solvent", "corrosive", "hazardous chemical"],
-    "Lab coat": ["chemical", "biosafety", "reagent", "sample", "hazard"],
-    "Respiratory protection": ["toxic gas", "vapor", "inhalation", "fume", "powder"],
-    "Cryogenic gloves": ["liquid nitrogen", "cryogenic", "low temperature", "dewars"],
-    "Electrical gloves": ["electric", "shock", "high voltage", "live circuit"],
+    "Splash goggles": ["acid", "base", "solvent", "splash", "corrosive", "etchant", "酸", "碱", "溶剂", "飞溅", "腐蚀"],
+    "Face shield": ["splash", "high pressure", "flying debris", "pressurized", "飞溅", "高压", "碎片"],
+    "Chemical resistant gloves": [
+        "acid",
+        "base",
+        "solvent",
+        "corrosive",
+        "hazardous chemical",
+        "酸",
+        "碱",
+        "溶剂",
+        "腐蚀",
+        "危化品",
+    ],
+    "Lab coat": ["chemical", "biosafety", "reagent", "sample", "hazard", "化学", "生物", "试剂", "样本", "危险"],
+    "Respiratory protection": ["toxic gas", "vapor", "inhalation", "fume", "powder", "有毒气体", "蒸气", "吸入", "烟雾", "粉尘"],
+    "Cryogenic gloves": ["liquid nitrogen", "cryogenic", "low temperature", "dewars", "液氮", "深冷", "低温", "杜瓦"],
+    "Electrical gloves": ["electric", "shock", "high voltage", "live circuit", "触电", "带电", "高压", "电路"],
 }
 
 HAZARD_HINTS = {
-    "Chemical": ["acid", "base", "solvent", "corrosive", "hazardous chemical", "oxidizer", "flammable"],
-    "Biosafety": ["bio", "pathogen", "sample", "sterilization", "culture", "blood"],
-    "Electrical": ["electric", "shock", "high voltage", "power", "circuit", "battery"],
-    "Fire": ["fire", "smoke", "ignition", "burn", "flammable", "reflux"],
-    "Cryogenic": ["liquid nitrogen", "cryogenic", "frostbite", "dewars"],
-    "Mechanical": ["centrifuge", "rotation", "pinch", "moving parts", "press"],
+    "Chemical": ["acid", "base", "solvent", "corrosive", "hazardous chemical", "oxidizer", "flammable", "酸", "碱", "溶剂", "腐蚀", "危化品", "氧化剂", "易燃"],
+    "Biosafety": ["bio", "pathogen", "sample", "sterilization", "culture", "blood", "生物", "病原", "样本", "灭菌", "培养", "血液"],
+    "Electrical": ["electric", "shock", "high voltage", "power", "circuit", "battery", "触电", "带电", "高压", "电源", "电路", "电池"],
+    "Fire": ["fire", "smoke", "ignition", "burn", "flammable", "reflux", "火", "起火", "冒烟", "点火源", "燃烧", "回流", "易燃"],
+    "Cryogenic": ["liquid nitrogen", "cryogenic", "frostbite", "dewars", "液氮", "深冷", "冻伤", "杜瓦"],
+    "Mechanical": ["centrifuge", "rotation", "pinch", "moving parts", "press", "离心机", "旋转", "夹伤", "运动部件", "压力机"],
 }
 
 BASE_CHECKLIST_ITEMS = [
@@ -781,18 +792,18 @@ def format_citation_lines(citations: list[Citation], limit: int = 3) -> str:
 def build_rule_answer(rule: dict[str, Any], citations: list[Citation]) -> str:
     response = str(rule.get("response") or "Stop the task and follow the local emergency procedure immediately.").strip()
     return (
-        "Conclusion:\n"
+        "结论:\n"
         f"{response}\n\n"
-        "Steps:\n"
-        "1. Stop the current action and isolate the hazard source.\n"
-        "2. Notify the laboratory supervisor and safety contact immediately.\n"
-        "3. Follow the local SOP for scene control, reporting, and documentation.\n\n"
-        "Forbidden actions:\n"
-        "- Do not continue the high-risk operation.\n"
-        "- Do not bypass ventilation, approvals, interlocks, or PPE requirements.\n\n"
-        "Escalation:\n"
-        "- If there is injury, fire, leak, or exposure risk, trigger the emergency plan at once.\n\n"
-        "References:\n"
+        "步骤:\n"
+        "1. 立即停止当前操作并隔离危险源。\n"
+        "2. 第一时间通知实验室负责人和安全联系人。\n"
+        "3. 按本单位 SOP 执行现场控制、上报和记录。\n\n"
+        "禁止事项:\n"
+        "- 禁止继续开展当前高风险操作。\n"
+        "- 禁止绕过通风、审批、联锁或 PPE 要求。\n\n"
+        "应急升级:\n"
+        "- 如存在受伤、起火、泄漏或暴露风险，立即启动应急预案。\n\n"
+        "参考依据:\n"
         f"{format_citation_lines(citations)}"
     )
 
@@ -811,25 +822,25 @@ def build_fallback_lab_answer(
     notes = low_confidence_reason or "upstream unavailable"
     guard = str((rule or {}).get("response") or "").strip()
     return (
-        "Conclusion:\n"
-        f"Treat this as a {risk_text} laboratory safety scenario. Use the local SOP and escalate early instead of improvising.\n\n"
-        "Steps:\n"
-        "1. Pause the operation and isolate energy, reaction, or exposure sources.\n"
-        "2. Re-check PPE, containment, ventilation, and emergency equipment.\n"
-        "3. Follow the written SOP and assign one person to control, one person to observe, and one person to report.\n"
-        "4. If injury, fire, leak, or abnormal reaction exists, trigger the emergency plan immediately.\n\n"
-        "Forbidden actions:\n"
-        "- Do not continue without authorization or supervision.\n"
-        "- Do not bypass ventilation, lockout, shielding, or waste segregation controls.\n"
-        "- Do not hide abnormal events or delay reporting.\n\n"
-        "Escalation:\n"
-        "- Injury or exposure: rinse/isolate and contact medical support.\n"
-        "- Fire or explosion risk: evacuate and call emergency responders.\n"
-        "- Spill or leak: cordon off the area and follow the spill SOP.\n\n"
-        "References:\n"
+        "结论:\n"
+        f"请将该问题视为 {risk_text} 风险等级的实验室安全场景，优先依照本地 SOP 处理，不要临场 improvising。\n\n"
+        "步骤:\n"
+        "1. 先暂停操作并隔离能量、反应或暴露源。\n"
+        "2. 重新核对 PPE、围护、通风和应急设备状态。\n"
+        "3. 按书面 SOP 执行，并明确一人控制、一人观察、一人上报。\n"
+        "4. 如已出现受伤、起火、泄漏或异常反应，立即启动应急预案。\n\n"
+        "禁止事项:\n"
+        "- 未经授权或无人监护时禁止继续操作。\n"
+        "- 禁止绕过通风、断电锁定、屏蔽或废弃物分类要求。\n"
+        "- 禁止隐瞒异常情况或延迟上报。\n\n"
+        "应急升级:\n"
+        "- 人员受伤或暴露：先冲洗或隔离，再联系医疗支持。\n"
+        "- 存在起火或爆炸风险：立即撤离并联系应急力量。\n"
+        "- 存在泄漏：先警戒隔离，再按泄漏 SOP 处置。\n\n"
+        "参考依据:\n"
         f"- top context: {top_title}\n"
         f"{format_citation_lines(citations)}\n\n"
-        "Notes:\n"
+        "备注:\n"
         f"- fallback reason: {notes}\n"
         f"- guardrail: {guard or 'N/A'}\n"
         f"- original question: {question.strip()}"
@@ -837,11 +848,19 @@ def build_fallback_lab_answer(
 
 
 def append_low_confidence_followup_notice(answer: str) -> str:
-    note = "Note: this question has been added to the low-confidence follow-up queue for later KB improvement."
+    note = "附注：该问题已加入低置信待补强队列，后续会继续完善知识库。"
     text = (answer or "").strip()
     if not text or note in text:
         return text or note
     return f"{text}\n\n{note}"
+
+
+def sanitize_llm_output(text: str) -> str:
+    cleaned = text or ""
+    cleaned = re.sub(r"<think\b[^>]*>.*?</think>", "", cleaned, flags=re.IGNORECASE | re.DOTALL)
+    cleaned = re.sub(r"```(?:think|thought|reasoning)[^\n]*\n.*?```", "", cleaned, flags=re.IGNORECASE | re.DOTALL)
+    cleaned = cleaned.strip()
+    return cleaned or "No answer returned."
 
 
 def build_system_prompt(mode: str, guardrail: str = "") -> str:
@@ -909,7 +928,7 @@ def call_upstream(mode: str, question: str, citations: list[Citation], guardrail
             message = choices[0].get("message") or {}
             content = message.get("content") if isinstance(message, dict) else ""
             if isinstance(content, str) and content.strip():
-                return content.strip(), model
+                return sanitize_llm_output(content), model
         last_error = "empty_response"
     raise HTTPException(status_code=502, detail=f"upstream_failed: {last_error}")
 
