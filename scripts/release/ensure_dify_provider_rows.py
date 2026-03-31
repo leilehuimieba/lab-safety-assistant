@@ -59,7 +59,7 @@ from app import create_app
 from extensions.ext_database import db
 from models.account import Tenant
 from models.model import App
-from models.provider import Provider, ProviderCredential
+from models.provider import Provider, ProviderCredential, ProviderModelCredential
 
 tenant_id = (os.environ.get("TENANT_ID") or "").strip()
 provider_names = [item.strip() for item in (os.environ.get("PROVIDER_NAMES") or "").split("\n") if item.strip()]
@@ -88,9 +88,29 @@ with app.app_context():
             .order_by(ProviderCredential.updated_at.desc(), ProviderCredential.created_at.desc())
             .first()
         )
+        credential_created = False
         if not credential:
-            results.append({"provider_name": provider_name, "ok": False, "reason": "credential_missing"})
-            continue
+            model_credential = (
+                db.session.query(ProviderModelCredential)
+                .filter(
+                    ProviderModelCredential.tenant_id == tenant_id,
+                    ProviderModelCredential.provider_name == provider_name,
+                )
+                .order_by(ProviderModelCredential.updated_at.desc(), ProviderModelCredential.created_at.desc())
+                .first()
+            )
+            if not model_credential:
+                results.append({"provider_name": provider_name, "ok": False, "reason": "credential_missing"})
+                continue
+            credential = ProviderCredential(
+                tenant_id=tenant_id,
+                provider_name=provider_name,
+                credential_name=model_credential.credential_name,
+                encrypted_config=model_credential.encrypted_config,
+            )
+            db.session.add(credential)
+            db.session.flush()
+            credential_created = True
 
         row = (
             db.session.query(Provider)
@@ -120,6 +140,7 @@ with app.app_context():
                 "provider_name": provider_name,
                 "ok": True,
                 "created": created,
+                "credential_created": credential_created,
                 "credential_id": str(credential.id),
             }
         )
@@ -151,9 +172,15 @@ with app.app_context():
         print(completed.stderr, file=sys.stderr)
         return completed.returncode
 
-    print(completed.stdout.strip())
+    stdout_text = completed.stdout.strip()
+    print(stdout_text)
     try:
-        payload = json.loads(completed.stdout.strip() or "{}")
+        candidate = ""
+        for line in reversed(stdout_text.splitlines()):
+            if line.strip().startswith("{") and line.strip().endswith("}"):
+                candidate = line.strip()
+                break
+        payload = json.loads(candidate or "{}")
     except Exception:
         print("[FAIL] cannot parse ensure result", file=sys.stderr)
         return 2
