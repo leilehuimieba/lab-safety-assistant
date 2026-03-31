@@ -207,6 +207,9 @@ echo "[remote] backup kept at: ${BACKUP_DIR}"
     Write-Step "Executing remote deployment"
     Invoke-External -FilePath "ssh" -Arguments ($sshBaseArgs + @($sshTarget, "bash $remoteRunner"))
 
+    Write-Step "Cleaning remote runner"
+    Invoke-External -FilePath "ssh" -Arguments ($sshBaseArgs + @($sshTarget, "rm -f $remoteRunner"))
+
     Write-Step "Remote deployment finished"
     Write-Host "Release dir : $RemoteReleaseDir"
     Write-Host "Archive sent: $remoteArchive"
