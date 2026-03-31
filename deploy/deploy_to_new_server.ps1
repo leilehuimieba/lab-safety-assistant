@@ -89,17 +89,17 @@ try {
     Write-Step "Uploading release archive"
     Invoke-External -FilePath "scp" -Arguments ($scpBaseArgs + @($archivePath, "${sshTarget}:$remoteArchive"))
 
-    $remoteScript = @"
+    $remoteScriptTemplate = @'
 #!/usr/bin/env bash
 set -euo pipefail
 
-RELEASE_DIR='$RemoteReleaseDir'
-STAGE_DIR='$RemoteStageDir'
-ARCHIVE_PATH='$remoteArchive'
-STAMP='$timestamp'
-RESEED_DEMO_DATA='$([int][bool]$ReseedDemoData)'
-SKIP_RESTART='$([int][bool]$SkipRestart)'
-SKIP_SMOKE='$([int][bool]$SkipSmoke)'
+RELEASE_DIR='__REMOTE_RELEASE_DIR__'
+STAGE_DIR='__REMOTE_STAGE_DIR__'
+ARCHIVE_PATH='__REMOTE_ARCHIVE__'
+STAMP='__STAMP__'
+RESEED_DEMO_DATA='__RESEED__'
+SKIP_RESTART='__SKIP_RESTART__'
+SKIP_SMOKE='__SKIP_SMOKE__'
 
 INCOMING_DIR="\${RELEASE_DIR}.__incoming_\${STAMP}"
 BACKUP_DIR="\${RELEASE_DIR}_backup_\${STAMP}"
@@ -185,7 +185,15 @@ fi
 echo "[remote] deployment complete"
 echo "[remote] current release: \${RELEASE_DIR}"
 echo "[remote] backup kept at: \${BACKUP_DIR}"
-"@
+'@
+
+    $remoteScript = $remoteScriptTemplate.Replace("__REMOTE_RELEASE_DIR__", $RemoteReleaseDir)
+    $remoteScript = $remoteScript.Replace("__REMOTE_STAGE_DIR__", $RemoteStageDir)
+    $remoteScript = $remoteScript.Replace("__REMOTE_ARCHIVE__", $remoteArchive)
+    $remoteScript = $remoteScript.Replace("__STAMP__", $timestamp)
+    $remoteScript = $remoteScript.Replace("__RESEED__", [string]([int][bool]$ReseedDemoData))
+    $remoteScript = $remoteScript.Replace("__SKIP_RESTART__", [string]([int][bool]$SkipRestart))
+    $remoteScript = $remoteScript.Replace("__SKIP_SMOKE__", [string]([int][bool]$SkipSmoke))
 
     $localRunner = Join-Path $tempDir "run_release.sh"
     Set-Content -Path $localRunner -Value $remoteScript -Encoding Ascii
