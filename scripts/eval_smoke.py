@@ -22,10 +22,10 @@ import math
 import os
 import re
 import time
-import urllib.error
-import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+import requests
 
 
 EVAL_REQUIRED_COLUMNS = [
@@ -246,106 +246,93 @@ def call_dify(
     timeout_sec: float,
     response_mode: str = "streaming",
 ) -> tuple[str, float, str]:
-    endpoint = resolve_chat_endpoint(base_url)
-    payload = {
-        "inputs": {},
-        "query": question,
-        "response_mode": response_mode,
-        "conversation_id": "",
-        "user": "eval-smoke",
-        "auto_generate_name": False,
-    }
-    body = json.dumps(payload).encode("utf-8")
-    request = urllib.request.Request(
-        endpoint,
-        data=body,
-        headers={
-            "Authorization": f"Bearer {app_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-
     started = time.perf_counter()
-    hard_deadline = started + max(timeout_sec, 1.0)
     try:
-        with urllib.request.urlopen(request, timeout=max(timeout_sec, 1.0)) as response:
-            content_type = str(response.headers.get("Content-Type", "") or "").lower()
+        response = requests.post(
+            resolve_chat_endpoint(base_url),
+            headers={
+                "Authorization": f"Bearer {app_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "inputs": {},
+                "query": question,
+                "response_mode": response_mode,
+                "conversation_id": "",
+                "user": "eval-smoke",
+                "auto_generate_name": False,
+            },
+            timeout=(20, max(timeout_sec, 1.0)),
+            stream=True,
+        )
 
-            # Some Dify app modes always return SSE. Parse stream events directly.
-            if "text/event-stream" in content_type:
-                answer_parts: list[str] = []
-                stream_error = ""
-                workflow_error = ""
+        content_type = str(response.headers.get("Content-Type", "") or "").lower()
+        if response.status_code != 200:
+            latency_ms = (time.perf_counter() - started) * 1000
+            return "", latency_ms, f"http_{response.status_code}: {response.text[:200]}"
 
-                while True:
-                    if time.perf_counter() >= hard_deadline:
-                        latency_ms = (time.perf_counter() - started) * 1000
-                        return "", latency_ms, f"request_error: timed out ({timeout_sec:.1f}s hard deadline)"
-                    raw_line = response.readline()
-                    if not raw_line:
-                        break
-                    line = raw_line.decode("utf-8", errors="ignore").strip()
-                    if not line or line.startswith("event:"):
-                        continue
-                    if not line.startswith("data:"):
-                        continue
-                    payload_str = line[5:].strip()
-                    if not payload_str or payload_str == "[DONE]":
-                        break
-                    try:
-                        event_obj = json.loads(payload_str)
-                    except json.JSONDecodeError:
-                        continue
+        if "text/event-stream" in content_type:
+            answer_parts: list[str] = []
+            stream_error = ""
+            workflow_error = ""
 
-                    event_name = str(event_obj.get("event", "") or "").strip().lower()
-                    if event_name in {"message", "agent_message"}:
-                        piece = str(
-                            event_obj.get("answer", "")
-                            or event_obj.get("delta", "")
-                            or event_obj.get("text", "")
-                            or ""
-                        )
-                        if piece:
-                            answer_parts.append(piece)
-                    elif event_name == "workflow_finished":
-                        data = event_obj.get("data")
-                        if isinstance(data, dict):
-                            outputs = data.get("outputs")
-                            if isinstance(outputs, dict):
-                                text_out = str(outputs.get("text", "") or "")
-                                if text_out and not answer_parts:
-                                    answer_parts.append(text_out)
-                            err_val = data.get("error")
-                            if isinstance(err_val, str) and err_val.strip():
-                                workflow_error = err_val.strip()
-                        break
-                    elif event_name == "message_end":
-                        break
-                    elif event_name == "error":
-                        stream_error = str(event_obj.get("message", "") or event_obj.get("error", "") or "stream_error")
-                        break
+            for raw_line in response.iter_lines(decode_unicode=True):
+                if not raw_line:
+                    continue
+                line = raw_line.strip()
+                if not line or line.startswith("event:") or not line.startswith("data:"):
+                    continue
+                payload_str = line[5:].strip()
+                if not payload_str or payload_str == "[DONE]":
+                    break
+                try:
+                    event_obj = json.loads(payload_str)
+                except json.JSONDecodeError:
+                    continue
 
-                latency_ms = (time.perf_counter() - started) * 1000
-                answer = "".join(answer_parts).strip()
-                if stream_error and not answer:
-                    return "", latency_ms, f"stream_error: {stream_error[:200]}"
-                if workflow_error and not answer:
-                    return "", latency_ms, f"workflow_error: {workflow_error[:200]}"
-                if not answer:
-                    return "", latency_ms, "empty_stream_answer"
-                return answer, latency_ms, ""
+                event_name = str(event_obj.get("event", "") or "").strip().lower()
+                if event_name in {"message", "agent_message"}:
+                    piece = str(
+                        event_obj.get("answer", "")
+                        or event_obj.get("delta", "")
+                        or event_obj.get("text", "")
+                        or ""
+                    )
+                    if piece:
+                        answer_parts.append(piece)
+                elif event_name == "workflow_finished":
+                    data = event_obj.get("data")
+                    if isinstance(data, dict):
+                        outputs = data.get("outputs")
+                        if isinstance(outputs, dict):
+                            text_out = str(outputs.get("text", "") or "")
+                            if text_out and not answer_parts:
+                                answer_parts.append(text_out)
+                        err_val = data.get("error")
+                        if isinstance(err_val, str) and err_val.strip():
+                            workflow_error = err_val.strip()
+                    break
+                elif event_name == "message_end":
+                    break
+                elif event_name == "error":
+                    stream_error = str(event_obj.get("message", "") or event_obj.get("error", "") or "stream_error")
+                    break
 
-            # Fallback: JSON blocking payload.
-            raw = response.read().decode("utf-8")
+            latency_ms = (time.perf_counter() - started) * 1000
+            answer = "".join(answer_parts).strip()
+            if stream_error and not answer:
+                return "", latency_ms, f"stream_error: {stream_error[:200]}"
+            if workflow_error and not answer:
+                return "", latency_ms, f"workflow_error: {workflow_error[:200]}"
+            if not answer:
+                return "", latency_ms, "empty_stream_answer"
+            return answer, latency_ms, ""
+
+        raw = response.text
         latency_ms = (time.perf_counter() - started) * 1000
         parsed = json.loads(raw)
         answer = str(parsed.get("answer", "") or "")
         return answer, latency_ms, ""
-    except urllib.error.HTTPError as exc:
-        latency_ms = (time.perf_counter() - started) * 1000
-        message = exc.read().decode("utf-8", errors="ignore")
-        return "", latency_ms, f"http_{exc.code}: {message[:200]}"
     except Exception as exc:  # pragma: no cover
         latency_ms = (time.perf_counter() - started) * 1000
         return "", latency_ms, f"request_error: {exc}"
