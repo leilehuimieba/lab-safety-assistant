@@ -182,7 +182,7 @@ resolve_dify_app_token() {
     return 1
   fi
   docker exec -i "$db_container" psql -U postgres -d dify -At -F '|' -c \
-    "select token from api_tokens order by created_at desc limit 1;" 2>/dev/null | head -n 1 | tr -d '\r'
+    "select token from api_tokens where type='app' order by created_at desc limit 1;" 2>/dev/null | head -n 1 | tr -d '\r'
 }
 
 if [[ "$SKIP_DIFY_BUSINESS_SMOKE" != "1" ]]; then
