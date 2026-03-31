@@ -59,7 +59,13 @@ from app import create_app
 from extensions.ext_database import db
 from models.account import Tenant
 from models.model import App
-from models.provider import Provider, ProviderCredential, ProviderModelCredential
+from models.provider import (
+    Provider,
+    ProviderCredential,
+    ProviderModel,
+    ProviderModelCredential,
+    ProviderModelSetting,
+)
 
 tenant_id = (os.environ.get("TENANT_ID") or "").strip()
 provider_names = [item.strip() for item in (os.environ.get("PROVIDER_NAMES") or "").split("\n") if item.strip()]
@@ -135,12 +141,74 @@ with app.app_context():
             row.provider_type = row.provider_type or "custom"
             row.credential_id = credential.id
 
+        model_rows_created = 0
+        model_settings_created = 0
+        model_credentials = (
+            db.session.query(ProviderModelCredential)
+            .filter(
+                ProviderModelCredential.tenant_id == tenant_id,
+                ProviderModelCredential.provider_name == provider_name,
+            )
+            .all()
+        )
+        for item in model_credentials:
+            provider_model = (
+                db.session.query(ProviderModel)
+                .filter(
+                    ProviderModel.tenant_id == tenant_id,
+                    ProviderModel.provider_name == provider_name,
+                    ProviderModel.model_name == item.model_name,
+                    ProviderModel.model_type == item.model_type,
+                )
+                .first()
+            )
+            if not provider_model:
+                provider_model = ProviderModel(
+                    tenant_id=tenant_id,
+                    provider_name=provider_name,
+                    model_name=item.model_name,
+                    model_type=item.model_type,
+                    is_valid=True,
+                    credential_id=credential.id,
+                )
+                db.session.add(provider_model)
+                model_rows_created += 1
+            else:
+                provider_model.is_valid = True
+                provider_model.credential_id = credential.id
+
+            model_setting = (
+                db.session.query(ProviderModelSetting)
+                .filter(
+                    ProviderModelSetting.tenant_id == tenant_id,
+                    ProviderModelSetting.provider_name == provider_name,
+                    ProviderModelSetting.model_name == item.model_name,
+                    ProviderModelSetting.model_type == item.model_type,
+                )
+                .first()
+            )
+            if not model_setting:
+                model_setting = ProviderModelSetting(
+                    tenant_id=tenant_id,
+                    provider_name=provider_name,
+                    model_name=item.model_name,
+                    model_type=item.model_type,
+                    enabled=True,
+                    load_balancing_enabled=False,
+                )
+                db.session.add(model_setting)
+                model_settings_created += 1
+            else:
+                model_setting.enabled = True
+
         results.append(
             {
                 "provider_name": provider_name,
                 "ok": True,
                 "created": created,
                 "credential_created": credential_created,
+                "provider_models_created": model_rows_created,
+                "provider_model_settings_created": model_settings_created,
                 "credential_id": str(credential.id),
             }
         )
