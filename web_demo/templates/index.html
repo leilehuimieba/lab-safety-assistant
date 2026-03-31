@@ -54,7 +54,7 @@
     }
     h2, h3 { margin: 0 0 12px; }
     p { line-height: 1.6; }
-    textarea, input {
+    textarea, input, select {
       width: 100%;
       border: 1px solid #c8d3e0;
       border-radius: 12px;
@@ -148,12 +148,22 @@
       border: 1px solid #d8e4ff;
     }
     .stats-card strong { display: block; font-size: 20px; margin-top: 6px; }
+    .incident-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .mini-textarea { min-height: 84px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     ul { margin: 8px 0 0; padding-left: 18px; }
     a { color: #1d4ed8; text-decoration: none; }
     a:hover { text-decoration: underline; }
     @media (max-width: 1100px) {
       .layout { grid-template-columns: 1fr; }
       .em-grid, .stats-grid { grid-template-columns: 1fr; }
+      .two-col { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -232,6 +242,57 @@
           <h2>6. Training Statistics</h2>
           <div id="trainingStats" class="stats-grid"></div>
         </article>
+
+        <article class="card">
+          <h2>7. Management Dashboard</h2>
+          <p class="muted">Live metrics from checklist submissions, quiz attempts, low-confidence follow-up, and incident review records.</p>
+          <div id="adminMetrics" class="stats-grid"></div>
+          <div class="two-col" style="margin-top: 12px;">
+            <div>
+              <h3>Low-confidence TOP</h3>
+              <div id="adminLowConfidence" class="panel">No low-confidence records yet.</div>
+            </div>
+            <div>
+              <h3>Recent high-risk scenarios</h3>
+              <div id="adminHighRisk" class="panel">No high-risk checklist records yet.</div>
+            </div>
+          </div>
+          <div style="margin-top: 12px;">
+            <h3>Incident status summary</h3>
+            <div id="adminIncidentSummary" class="panel">No incident summary yet.</div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>8. Incident Review</h2>
+          <p class="muted">Record an incident, classify the causes, assign corrective actions, and drive closure state.</p>
+          <div class="two-col">
+            <input id="incidentReporter" placeholder="Reporter" />
+            <input id="incidentTitle" placeholder="Incident title" />
+          </div>
+          <div class="two-col" style="margin-top: 10px;">
+            <select id="incidentSeverity">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+            <input id="incidentLocation" placeholder="Location / room" />
+          </div>
+          <textarea id="incidentScenario" class="mini-textarea" style="margin-top: 10px;" placeholder="Incident scenario and what happened"></textarea>
+          <textarea id="incidentCauses" class="mini-textarea" style="margin-top: 10px;" placeholder="Cause categories, separated by comma. Example: labeling error, missing PPE, ventilation failure"></textarea>
+          <textarea id="incidentImmediateActions" class="mini-textarea" style="margin-top: 10px;" placeholder="Immediate containment actions, one per line"></textarea>
+          <textarea id="incidentCorrectiveActions" class="mini-textarea" style="margin-top: 10px;" placeholder="Corrective actions, one per line"></textarea>
+          <div class="two-col" style="margin-top: 10px;">
+            <input id="incidentOwner" placeholder="Corrective action owner" />
+            <input id="incidentDueDate" placeholder="Due date, e.g. 2026-04-15" />
+          </div>
+          <div class="actions" style="margin-top: 12px;">
+            <button class="btn-accent" id="createIncidentBtn">Create Incident Review</button>
+          </div>
+          <div id="incidentCreateStatus" class="alert warn"></div>
+          <div id="incidentList" style="margin-top: 12px;"></div>
+        </article>
       </div>
     </section>
   </main>
@@ -260,9 +321,40 @@
     const quizBox = document.getElementById('quizBox');
     const quizResult = document.getElementById('quizResult');
     const trainingStats = document.getElementById('trainingStats');
+    const adminMetrics = document.getElementById('adminMetrics');
+    const adminLowConfidence = document.getElementById('adminLowConfidence');
+    const adminHighRisk = document.getElementById('adminHighRisk');
+    const adminIncidentSummary = document.getElementById('adminIncidentSummary');
+    const createIncidentBtn = document.getElementById('createIncidentBtn');
+    const incidentCreateStatus = document.getElementById('incidentCreateStatus');
+    const incidentList = document.getElementById('incidentList');
 
     let checklistCache = [];
     let quizSession = null;
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
+    function splitMultiline(value) {
+      return String(value || '')
+        .split(/\r?\n/)
+        .map(item => item.trim())
+        .filter(Boolean);
+    }
+
+    function splitComma(value) {
+      return String(value || '')
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean);
+    }
 
     function getMode() {
       const checked = document.querySelector('input[name="mode"]:checked');
@@ -328,6 +420,17 @@
     async function postJson(url, payload) {
       const resp = await fetch(url, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || 'Request failed.');
+      return data;
+    }
+
+    async function patchJson(url, payload) {
+      const resp = await fetch(url, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
@@ -422,6 +525,7 @@
         checklistStatus.style.display = 'block';
         checklistStatus.className = `alert ${data.allow_start ? 'ok' : 'bad'}`;
         checklistStatus.innerHTML = `<strong>${data.allow_start ? 'Checklist PASS' : 'Checklist BLOCKED'}</strong><br>${(data.next_actions || []).join('<br>')}${data.blocking_reasons.length ? `<br><br>Blocking: ${data.blocking_reasons.join(' | ')}` : ''}`;
+        loadAdminDashboard();
       } catch (err) {
         checklistStatus.style.display = 'block';
         checklistStatus.className = 'alert bad';
@@ -509,7 +613,7 @@
           <div>${(data.recommended_actions || []).join('<br>')}</div>
           ${(data.review || []).map(item => `<div class="review-item"><strong>${item.correct ? 'Correct' : 'Needs review'}:</strong> ${item.prompt}<br><span class="muted">${item.explanation}</span></div>`).join('')}
         `;
-        loadTrainingStats();
+        await Promise.all([loadTrainingStats(), loadAdminDashboard()]);
       } catch (err) {
         quizResult.textContent = err.message;
       }
@@ -533,6 +637,112 @@
       }
     }
 
+    async function loadAdminDashboard() {
+      const resp = await fetch('/api/admin/dashboard');
+      const data = await resp.json();
+      if (!resp.ok) {
+        adminMetrics.innerHTML = '<div class="stats-card">Unable to load dashboard.</div>';
+        adminLowConfidence.textContent = 'Unable to load low-confidence queue.';
+        adminHighRisk.textContent = 'Unable to load high-risk scenarios.';
+        adminIncidentSummary.textContent = 'Unable to load incident summary.';
+        return;
+      }
+      adminMetrics.innerHTML = (data.metrics || []).map(item => `
+        <div class="stats-card">
+          <div>${escapeHtml(item.label)}</div>
+          <strong>${escapeHtml(item.value)}</strong>
+          <div class="muted">${escapeHtml(item.detail || '')}</div>
+        </div>
+      `).join('');
+      adminLowConfidence.innerHTML = (data.low_confidence_top || []).length
+        ? `<ul>${data.low_confidence_top.map(item => `<li>${escapeHtml(item.label)} (${item.count})</li>`).join('')}</ul>`
+        : 'No low-confidence records yet.';
+      adminHighRisk.innerHTML = (data.recent_high_risk_scenarios || []).length
+        ? `<ul>${data.recent_high_risk_scenarios.map(item => `<li>${escapeHtml(item.submitted_at)} | ${escapeHtml(item.risk_level)} | ${item.allow_start ? 'PASS' : 'BLOCKED'} | ${escapeHtml(item.scenario)}</li>`).join('')}</ul>`
+        : 'No high-risk checklist records yet.';
+      adminIncidentSummary.innerHTML = Object.keys(data.incident_summary || {}).length
+        ? `<div>${Object.entries(data.incident_summary).map(([k, v]) => `${escapeHtml(k)}: ${v}`).join(' | ')}</div>`
+        : 'No incident review records yet.';
+    }
+
+    function renderIncidentCard(item) {
+      return `
+        <div class="incident-card">
+          <div><strong>${escapeHtml(item.title)}</strong> <span class="pill">${escapeHtml(item.severity)}</span> <span class="pill">${escapeHtml(item.status)}</span></div>
+          <div class="muted">${escapeHtml(item.reported_at)} | reporter=${escapeHtml(item.reporter)} | owner=${escapeHtml(item.owner || 'unassigned')}</div>
+          <div style="margin-top: 8px;">${escapeHtml(item.scenario)}</div>
+          <div class="muted" style="margin-top: 6px;">causes=${escapeHtml((item.cause_categories || []).join(', ') || 'none')} | location=${escapeHtml(item.location || '-')}</div>
+          <div class="two-col" style="margin-top: 10px;">
+            <select id="status-${item.incident_id}">
+              ${['open', 'in_review', 'action_in_progress', 'verified', 'closed'].map(status => `<option value="${status}" ${status === item.status ? 'selected' : ''}>${status}</option>`).join('')}
+            </select>
+            <input id="owner-${item.incident_id}" value="${escapeHtml(item.owner || '')}" placeholder="Owner" />
+          </div>
+          <div class="two-col" style="margin-top: 10px;">
+            <input id="due-${item.incident_id}" value="${escapeHtml(item.due_date || '')}" placeholder="Due date" />
+            <input id="closure-${item.incident_id}" value="${escapeHtml(item.closure_notes || '')}" placeholder="Closure notes" />
+          </div>
+          <textarea id="actions-${item.incident_id}" class="mini-textarea" style="margin-top: 10px;" placeholder="Corrective actions, one per line">${escapeHtml((item.corrective_actions || []).join('\n'))}</textarea>
+          <div style="margin-top: 10px;"><button class="btn-primary" onclick="updateIncident('${item.incident_id}')">Update Incident</button></div>
+        </div>
+      `;
+    }
+
+    async function loadIncidents() {
+      const resp = await fetch('/api/incidents');
+      const data = await resp.json();
+      if (!resp.ok) {
+        incidentList.innerHTML = '<div class="panel">Unable to load incidents.</div>';
+        return;
+      }
+      incidentList.innerHTML = data.length
+        ? data.map(renderIncidentCard).join('')
+        : '<div class="panel">No incident review records yet. Create the first one from the form above.</div>';
+    }
+
+    async function createIncident() {
+      createIncidentBtn.disabled = true;
+      try {
+        const data = await postJson('/api/incidents', {
+          reporter: document.getElementById('incidentReporter').value || 'anonymous',
+          title: document.getElementById('incidentTitle').value,
+          scenario: document.getElementById('incidentScenario').value,
+          severity: document.getElementById('incidentSeverity').value,
+          location: document.getElementById('incidentLocation').value || '',
+          cause_categories: splitComma(document.getElementById('incidentCauses').value),
+          immediate_actions: splitMultiline(document.getElementById('incidentImmediateActions').value),
+          corrective_actions: splitMultiline(document.getElementById('incidentCorrectiveActions').value),
+          owner: document.getElementById('incidentOwner').value || '',
+          due_date: document.getElementById('incidentDueDate').value || ''
+        });
+        incidentCreateStatus.style.display = 'block';
+        incidentCreateStatus.className = 'alert ok';
+        incidentCreateStatus.textContent = `Incident created: ${data.incident_id}`;
+        await Promise.all([loadIncidents(), loadAdminDashboard()]);
+      } catch (err) {
+        incidentCreateStatus.style.display = 'block';
+        incidentCreateStatus.className = 'alert bad';
+        incidentCreateStatus.textContent = err.message;
+      } finally {
+        createIncidentBtn.disabled = false;
+      }
+    }
+
+    window.updateIncident = async function updateIncident(incidentId) {
+      try {
+        await patchJson(`/api/incidents/${incidentId}`, {
+          status: document.getElementById(`status-${incidentId}`).value,
+          owner: document.getElementById(`owner-${incidentId}`).value || '',
+          due_date: document.getElementById(`due-${incidentId}`).value || '',
+          closure_notes: document.getElementById(`closure-${incidentId}`).value || '',
+          corrective_actions: splitMultiline(document.getElementById(`actions-${incidentId}`).value)
+        });
+        await Promise.all([loadIncidents(), loadAdminDashboard()]);
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
     sendBtn.addEventListener('click', ask);
     riskBtn.addEventListener('click', assessRisk);
     checklistBtn.addEventListener('click', generateChecklist);
@@ -540,9 +750,12 @@
     matchEmergencyBtn.addEventListener('click', matchEmergencyCard);
     startQuizBtn.addEventListener('click', startQuiz);
     submitQuizBtn.addEventListener('click', submitQuiz);
+    createIncidentBtn.addEventListener('click', createIncident);
 
     loadEmergencyCards();
     loadTrainingStats();
+    loadAdminDashboard();
+    loadIncidents();
   </script>
 </body>
 </html>

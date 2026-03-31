@@ -35,6 +35,7 @@ LOW_CONFIDENCE_QUEUE_FILE = REPO_ROOT / "artifacts" / "low_confidence_followups"
 CHECKLIST_RUNS_FILE = REPO_ROOT / "artifacts" / "checklists" / "checklist_runs.csv"
 TRAINING_ATTEMPTS_FILE = REPO_ROOT / "artifacts" / "training" / "training_attempts.csv"
 TRAINING_MISTAKES_FILE = REPO_ROOT / "artifacts" / "training" / "training_mistakes.csv"
+INCIDENT_REVIEWS_FILE = REPO_ROOT / "artifacts" / "incidents" / "incident_reviews.csv"
 
 DEFAULT_BASE_URL = "http://ai.little100.cn:3000/v1"
 DEFAULT_MODEL = "gpt-5.2-codex"
@@ -111,6 +112,26 @@ TRAINING_MISTAKE_HEADERS = [
     "correct_indices",
     "references",
 ]
+
+INCIDENT_HEADERS = [
+    "incident_id",
+    "reported_at",
+    "updated_at",
+    "reporter",
+    "title",
+    "scenario",
+    "severity",
+    "status",
+    "location",
+    "cause_categories",
+    "immediate_actions",
+    "corrective_actions",
+    "owner",
+    "due_date",
+    "closure_notes",
+]
+
+INCIDENT_STATUS_ORDER = {"open": 1, "in_review": 2, "action_in_progress": 3, "verified": 4, "closed": 5}
 
 SYSTEM_PROMPTS = {
     "agent": "You are a project copilot. Give concise, executable guidance.",
@@ -236,6 +257,7 @@ _KB_CACHE: list[dict[str, str]] | None = None
 _RULES_CACHE: dict[str, Any] | None = None
 _EMERGENCY_CACHE: list[dict[str, Any]] | None = None
 _TRAINING_BANK_CACHE: list[dict[str, Any]] | None = None
+_INCIDENT_LOCK = threading.Lock()
 
 
 class ChatRequest(BaseModel):
@@ -408,6 +430,71 @@ class TrainingStatsResponse(BaseModel):
     recent_scores: list[int] = Field(default_factory=list)
 
 
+class DashboardMetric(BaseModel):
+    label: str
+    value: str
+    detail: str = ""
+
+
+class DashboardLowConfidenceItem(BaseModel):
+    label: str
+    count: int
+
+
+class DashboardHighRiskScenario(BaseModel):
+    submitted_at: str
+    scenario: str
+    risk_level: str
+    allow_start: bool
+    operator: str = ""
+
+
+class AdminDashboardResponse(BaseModel):
+    metrics: list[DashboardMetric] = Field(default_factory=list)
+    low_confidence_top: list[DashboardLowConfidenceItem] = Field(default_factory=list)
+    recent_high_risk_scenarios: list[DashboardHighRiskScenario] = Field(default_factory=list)
+    incident_summary: dict[str, int] = Field(default_factory=dict)
+
+
+class IncidentCreateRequest(BaseModel):
+    reporter: str = Field(default="anonymous", max_length=120)
+    title: str = Field(min_length=1, max_length=200)
+    scenario: str = Field(min_length=1, max_length=3000)
+    severity: str = Field(default="medium", pattern="^(low|medium|high|critical)$")
+    location: str = Field(default="", max_length=200)
+    cause_categories: list[str] = Field(default_factory=list)
+    immediate_actions: list[str] = Field(default_factory=list)
+    corrective_actions: list[str] = Field(default_factory=list)
+    owner: str = Field(default="", max_length=120)
+    due_date: str = Field(default="", max_length=40)
+
+
+class IncidentUpdateRequest(BaseModel):
+    status: str = Field(default="in_review", pattern="^(open|in_review|action_in_progress|verified|closed)$")
+    corrective_actions: list[str] = Field(default_factory=list)
+    owner: str = Field(default="", max_length=120)
+    due_date: str = Field(default="", max_length=40)
+    closure_notes: str = Field(default="", max_length=1000)
+
+
+class IncidentRecord(BaseModel):
+    incident_id: str
+    reported_at: str
+    updated_at: str
+    reporter: str
+    title: str
+    scenario: str
+    severity: str
+    status: str
+    location: str = ""
+    cause_categories: list[str] = Field(default_factory=list)
+    immediate_actions: list[str] = Field(default_factory=list)
+    corrective_actions: list[str] = Field(default_factory=list)
+    owner: str = ""
+    due_date: str = ""
+    closure_notes: str = ""
+
+
 def normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").strip().lower())
 
@@ -435,6 +522,13 @@ def load_json_list(path: Path) -> list[dict[str, Any]]:
     if not isinstance(payload, list):
         return []
     return [item for item in payload if isinstance(item, dict)]
+
+
+def read_csv_rows(path: Path) -> list[dict[str, str]]:
+    if not path.exists():
+        return []
+    with path.open("r", encoding="utf-8-sig", newline="") as f:
+        return [row for row in csv.DictReader(f)]
 
 
 def load_kb_entries() -> list[dict[str, str]]:
@@ -1103,14 +1197,10 @@ def load_training_stats() -> TrainingStatsResponse:
     mistakes: dict[str, int] = {}
     latest_submitted_at = ""
 
-    if TRAINING_ATTEMPTS_FILE.exists():
-        with TRAINING_ATTEMPTS_FILE.open("r", encoding="utf-8-sig", newline="") as f:
-            attempts = [row for row in csv.DictReader(f)]
-    if TRAINING_MISTAKES_FILE.exists():
-        with TRAINING_MISTAKES_FILE.open("r", encoding="utf-8-sig", newline="") as f:
-            for row in csv.DictReader(f):
-                category = (row.get("category") or "Uncategorized").strip() or "Uncategorized"
-                mistakes[category] = mistakes.get(category, 0) + 1
+    attempts = read_csv_rows(TRAINING_ATTEMPTS_FILE)
+    for row in read_csv_rows(TRAINING_MISTAKES_FILE):
+        category = (row.get("category") or "Uncategorized").strip() or "Uncategorized"
+        mistakes[category] = mistakes.get(category, 0) + 1
 
     scores = [int(float(row.get("score", "0") or "0")) for row in attempts]
     passed_count = sum(1 for row in attempts if (row.get("passed") or "").strip().lower() == "true")
@@ -1127,7 +1217,198 @@ def load_training_stats() -> TrainingStatsResponse:
     )
 
 
-app = FastAPI(title="Lab Safety Assistant Demo", version="0.4.0")
+def parse_json_list_field(value: str) -> list[str]:
+    text = (value or "").strip()
+    if not text:
+        return []
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        return [item.strip() for item in re.split(r"[|;]", text) if item.strip()]
+    if isinstance(payload, list):
+        return [str(item).strip() for item in payload if str(item).strip()]
+    return [str(payload).strip()]
+
+
+def load_incident_records() -> list[IncidentRecord]:
+    records: list[IncidentRecord] = []
+    for row in read_csv_rows(INCIDENT_REVIEWS_FILE):
+        records.append(
+            IncidentRecord(
+                incident_id=(row.get("incident_id") or "").strip(),
+                reported_at=(row.get("reported_at") or "").strip(),
+                updated_at=(row.get("updated_at") or "").strip(),
+                reporter=(row.get("reporter") or "").strip(),
+                title=(row.get("title") or "").strip(),
+                scenario=(row.get("scenario") or "").strip(),
+                severity=(row.get("severity") or "").strip(),
+                status=(row.get("status") or "").strip(),
+                location=(row.get("location") or "").strip(),
+                cause_categories=parse_json_list_field(row.get("cause_categories") or ""),
+                immediate_actions=parse_json_list_field(row.get("immediate_actions") or ""),
+                corrective_actions=parse_json_list_field(row.get("corrective_actions") or ""),
+                owner=(row.get("owner") or "").strip(),
+                due_date=(row.get("due_date") or "").strip(),
+                closure_notes=(row.get("closure_notes") or "").strip(),
+            )
+        )
+    records.sort(
+        key=lambda item: (
+            INCIDENT_STATUS_ORDER.get(item.status, 99),
+            item.reported_at,
+        )
+    )
+    return records
+
+
+def write_incident_records(records: list[IncidentRecord]) -> None:
+    INCIDENT_REVIEWS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with INCIDENT_REVIEWS_FILE.open("w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=INCIDENT_HEADERS)
+        writer.writeheader()
+        for item in records:
+            writer.writerow(
+                {
+                    "incident_id": item.incident_id,
+                    "reported_at": item.reported_at,
+                    "updated_at": item.updated_at,
+                    "reporter": item.reporter,
+                    "title": item.title,
+                    "scenario": item.scenario,
+                    "severity": item.severity,
+                    "status": item.status,
+                    "location": item.location,
+                    "cause_categories": json.dumps(item.cause_categories, ensure_ascii=False),
+                    "immediate_actions": json.dumps(item.immediate_actions, ensure_ascii=False),
+                    "corrective_actions": json.dumps(item.corrective_actions, ensure_ascii=False),
+                    "owner": item.owner,
+                    "due_date": item.due_date,
+                    "closure_notes": item.closure_notes,
+                }
+            )
+
+
+def create_incident_record(payload: IncidentCreateRequest) -> IncidentRecord:
+    now = datetime.now().isoformat(timespec="seconds")
+    incident = IncidentRecord(
+        incident_id=f"INC-{datetime.now().strftime('%Y%m%d')}-{uuid4().hex[:8]}",
+        reported_at=now,
+        updated_at=now,
+        reporter=payload.reporter.strip() or "anonymous",
+        title=payload.title.strip(),
+        scenario=payload.scenario.strip(),
+        severity=payload.severity,
+        status="open",
+        location=payload.location.strip(),
+        cause_categories=[item.strip() for item in payload.cause_categories if item.strip()],
+        immediate_actions=[item.strip() for item in payload.immediate_actions if item.strip()],
+        corrective_actions=[item.strip() for item in payload.corrective_actions if item.strip()],
+        owner=payload.owner.strip(),
+        due_date=payload.due_date.strip(),
+        closure_notes="",
+    )
+    with _INCIDENT_LOCK:
+        records = load_incident_records()
+        records.insert(0, incident)
+        write_incident_records(records)
+    return incident
+
+
+def update_incident_record(incident_id: str, payload: IncidentUpdateRequest) -> IncidentRecord:
+    with _INCIDENT_LOCK:
+        records = load_incident_records()
+        for idx, item in enumerate(records):
+            if item.incident_id != incident_id:
+                continue
+            updated = item.model_copy(
+                update={
+                    "updated_at": datetime.now().isoformat(timespec="seconds"),
+                    "status": payload.status,
+                    "corrective_actions": [entry.strip() for entry in payload.corrective_actions if entry.strip()] or item.corrective_actions,
+                    "owner": payload.owner.strip() or item.owner,
+                    "due_date": payload.due_date.strip() or item.due_date,
+                    "closure_notes": payload.closure_notes.strip() or item.closure_notes,
+                }
+            )
+            records[idx] = updated
+            write_incident_records(records)
+            return updated
+    raise HTTPException(status_code=404, detail="incident not found.")
+
+
+def load_admin_dashboard() -> AdminDashboardResponse:
+    checklist_rows = read_csv_rows(CHECKLIST_RUNS_FILE)
+    blocked = sum(1 for row in checklist_rows if (row.get("allow_start") or "").strip().lower() == "false")
+    checklist_total = len(checklist_rows)
+    checklist_block_rate = (blocked / checklist_total) if checklist_total else 0.0
+
+    training_stats = load_training_stats()
+
+    low_confidence_counts: dict[str, int] = {}
+    for row in read_csv_rows(LOW_CONFIDENCE_QUEUE_FILE):
+        label = (row.get("low_confidence_reason") or row.get("question") or "unknown").strip() or "unknown"
+        low_confidence_counts[label] = low_confidence_counts.get(label, 0) + 1
+
+    high_risk_rows: list[DashboardHighRiskScenario] = []
+    for row in checklist_rows:
+        score = int(float(row.get("risk_score", "0") or "0"))
+        if score < 4:
+            continue
+        high_risk_rows.append(
+            DashboardHighRiskScenario(
+                submitted_at=(row.get("submitted_at") or "").strip(),
+                scenario=(row.get("scenario") or "").strip(),
+                risk_level=(row.get("risk_level") or "").strip(),
+                allow_start=(row.get("allow_start") or "").strip().lower() == "true",
+                operator=(row.get("operator") or "").strip(),
+            )
+        )
+    high_risk_rows.sort(key=lambda item: item.submitted_at, reverse=True)
+
+    incidents = load_incident_records()
+    incident_summary = {
+        "open": sum(1 for item in incidents if item.status == "open"),
+        "in_review": sum(1 for item in incidents if item.status == "in_review"),
+        "action_in_progress": sum(1 for item in incidents if item.status == "action_in_progress"),
+        "verified": sum(1 for item in incidents if item.status == "verified"),
+        "closed": sum(1 for item in incidents if item.status == "closed"),
+    }
+
+    metrics = [
+        DashboardMetric(
+            label="Checklist block rate",
+            value=f"{round(checklist_block_rate * 100)}%",
+            detail=f"{blocked}/{checklist_total or 0} submissions blocked",
+        ),
+        DashboardMetric(
+            label="Training pass rate",
+            value=f"{round(training_stats.pass_rate * 100)}%",
+            detail=f"{training_stats.attempt_count} attempts",
+        ),
+        DashboardMetric(
+            label="Average training score",
+            value=f"{training_stats.average_score}",
+            detail="Based on completed quiz attempts",
+        ),
+        DashboardMetric(
+            label="Open incident reviews",
+            value=str(incident_summary["open"] + incident_summary["in_review"] + incident_summary["action_in_progress"]),
+            detail="Open + in review + corrective action in progress",
+        ),
+    ]
+    low_confidence_top = [
+        DashboardLowConfidenceItem(label=label, count=count)
+        for label, count in sorted(low_confidence_counts.items(), key=lambda item: item[1], reverse=True)[:5]
+    ]
+    return AdminDashboardResponse(
+        metrics=metrics,
+        low_confidence_top=low_confidence_top,
+        recent_high_risk_scenarios=high_risk_rows[:5],
+        incident_summary=incident_summary,
+    )
+
+
+app = FastAPI(title="Lab Safety Assistant Demo", version="0.5.0")
 
 
 @app.get("/")
@@ -1272,6 +1553,26 @@ def training_submit(payload: TrainingSubmitRequest) -> TrainingSubmitResponse:
 @app.get("/api/training/stats", response_model=TrainingStatsResponse)
 def training_stats() -> TrainingStatsResponse:
     return load_training_stats()
+
+
+@app.get("/api/admin/dashboard", response_model=AdminDashboardResponse)
+def admin_dashboard() -> AdminDashboardResponse:
+    return load_admin_dashboard()
+
+
+@app.get("/api/incidents", response_model=list[IncidentRecord])
+def incidents() -> list[IncidentRecord]:
+    return load_incident_records()
+
+
+@app.post("/api/incidents", response_model=IncidentRecord)
+def create_incident(payload: IncidentCreateRequest) -> IncidentRecord:
+    return create_incident_record(payload)
+
+
+@app.patch("/api/incidents/{incident_id}", response_model=IncidentRecord)
+def patch_incident(incident_id: str, payload: IncidentUpdateRequest) -> IncidentRecord:
+    return update_incident_record(incident_id, payload)
 
 
 @app.get("/api/search")
