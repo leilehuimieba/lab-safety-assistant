@@ -1,0 +1,125 @@
+[
+  {
+    "id": "chemical_splash",
+    "title": "Chemical Splash to Skin or Eyes",
+    "category": "chemical",
+    "summary": "Prioritize decontamination, isolate the source, and activate medical escalation early.",
+    "keywords": ["chemical", "acid", "base", "corrosive", "splash", "eyes", "skin"],
+    "trigger_signs": [
+      "Chemical enters eyes, face, or exposed skin",
+      "Burning pain, redness, blurred vision, or damaged gloves/clothing"
+    ],
+    "immediate_actions": [
+      "Stop the operation and call for nearby support immediately.",
+      "Use eyewash or emergency shower continuously according to local SOP.",
+      "Remove contaminated gloves, coat, or face shield while flushing.",
+      "Bring the SDS or chemical label information for handoff."
+    ],
+    "forbidden": [
+      "Do not delay flushing while searching for paperwork.",
+      "Do not neutralize on the body unless the local SOP explicitly requires it.",
+      "Do not let the exposed person continue working."
+    ],
+    "ppe": [
+      "Splash goggles",
+      "Face shield for secondary responders",
+      "Chemical resistant gloves"
+    ],
+    "escalation": [
+      "Notify supervisor and institutional emergency contact.",
+      "Seek medical evaluation for eye exposure, persistent pain, or unknown chemicals."
+    ]
+  },
+  {
+    "id": "lab_fire",
+    "title": "Small Laboratory Fire or Ignition",
+    "category": "fire",
+    "summary": "Only fight a small controllable fire if trained and exit remains clear; otherwise evacuate immediately.",
+    "keywords": ["fire", "flame", "burning", "smoke", "ignition", "reflux", "solvent"],
+    "trigger_signs": [
+      "Visible flame, burning solvent, electrical smoke, or overheated equipment",
+      "Rapid heat rise, ignition near flammables, or failed heating control"
+    ],
+    "immediate_actions": [
+      "Stop the process if safe, isolate gas/power, and warn nearby people.",
+      "Use the correct extinguisher only if the fire is small and you are trained.",
+      "If fire is not controlled immediately, evacuate and close the door behind you.",
+      "Report the location and material involved to emergency responders."
+    ],
+    "forbidden": [
+      "Do not fight a growing fire alone.",
+      "Do not use the wrong extinguisher for solvent, metal, or electrical fire.",
+      "Do not re-enter before clearance."
+    ],
+    "ppe": [
+      "Standard lab PPE for evacuation support",
+      "Thermal or specialized PPE only for trained responders"
+    ],
+    "escalation": [
+      "Trigger the institutional fire alarm and emergency call chain.",
+      "Record involved chemicals, gases, and cylinders for responder briefing."
+    ]
+  },
+  {
+    "id": "electric_shock",
+    "title": "Electrical Shock or Energized Equipment Incident",
+    "category": "electrical",
+    "summary": "Cut power first, avoid direct contact with the victim, and escalate medical support immediately.",
+    "keywords": ["electric", "shock", "electrical", "battery", "circuit", "high voltage", "spark"],
+    "trigger_signs": [
+      "Person collapses near energized equipment",
+      "Sparks, exposed conductors, damaged insulation, or burning smell"
+    ],
+    "immediate_actions": [
+      "Isolate power using emergency stop, breaker, or unplug only if safe.",
+      "Use a non-conductive object to separate the victim from the source if still energized.",
+      "Call emergency medical support and monitor breathing until responders arrive.",
+      "Secure the area and preserve the equipment state for incident review."
+    ],
+    "forbidden": [
+      "Do not touch the victim directly before power is isolated.",
+      "Do not re-energize or test the device after the event.",
+      "Do not ignore minor shock symptoms."
+    ],
+    "ppe": [
+      "Electrical gloves for trained responders",
+      "Insulated footwear where applicable"
+    ],
+    "escalation": [
+      "Immediate medical evaluation is required after electrical exposure.",
+      "Notify equipment owner and safety manager before restart or repair."
+    ]
+  },
+  {
+    "id": "chemical_leak",
+    "title": "Chemical Spill or Leak",
+    "category": "spill",
+    "summary": "Assess size and toxicity quickly, isolate the zone, and use the spill SOP instead of improvised cleanup.",
+    "keywords": ["spill", "leak", "release", "solvent", "acid", "base", "unknown chemical", "vapour"],
+    "trigger_signs": [
+      "Liquid on bench or floor, broken container, spreading odor, or visible vapor",
+      "Unknown substance outside containment or damaged transport container"
+    ],
+    "immediate_actions": [
+      "Stop nearby work, isolate the area, and identify the material if possible.",
+      "Use spill kit, absorbent, or containment tools only if the spill is within your training level.",
+      "Increase local ventilation if the SOP allows and exposure risk is manageable.",
+      "Package contaminated absorbents and waste according to the waste route."
+    ],
+    "forbidden": [
+      "Do not touch unknown material with bare hands.",
+      "Do not wash incompatible chemicals into the drain without approval.",
+      "Do not continue nearby ignition or heat-generating work."
+    ],
+    "ppe": [
+      "Splash goggles",
+      "Chemical resistant gloves",
+      "Lab coat or apron",
+      "Respiratory protection if required by SOP"
+    ],
+    "escalation": [
+      "Escalate immediately for large, unknown, toxic, or highly volatile spills.",
+      "Report the material, quantity, and exposure status to the supervisor and safety contact."
+    ]
+  }
+]

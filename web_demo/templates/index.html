@@ -3,164 +3,235 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lab Safety Assistant Demo</title>
+  <title>Lab Safety Assistant Platform Demo</title>
   <style>
     :root {
-      --bg: #f4f7fb;
-      --card: #ffffff;
-      --text: #1f2937;
-      --sub: #64748b;
+      --bg: #f3f6fb;
+      --card: rgba(255, 255, 255, 0.92);
+      --text: #10233f;
+      --sub: #52637d;
+      --line: #d7e0eb;
       --primary: #0f766e;
       --primary-dark: #115e59;
-      --secondary: #2563eb;
-      --secondary-dark: #1d4ed8;
-      --border: #dbe4ee;
-      --warn-bg: #fffbeb;
-      --warn-border: #fbbf24;
-      --warn-text: #92400e;
+      --secondary: #1d4ed8;
+      --secondary-dark: #1e40af;
+      --accent: #b45309;
+      --danger: #b91c1c;
+      --ok: #166534;
+      --soft: #edf4ff;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Segoe UI", "Noto Sans", sans-serif;
       color: var(--text);
+      font-family: "Segoe UI", "Noto Sans", sans-serif;
       background:
-        radial-gradient(circle at 10% 10%, #d8f3ea, transparent 35%),
-        radial-gradient(circle at 90% 0%, #dbeafe, transparent 35%),
-        var(--bg);
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.16), transparent 30%),
+        linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
       min-height: 100vh;
       padding: 24px;
     }
-    .container { max-width: 1100px; margin: 0 auto; }
-    .header h1 { margin: 0 0 8px; font-size: 30px; }
-    .header p { margin: 0; color: var(--sub); line-height: 1.6; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 16px; }
+    .container { max-width: 1380px; margin: 0 auto; }
+    .hero {
+      background: linear-gradient(135deg, rgba(15, 118, 110, 0.92), rgba(29, 78, 216, 0.9));
+      color: white;
+      padding: 26px 28px;
+      border-radius: 24px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+    }
+    .hero h1 { margin: 0 0 8px; font-size: 34px; }
+    .hero p { margin: 0; line-height: 1.7; max-width: 900px; color: rgba(255,255,255,0.88); }
+    .layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; margin-top: 18px; }
+    .stack { display: grid; gap: 18px; }
     .card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(215, 224, 235, 0.95);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+      backdrop-filter: blur(10px);
     }
-    .mode-group { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-    .mode-option {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: #f8fafc;
-      cursor: pointer;
-      user-select: none;
-    }
-    textarea {
+    h2, h3 { margin: 0 0 12px; }
+    p { line-height: 1.6; }
+    textarea, input {
       width: 100%;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      padding: 12px;
-      font-size: 15px;
-      resize: vertical;
-      min-height: 140px;
-      line-height: 1.6;
+      border: 1px solid #c8d3e0;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 14px;
+      color: var(--text);
+      background: white;
     }
-    .actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    textarea { min-height: 160px; resize: vertical; line-height: 1.7; }
+    .actions, .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .row > * { flex: 1 1 220px; }
     button {
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 10px 16px;
-      font-size: 14px;
+      color: white;
       cursor: pointer;
+      font-size: 14px;
+      transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
     }
-    .btn-primary { background: var(--primary); color: white; }
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-primary { background: var(--primary); }
     .btn-primary:hover { background: var(--primary-dark); }
-    .btn-secondary { background: var(--secondary); color: white; }
+    .btn-secondary { background: var(--secondary); }
     .btn-secondary:hover { background: var(--secondary-dark); }
-    .btn-ghost { background: #e2e8f0; color: #334155; }
+    .btn-accent { background: var(--accent); }
+    .btn-ghost { background: #dbe6f3; color: #29405e; }
     .muted { color: var(--sub); font-size: 13px; }
-    .result {
+    .result, .panel {
+      background: #f8fbff;
+      border: 1px dashed #c6d4e2;
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 120px;
       line-height: 1.7;
-      background: #f8fafc;
-      border: 1px dashed #cbd5e1;
-      border-radius: 10px;
-      padding: 12px;
-      min-height: 140px;
       overflow-wrap: anywhere;
     }
-    .route-info { margin-top: 10px; color: #334155; font-size: 13px; }
-    .low-confidence-alert {
-      margin-top: 8px;
-      border: 1px solid var(--warn-border);
-      background: var(--warn-bg);
-      color: var(--warn-text);
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 13px;
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      background: #e9efff;
+      color: #2d3d8f;
+      padding: 5px 10px;
+      font-size: 12px;
+      margin: 0 8px 8px 0;
+    }
+    .alert {
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 14px;
       line-height: 1.6;
       display: none;
+      margin-top: 10px;
     }
-    .citation-box { margin-top: 12px; border-top: 1px solid #dbe4ee; padding-top: 10px; }
-    .citation-title { font-size: 14px; font-weight: 600; margin: 0 0 8px; color: #0f172a; }
-    .citation-item {
-      border: 1px solid #dbe4ee;
-      background: #fff;
-      border-radius: 10px;
-      padding: 10px;
-      margin-bottom: 8px;
-      font-size: 12px;
-      line-height: 1.5;
+    .alert.warn { background: #fff7e6; border: 1px solid #f8cc76; color: #8a5600; }
+    .alert.ok { background: #edfdf1; border: 1px solid #86efac; color: var(--ok); display: block; }
+    .alert.bad { background: #fef2f2; border: 1px solid #fecaca; color: var(--danger); display: block; }
+    .citation-item, .review-item, .em-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      margin-top: 10px;
     }
-    .citation-item a { color: #0369a1; text-decoration: none; word-break: break-all; }
-    .citation-item a:hover { text-decoration: underline; }
-    .risk-box { margin-top: 14px; border-top: 1px solid #dbe4ee; padding-top: 10px; display: none; }
-    .risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-    .risk-pill {
-      background: #eef2ff;
-      color: #3730a3;
+    .checklist-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid #eef2f7;
+    }
+    .checklist-item:last-child { border-bottom: none; }
+    .critical-tag {
+      background: #fff1f2;
+      color: #be123c;
+      font-size: 11px;
       border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 12px;
-      display: inline-block;
-      margin-right: 6px;
-      margin-bottom: 6px;
+      padding: 2px 8px;
+      margin-left: 8px;
     }
-    .risk-list { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
-    .risk-list li { margin: 4px 0; }
-    @media (max-width: 900px) { .risk-grid { grid-template-columns: 1fr; } }
-    @media (min-width: 920px) { .grid { grid-template-columns: 1fr 1fr; } }
+    .em-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .quiz-question { padding: 12px 0; border-bottom: 1px solid #edf2f7; }
+    .quiz-question:last-child { border-bottom: none; }
+    .quiz-option { display: block; margin-top: 8px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .stats-card {
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--soft);
+      border: 1px solid #d8e4ff;
+    }
+    .stats-card strong { display: block; font-size: 20px; margin-top: 6px; }
+    ul { margin: 8px 0 0; padding-left: 18px; }
+    a { color: #1d4ed8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .em-grid, .stats-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <main class="container">
-    <header class="header">
-      <h1>Lab Safety Assistant Demo</h1>
-      <p>Two core capabilities: safety Q&A and structured risk assessment with source traceability.</p>
-    </header>
+    <section class="hero">
+      <h1>Lab Safety Assistant Platform</h1>
+      <p>One demo page for the full pre-task loop: structured Q&amp;A, risk assessment, pre-start checklist with blocking logic, emergency response cards, and a training quiz with mistake tracking.</p>
+    </section>
 
-    <section class="grid">
-      <div class="card">
-        <h3>Input</h3>
-        <div class="mode-group">
-          <label class="mode-option"><input type="radio" name="mode" value="agent" /> Project Copilot</label>
-          <label class="mode-option"><input type="radio" name="mode" value="lab" checked /> Lab Safety Assistant</label>
-        </div>
-        <textarea id="question" placeholder="Example: We plan to run an ethanol reflux experiment. What controls are required?"></textarea>
-        <div class="actions">
-          <button class="btn-primary" id="sendBtn">Q&A</button>
-          <button class="btn-secondary" id="riskBtn">Risk Assess</button>
-          <button class="btn-ghost" id="clearBtn">Clear</button>
-        </div>
-        <p class="muted">Tip: one scenario per request gives the most stable output.</p>
+    <section class="layout">
+      <div class="stack">
+        <article class="card">
+          <h2>1. Scenario Input</h2>
+          <p class="muted">Use one concrete scenario at a time for the most stable result.</p>
+          <div class="row" style="margin-bottom: 10px;">
+            <label><input type="radio" name="mode" value="lab" checked /> Lab Safety Assistant</label>
+            <label><input type="radio" name="mode" value="agent" /> Project Copilot</label>
+          </div>
+          <textarea id="question" placeholder="Example: We plan to perform ethanol reflux in a fume hood and then collect solvent waste. What controls are required?"></textarea>
+          <div class="actions" style="margin-top: 12px;">
+            <button class="btn-primary" id="sendBtn">Run Q&amp;A</button>
+            <button class="btn-secondary" id="riskBtn">Run Risk Assessment</button>
+            <button class="btn-accent" id="checklistBtn">Generate Checklist</button>
+            <button class="btn-ghost" id="matchEmergencyBtn">Match Emergency Card</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>2. Assistant Output</h2>
+          <div id="result" class="result">Waiting for a scenario...</div>
+          <p id="routeInfo" class="muted"></p>
+          <div id="lowConfidenceAlert" class="alert warn"></div>
+          <div id="riskBox" class="panel" style="display:none; margin-top:10px;"></div>
+          <div id="citationBox"></div>
+        </article>
+
+        <article class="card">
+          <h2>3. Pre-start Checklist</h2>
+          <div class="row">
+            <input id="operatorName" placeholder="Operator / reviewer name" />
+            <input id="checklistNotes" placeholder="Notes for blockers or exceptions" />
+          </div>
+          <div id="checklistMeta" class="muted" style="margin-top: 10px;">Generate a checklist from the current scenario.</div>
+          <div id="checklistItems" class="panel" style="margin-top:10px;">No checklist generated yet.</div>
+          <div class="actions" style="margin-top: 12px;">
+            <button class="btn-primary" id="submitChecklistBtn" disabled>Submit Checklist</button>
+          </div>
+          <div id="checklistStatus" class="alert warn"></div>
+        </article>
       </div>
 
-      <div class="card">
-        <h3>Output</h3>
-        <div id="result" class="result">Waiting for input...</div>
-        <p class="route-info" id="routeInfo"></p>
-        <div id="lowConfidenceAlert" class="low-confidence-alert"></div>
-        <div id="riskBox" class="risk-box"></div>
-        <div id="citationBox" class="citation-box"></div>
-        <p class="muted" id="metaInfo"></p>
+      <div class="stack">
+        <article class="card">
+          <h2>4. Emergency Cards</h2>
+          <p class="muted">Four standard response cards for high-value demo scenarios.</p>
+          <div id="emergencyMatch" class="panel">Use “Match Emergency Card” to get the best card for the current scenario.</div>
+          <div id="emergencyCards" class="em-grid" style="margin-top: 12px;"></div>
+        </article>
+
+        <article class="card">
+          <h2>5. Training MVP</h2>
+          <div class="row">
+            <input id="participantName" placeholder="Participant name" />
+            <input id="quizLimit" type="number" min="3" max="10" value="5" />
+          </div>
+          <div class="actions" style="margin-top: 12px;">
+            <button class="btn-secondary" id="startQuizBtn">Start Quiz</button>
+            <button class="btn-primary" id="submitQuizBtn" disabled>Submit Quiz</button>
+          </div>
+          <div id="quizBox" class="panel" style="margin-top: 10px;">Quiz not started.</div>
+          <div id="quizResult" class="panel" style="margin-top: 10px;">Training result will appear here.</div>
+        </article>
+
+        <article class="card">
+          <h2>6. Training Statistics</h2>
+          <div id="trainingStats" class="stats-grid"></div>
+        </article>
       </div>
     </section>
   </main>
@@ -170,31 +241,45 @@
   <script>
     const sendBtn = document.getElementById('sendBtn');
     const riskBtn = document.getElementById('riskBtn');
-    const clearBtn = document.getElementById('clearBtn');
+    const checklistBtn = document.getElementById('checklistBtn');
+    const matchEmergencyBtn = document.getElementById('matchEmergencyBtn');
+    const submitChecklistBtn = document.getElementById('submitChecklistBtn');
+    const startQuizBtn = document.getElementById('startQuizBtn');
+    const submitQuizBtn = document.getElementById('submitQuizBtn');
     const questionInput = document.getElementById('question');
     const result = document.getElementById('result');
     const routeInfo = document.getElementById('routeInfo');
     const lowConfidenceAlert = document.getElementById('lowConfidenceAlert');
-    const citationBox = document.getElementById('citationBox');
-    const metaInfo = document.getElementById('metaInfo');
     const riskBox = document.getElementById('riskBox');
+    const citationBox = document.getElementById('citationBox');
+    const checklistItems = document.getElementById('checklistItems');
+    const checklistMeta = document.getElementById('checklistMeta');
+    const checklistStatus = document.getElementById('checklistStatus');
+    const emergencyCards = document.getElementById('emergencyCards');
+    const emergencyMatch = document.getElementById('emergencyMatch');
+    const quizBox = document.getElementById('quizBox');
+    const quizResult = document.getElementById('quizResult');
+    const trainingStats = document.getElementById('trainingStats');
+
+    let checklistCache = [];
+    let quizSession = null;
 
     function getMode() {
       const checked = document.querySelector('input[name="mode"]:checked');
       return checked ? checked.value : 'lab';
     }
 
-    function renderAnswer(rawText) {
+    function renderMarkdown(target, rawText) {
       const text = String(rawText || '').trim();
       if (!text) {
-        result.textContent = 'No model text returned.';
+        target.textContent = 'No content returned.';
         return;
       }
       if (window.marked && window.DOMPurify) {
         marked.setOptions({ breaks: true, gfm: true });
-        result.innerHTML = DOMPurify.sanitize(marked.parse(text));
+        target.innerHTML = DOMPurify.sanitize(marked.parse(text));
       } else {
-        result.textContent = text;
+        target.textContent = text;
       }
     }
 
@@ -204,124 +289,260 @@
         citationBox.innerHTML = '<p class="muted">No source citations matched.</p>';
         return;
       }
-      const title = document.createElement('p');
-      title.className = 'citation-title';
-      title.textContent = 'Citations';
-      citationBox.appendChild(title);
-      citations.forEach((item, index) => {
-        const card = document.createElement('div');
-        card.className = 'citation-item';
-        card.innerHTML = `
-          <div><strong>${index + 1}. [${item.kb_id || '-'}] ${item.title || 'Untitled item'}</strong></div>
-          <div>source: ${item.source_title || '-'} | org: ${item.source_org || '-'} | risk: ${item.risk_level || '-'}</div>
-          <div>${item.snippet || 'No snippet'}</div>
+      citationBox.innerHTML = citations.map((item, index) => `
+        <div class="citation-item">
+          <div><strong>${index + 1}. [${item.kb_id || '-'}] ${item.title || 'Untitled'}</strong></div>
+          <div class="muted">source: ${item.source_title || '-'} | org: ${item.source_org || '-'} | risk: ${item.risk_level || '-'}</div>
+          <div>${item.snippet || 'No snippet available.'}</div>
           ${item.source_url ? `<a href="${item.source_url}" target="_blank" rel="noopener noreferrer">${item.source_url}</a>` : ''}
-        `;
-        citationBox.appendChild(card);
-      });
+        </div>
+      `).join('');
     }
 
     function renderRiskPanel(data) {
-      const pills = (arr) => (arr || []).map(v => `<span class="risk-pill">${v}</span>`).join('');
-      const list = (arr) => (arr || []).map(v => `<li>${v}</li>`).join('');
-      riskBox.innerHTML = `
-        <h4>Risk Assessment</h4>
-        <div class="risk-grid">
-          <div><strong>Risk level:</strong> ${data.risk_level || '-'} (${data.risk_score || '-'} / 5)</div>
-          <div><strong>Low confidence:</strong> ${data.low_confidence ? (data.low_confidence_reason || 'yes') : 'no'}</div>
-        </div>
-        <div style="margin-top:8px;"><strong>Hazards:</strong> <div>${pills(data.key_hazards)}</div></div>
-        <div style="margin-top:8px;"><strong>PPE:</strong> <div>${pills(data.ppe)}</div></div>
-        <div class="risk-grid">
-          <div><strong>Recommended steps</strong><ul class="risk-list">${list(data.recommended_steps)}</ul></div>
-          <div><strong>Forbidden</strong><ul class="risk-list">${list(data.forbidden)}</ul></div>
-        </div>
-        <div style="margin-top:8px;"><strong>Emergency actions</strong><ul class="risk-list">${list(data.emergency_actions)}</ul></div>
-      `;
+      const pills = (arr) => (arr || []).map(v => `<span class="pill">${v}</span>`).join('');
+      const items = (arr) => (arr || []).map(v => `<li>${v}</li>`).join('');
       riskBox.style.display = 'block';
+      riskBox.innerHTML = `
+        <div><strong>Risk:</strong> ${data.risk_level || '-'} (${data.risk_score || '-'}/5)</div>
+        <div style="margin-top:8px;"><strong>Hazards:</strong><div>${pills(data.key_hazards)}</div></div>
+        <div style="margin-top:8px;"><strong>PPE:</strong><div>${pills(data.ppe)}</div></div>
+        <div class="row" style="margin-top:8px;">
+          <div><strong>Recommended steps</strong><ul>${items(data.recommended_steps)}</ul></div>
+          <div><strong>Forbidden</strong><ul>${items(data.forbidden)}</ul></div>
+        </div>
+        <div style="margin-top:8px;"><strong>Emergency actions</strong><ul>${items(data.emergency_actions)}</ul></div>
+      `;
     }
 
-    function renderLowConfidence(flag, reason) {
-      if (flag) {
-        lowConfidenceAlert.textContent = `Low confidence: ${reason || 'insufficient retrieval confidence'}`;
-        lowConfidenceAlert.style.display = 'block';
-      } else {
+    function showLowConfidence(flag, reason) {
+      if (!flag) {
         lowConfidenceAlert.style.display = 'none';
         lowConfidenceAlert.textContent = '';
+        return;
       }
+      lowConfidenceAlert.style.display = 'block';
+      lowConfidenceAlert.textContent = `Low confidence: ${reason || 'insufficient retrieval confidence'}`;
+    }
+
+    async function postJson(url, payload) {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || 'Request failed.');
+      return data;
     }
 
     async function ask() {
       const question = questionInput.value.trim();
-      if (!question) { result.textContent = 'Please input a question first.'; return; }
+      if (!question) return;
       sendBtn.disabled = true;
-      riskBtn.disabled = true;
-      sendBtn.textContent = 'Running...';
-      riskBox.style.display = 'none';
       try {
-        const resp = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mode: getMode(), question })
-        });
-        const data = await resp.json();
-        if (!resp.ok) { result.textContent = data.detail || 'Request failed.'; return; }
-        renderAnswer(data.answer || '');
+        const data = await postJson('/api/chat', { mode: getMode(), question });
+        renderMarkdown(result, data.answer || '');
         routeInfo.textContent = `decision=${data.decision || '-'} | rule=${data.matched_rule_id || '-'} | risk=${data.risk_level || '-'}`;
-        metaInfo.textContent = `mode=${data.mode || '-'} | model=${data.model || '-'}`;
-        renderLowConfidence(data.low_confidence, data.low_confidence_reason);
+        showLowConfidence(data.low_confidence, data.low_confidence_reason);
         renderCitations(data.citations || []);
       } catch (err) {
-        result.textContent = `Request error: ${err.message}`;
+        result.textContent = err.message;
       } finally {
         sendBtn.disabled = false;
-        riskBtn.disabled = false;
-        sendBtn.textContent = 'Q&A';
       }
     }
 
     async function assessRisk() {
       const scenario = questionInput.value.trim();
-      if (!scenario) { result.textContent = 'Please input a scenario first.'; return; }
-      sendBtn.disabled = true;
+      if (!scenario) return;
       riskBtn.disabled = true;
-      riskBtn.textContent = 'Assessing...';
       try {
-        const resp = await fetch('/api/risk_assess', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scenario })
-        });
-        const data = await resp.json();
-        if (!resp.ok) { result.textContent = data.detail || 'Risk assess failed.'; return; }
-        result.textContent = `Risk assessment completed.`;
+        const data = await postJson('/api/risk_assess', { scenario });
+        result.textContent = 'Risk assessment completed.';
         routeInfo.textContent = 'decision=structured_risk_assessment';
-        metaInfo.textContent = `risk=${data.risk_level || '-'} (${data.risk_score || '-'}/5)`;
-        renderLowConfidence(data.low_confidence, data.low_confidence_reason);
+        showLowConfidence(data.low_confidence, data.low_confidence_reason);
         renderRiskPanel(data);
         renderCitations(data.citations || []);
       } catch (err) {
-        result.textContent = `Request error: ${err.message}`;
+        result.textContent = err.message;
       } finally {
-        sendBtn.disabled = false;
         riskBtn.disabled = false;
-        riskBtn.textContent = 'Risk Assess';
+      }
+    }
+
+    function renderChecklist(template) {
+      checklistCache = template.checklist || [];
+      checklistMeta.textContent = `risk=${template.risk_level} (${template.risk_score}/5) | hazards=${(template.key_hazards || []).join(', ') || 'none'}`;
+      checklistItems.innerHTML = checklistCache.map(item => `
+        <label class="checklist-item">
+          <input type="checkbox" data-checklist-id="${item.id}" />
+          <div>
+            <strong>${item.label}</strong>${item.critical ? '<span class="critical-tag">critical</span>' : ''}
+          </div>
+        </label>
+      `).join('');
+      checklistStatus.style.display = 'none';
+      checklistStatus.className = 'alert warn';
+      checklistStatus.textContent = '';
+      submitChecklistBtn.disabled = false;
+      renderCitations(template.citations || []);
+    }
+
+    async function generateChecklist() {
+      const scenario = questionInput.value.trim();
+      if (!scenario) return;
+      checklistBtn.disabled = true;
+      try {
+        const data = await postJson('/api/checklist/template', { scenario });
+        renderChecklist(data);
+      } catch (err) {
+        checklistItems.textContent = err.message;
+      } finally {
+        checklistBtn.disabled = false;
+      }
+    }
+
+    async function submitChecklist() {
+      const scenario = questionInput.value.trim();
+      const checklist = checklistCache.map(item => ({
+        id: item.id,
+        label: item.label,
+        critical: item.critical,
+        checked: document.querySelector(`[data-checklist-id="${item.id}"]`)?.checked || false,
+        note: ''
+      }));
+      try {
+        const data = await postJson('/api/checklist/submit', {
+          scenario,
+          operator: document.getElementById('operatorName').value || 'anonymous',
+          notes: document.getElementById('checklistNotes').value || '',
+          checklist
+        });
+        checklistStatus.style.display = 'block';
+        checklistStatus.className = `alert ${data.allow_start ? 'ok' : 'bad'}`;
+        checklistStatus.innerHTML = `<strong>${data.allow_start ? 'Checklist PASS' : 'Checklist BLOCKED'}</strong><br>${(data.next_actions || []).join('<br>')}${data.blocking_reasons.length ? `<br><br>Blocking: ${data.blocking_reasons.join(' | ')}` : ''}`;
+      } catch (err) {
+        checklistStatus.style.display = 'block';
+        checklistStatus.className = 'alert bad';
+        checklistStatus.textContent = err.message;
+      }
+    }
+
+    function renderEmergencyCard(card) {
+      return `
+        <div class="em-card">
+          <strong>${card.title}</strong>
+          <div class="muted">${card.summary}</div>
+          <div style="margin-top:8px;"><strong>Immediate actions</strong><ul>${(card.immediate_actions || []).map(v => `<li>${v}</li>`).join('')}</ul></div>
+          <div><strong>Forbidden</strong><ul>${(card.forbidden || []).map(v => `<li>${v}</li>`).join('')}</ul></div>
+        </div>
+      `;
+    }
+
+    async function loadEmergencyCards() {
+      const resp = await fetch('/api/emergency/cards');
+      const cards = await resp.json();
+      emergencyCards.innerHTML = cards.map(renderEmergencyCard).join('');
+    }
+
+    async function matchEmergencyCard() {
+      const scenario = questionInput.value.trim();
+      if (!scenario) return;
+      const resp = await fetch(`/api/emergency/match?q=${encodeURIComponent(scenario)}`);
+      const data = await resp.json();
+      if (!resp.ok || !data.card) {
+        emergencyMatch.textContent = data.detail || 'No matching emergency card.';
+        return;
+      }
+      emergencyMatch.innerHTML = `<strong>Matched card:</strong> ${data.card.title}<br><strong>Confidence:</strong> ${data.confidence}<ul>${(data.card.immediate_actions || []).map(v => `<li>${v}</li>`).join('')}</ul>`;
+    }
+
+    function renderQuiz(session) {
+      quizSession = session;
+      quizBox.innerHTML = session.questions.map((question, index) => `
+        <div class="quiz-question">
+          <strong>${index + 1}. ${question.prompt}</strong>
+          <div class="muted">category=${question.category} | ${question.multiple ? 'multiple' : 'single'} choice</div>
+          ${(question.options || []).map((option, optionIndex) => `
+            <label class="quiz-option">
+              <input type="${question.multiple ? 'checkbox' : 'radio'}" name="quiz-${question.id}" value="${optionIndex}" />
+              ${option}
+            </label>
+          `).join('')}
+        </div>
+      `).join('');
+      submitQuizBtn.disabled = false;
+      quizResult.textContent = 'Complete the quiz and submit for scoring.';
+    }
+
+    async function startQuiz() {
+      startQuizBtn.disabled = true;
+      try {
+        const limit = Math.max(3, Math.min(10, Number(document.getElementById('quizLimit').value || 5)));
+        const resp = await fetch(`/api/training/questions?limit=${limit}`);
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || 'Failed to load questions.');
+        renderQuiz(data);
+      } catch (err) {
+        quizBox.textContent = err.message;
+      } finally {
+        startQuizBtn.disabled = false;
+      }
+    }
+
+    async function submitQuiz() {
+      if (!quizSession) return;
+      const answers = quizSession.questions.map(question => {
+        const nodes = document.querySelectorAll(`[name="quiz-${question.id}"]:checked`);
+        return { question_id: question.id, selected_indices: Array.from(nodes).map(node => Number(node.value)) };
+      });
+      try {
+        const data = await postJson('/api/training/submit', {
+          session_id: quizSession.session_id,
+          participant: document.getElementById('participantName').value || 'anonymous',
+          answers
+        });
+        quizResult.innerHTML = `
+          <strong>Score:</strong> ${data.score}/${100} | threshold=${data.pass_threshold} | ${data.passed ? 'PASS' : 'REVIEW REQUIRED'}
+          <br><strong>Weak categories:</strong> ${(data.weak_categories || []).join(', ') || 'none'}
+          <div>${(data.recommended_actions || []).join('<br>')}</div>
+          ${(data.review || []).map(item => `<div class="review-item"><strong>${item.correct ? 'Correct' : 'Needs review'}:</strong> ${item.prompt}<br><span class="muted">${item.explanation}</span></div>`).join('')}
+        `;
+        loadTrainingStats();
+      } catch (err) {
+        quizResult.textContent = err.message;
+      }
+    }
+
+    async function loadTrainingStats() {
+      const resp = await fetch('/api/training/stats');
+      const data = await resp.json();
+      if (!resp.ok) {
+        trainingStats.innerHTML = `<div class="stats-card">Unable to load stats.</div>`;
+        return;
+      }
+      trainingStats.innerHTML = `
+        <div class="stats-card"><div>Attempts</div><strong>${data.attempt_count}</strong></div>
+        <div class="stats-card"><div>Pass rate</div><strong>${Math.round((data.pass_rate || 0) * 100)}%</strong></div>
+        <div class="stats-card"><div>Average score</div><strong>${data.average_score}</strong></div>
+        <div class="stats-card"><div>Last run</div><strong style="font-size:14px;">${data.latest_submitted_at || 'N/A'}</strong></div>
+      `;
+      if (data.category_mistakes && Object.keys(data.category_mistakes).length) {
+        trainingStats.innerHTML += `<div class="stats-card" style="grid-column: 1 / -1;"><div>Top mistake categories</div><strong style="font-size:16px;">${Object.entries(data.category_mistakes).map(([k, v]) => `${k}: ${v}`).join(' | ')}</strong></div>`;
       }
     }
 
     sendBtn.addEventListener('click', ask);
     riskBtn.addEventListener('click', assessRisk);
-    clearBtn.addEventListener('click', () => {
-      questionInput.value = '';
-      result.textContent = 'Waiting for input...';
-      routeInfo.textContent = '';
-      lowConfidenceAlert.style.display = 'none';
-      lowConfidenceAlert.textContent = '';
-      riskBox.style.display = 'none';
-      riskBox.innerHTML = '';
-      citationBox.innerHTML = '';
-      metaInfo.textContent = '';
-    });
+    checklistBtn.addEventListener('click', generateChecklist);
+    submitChecklistBtn.addEventListener('click', submitChecklist);
+    matchEmergencyBtn.addEventListener('click', matchEmergencyCard);
+    startQuizBtn.addEventListener('click', startQuiz);
+    submitQuizBtn.addEventListener('click', submitQuiz);
+
+    loadEmergencyCards();
+    loadTrainingStats();
   </script>
 </body>
 </html>

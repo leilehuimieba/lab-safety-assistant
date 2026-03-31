@@ -1,0 +1,152 @@
+[
+  {
+    "id": "Q001",
+    "category": "PPE",
+    "prompt": "Before starting a corrosive liquid transfer, which control is essential?",
+    "options": [
+      "Any gloves are fine as long as they are new",
+      "Chemical-resistant gloves and splash eye protection matched to the liquid",
+      "Only a mask is needed if the transfer is short",
+      "No PPE is needed inside a lab"
+    ],
+    "correct_indices": [1],
+    "explanation": "Corrosive liquid handling requires PPE matched to the chemical hazard, especially splash goggles and suitable gloves.",
+    "references": ["Lab SOP", "SDS Section 8"],
+    "multiple": false
+  },
+  {
+    "id": "Q002",
+    "category": "Chemical",
+    "prompt": "What is the safest first step when an unknown liquid is spilled on the bench?",
+    "options": [
+      "Wipe it with tissue immediately",
+      "Smell it to identify the material",
+      "Stop work, isolate the area, and identify the material before cleanup",
+      "Flush it into the sink"
+    ],
+    "correct_indices": [2],
+    "explanation": "Unknown material should be treated cautiously. Isolation and identification come before cleanup.",
+    "references": ["Chemical spill SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q003",
+    "category": "Electrical",
+    "prompt": "A teammate receives an electric shock from powered equipment. What should you do first?",
+    "options": [
+      "Pull the teammate away with bare hands",
+      "Cut power or isolate the source if it is safe to do so",
+      "Ask them to sit down and continue later",
+      "Spray water on the equipment"
+    ],
+    "correct_indices": [1],
+    "explanation": "You must isolate power before direct contact with the victim or equipment.",
+    "references": ["Electrical safety SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q004",
+    "category": "Waste",
+    "prompt": "Why should waste segregation be confirmed before a high-risk experiment starts?",
+    "options": [
+      "Because it reduces paperwork later",
+      "Because incompatible waste mixing can create secondary hazards",
+      "Because all waste can go into the same bottle temporarily",
+      "Because waste planning is optional for small experiments"
+    ],
+    "correct_indices": [1],
+    "explanation": "Improper segregation can cause fire, pressure build-up, toxic gas release, or traceability failure.",
+    "references": ["Waste management SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q005",
+    "category": "Emergency",
+    "prompt": "Which actions are correct when a small lab fire appears and you are trained to respond?",
+    "options": [
+      "Warn nearby people and isolate power or fuel if safe",
+      "Use the correct extinguisher only if the exit remains clear",
+      "Fight the fire even if it is spreading quickly",
+      "Evacuate if the fire is not controlled immediately"
+    ],
+    "correct_indices": [0, 1, 3],
+    "explanation": "Small controllable fires may be handled by trained staff, but evacuation is required if control is not immediate.",
+    "references": ["Fire response SOP"],
+    "multiple": true
+  },
+  {
+    "id": "Q006",
+    "category": "Planning",
+    "prompt": "Which item is the strongest reason to block a pre-start checklist?",
+    "options": [
+      "The operator forgot to bring a pen",
+      "Supervisor approval for a high-risk step is still missing",
+      "The report template is not prepared",
+      "The team has not chosen a photo angle"
+    ],
+    "correct_indices": [1],
+    "explanation": "Missing approval for high-risk work is a critical blocker and should stop the task from starting.",
+    "references": ["High-risk operation policy"],
+    "multiple": false
+  },
+  {
+    "id": "Q007",
+    "category": "Biosafety",
+    "prompt": "For open handling of potentially infectious material, what should be confirmed before work begins?",
+    "options": [
+      "Disinfection route and containment equipment availability",
+      "Only the sample label color",
+      "That the task can be finished faster than usual",
+      "That gloves are optional if the volume is small"
+    ],
+    "correct_indices": [0],
+    "explanation": "Containment and disinfection readiness are baseline requirements for biosafety work.",
+    "references": ["Biosafety SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q008",
+    "category": "Incident",
+    "prompt": "After chemical exposure to the eyes, which statement is correct?",
+    "options": [
+      "Delay flushing until the SDS is found",
+      "Flush immediately and escalate medical evaluation according to local SOP",
+      "Use neutralizer on the eye directly",
+      "Return to work if pain decreases after one minute"
+    ],
+    "correct_indices": [1],
+    "explanation": "Immediate flushing takes priority, followed by escalation and medical evaluation per SOP.",
+    "references": ["Eyewash SOP", "SDS Section 4"],
+    "multiple": false
+  },
+  {
+    "id": "Q009",
+    "category": "Mechanical",
+    "prompt": "What is an important check before starting a centrifuge?",
+    "options": [
+      "Rotor balance and lid/guard condition",
+      "Whether the device looks clean from far away",
+      "Only the sample color",
+      "Nothing if a senior used it earlier"
+    ],
+    "correct_indices": [0],
+    "explanation": "Rotor balance and mechanical guarding are essential to prevent vibration, failure, and ejection hazards.",
+    "references": ["Equipment SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q010",
+    "category": "Escalation",
+    "prompt": "Why is prompt incident reporting part of lab safety rather than just administration?",
+    "options": [
+      "It allows exposure control, rescue coordination, and recurrence prevention",
+      "It only helps with annual paperwork",
+      "It is optional if no one was injured immediately",
+      "It should wait until the experiment is finished"
+    ],
+    "correct_indices": [0],
+    "explanation": "Early reporting supports immediate control actions and later corrective measures.",
+    "references": ["Incident reporting SOP"],
+    "multiple": false
+  }
+]
