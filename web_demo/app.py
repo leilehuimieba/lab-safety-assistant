@@ -1397,6 +1397,9 @@ def create_incident_record(payload: IncidentCreateRequest) -> IncidentRecord:
         records = load_incident_records()
         records.insert(0, incident)
         write_incident_records(records)
+    for item in load_incident_records():
+        if item.incident_id == incident.incident_id:
+            return item
     return incident
 
 
@@ -1418,6 +1421,9 @@ def update_incident_record(incident_id: str, payload: IncidentUpdateRequest) -> 
             )
             records[idx] = updated
             write_incident_records(records)
+            for current in load_incident_records():
+                if current.incident_id == incident_id:
+                    return current
             return updated
     raise HTTPException(status_code=404, detail="incident not found.")
 
