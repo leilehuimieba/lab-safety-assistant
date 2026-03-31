@@ -2,19 +2,20 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import io
 import json
 import os
 import random
 import re
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 import requests
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field
 
 try:
@@ -454,6 +455,7 @@ class AdminDashboardResponse(BaseModel):
     low_confidence_top: list[DashboardLowConfidenceItem] = Field(default_factory=list)
     recent_high_risk_scenarios: list[DashboardHighRiskScenario] = Field(default_factory=list)
     incident_summary: dict[str, int] = Field(default_factory=dict)
+    overdue_incidents: list[str] = Field(default_factory=list)
 
 
 class IncidentCreateRequest(BaseModel):
@@ -493,6 +495,9 @@ class IncidentRecord(BaseModel):
     owner: str = ""
     due_date: str = ""
     closure_notes: str = ""
+    recurrence_risk: str = "medium"
+    overdue: bool = False
+    overdue_days: int = 0
 
 
 def normalize_text(text: str) -> str:
@@ -529,6 +534,30 @@ def read_csv_rows(path: Path) -> list[dict[str, str]]:
         return []
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         return [row for row in csv.DictReader(f)]
+
+
+def parse_datetime(value: str) -> datetime | None:
+    text = (value or "").strip()
+    if not text:
+        return None
+    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    try:
+        return datetime.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def within_days(value: str, days: int) -> bool:
+    if days <= 0:
+        return True
+    dt = parse_datetime(value)
+    if dt is None:
+        return False
+    return dt >= datetime.now() - timedelta(days=days)
 
 
 def load_kb_entries() -> list[dict[str, str]]:
@@ -1230,32 +1259,89 @@ def parse_json_list_field(value: str) -> list[str]:
     return [str(payload).strip()]
 
 
+def compute_incident_recurrence_risk(
+    *,
+    severity: str,
+    cause_categories: list[str],
+    all_records: list[IncidentRecord],
+    current_id: str,
+) -> str:
+    score = {"low": 1, "medium": 2, "high": 3, "critical": 4}.get(severity, 2)
+    normalized_causes = {item.strip().lower() for item in cause_categories if item.strip()}
+    for item in all_records:
+        if item.incident_id == current_id:
+            continue
+        other_causes = {entry.strip().lower() for entry in item.cause_categories if entry.strip()}
+        overlap = len(normalized_causes & other_causes)
+        if overlap:
+            score += 1
+        if item.severity in {"high", "critical"} and overlap:
+            score += 1
+    if len(normalized_causes) >= 3:
+        score += 1
+    if score <= 2:
+        return "low"
+    if score == 3:
+        return "medium"
+    if score == 4:
+        return "high"
+    return "critical"
+
+
+def compute_incident_due_state(due_date: str, status: str) -> tuple[bool, int]:
+    if status in {"verified", "closed"}:
+        return False, 0
+    due = parse_datetime(due_date)
+    if due is None:
+        return False, 0
+    overdue_days = (datetime.now().date() - due.date()).days
+    return overdue_days > 0, max(overdue_days, 0)
+
+
 def load_incident_records() -> list[IncidentRecord]:
-    records: list[IncidentRecord] = []
-    for row in read_csv_rows(INCIDENT_REVIEWS_FILE):
-        records.append(
-            IncidentRecord(
-                incident_id=(row.get("incident_id") or "").strip(),
-                reported_at=(row.get("reported_at") or "").strip(),
-                updated_at=(row.get("updated_at") or "").strip(),
-                reporter=(row.get("reporter") or "").strip(),
-                title=(row.get("title") or "").strip(),
-                scenario=(row.get("scenario") or "").strip(),
-                severity=(row.get("severity") or "").strip(),
-                status=(row.get("status") or "").strip(),
-                location=(row.get("location") or "").strip(),
-                cause_categories=parse_json_list_field(row.get("cause_categories") or ""),
-                immediate_actions=parse_json_list_field(row.get("immediate_actions") or ""),
-                corrective_actions=parse_json_list_field(row.get("corrective_actions") or ""),
-                owner=(row.get("owner") or "").strip(),
-                due_date=(row.get("due_date") or "").strip(),
-                closure_notes=(row.get("closure_notes") or "").strip(),
+    records = [
+        IncidentRecord(
+            incident_id=(row.get("incident_id") or "").strip(),
+            reported_at=(row.get("reported_at") or "").strip(),
+            updated_at=(row.get("updated_at") or "").strip(),
+            reporter=(row.get("reporter") or "").strip(),
+            title=(row.get("title") or "").strip(),
+            scenario=(row.get("scenario") or "").strip(),
+            severity=(row.get("severity") or "").strip(),
+            status=(row.get("status") or "").strip(),
+            location=(row.get("location") or "").strip(),
+            cause_categories=parse_json_list_field(row.get("cause_categories") or ""),
+            immediate_actions=parse_json_list_field(row.get("immediate_actions") or ""),
+            corrective_actions=parse_json_list_field(row.get("corrective_actions") or ""),
+            owner=(row.get("owner") or "").strip(),
+            due_date=(row.get("due_date") or "").strip(),
+            closure_notes=(row.get("closure_notes") or "").strip(),
+        )
+        for row in read_csv_rows(INCIDENT_REVIEWS_FILE)
+    ]
+    enriched: list[IncidentRecord] = []
+    for item in records:
+        overdue, overdue_days = compute_incident_due_state(item.due_date, item.status)
+        enriched.append(
+            item.model_copy(
+                update={
+                    "recurrence_risk": compute_incident_recurrence_risk(
+                        severity=item.severity,
+                        cause_categories=item.cause_categories,
+                        all_records=records,
+                        current_id=item.incident_id,
+                    ),
+                    "overdue": overdue,
+                    "overdue_days": overdue_days,
+                }
             )
         )
+    records = enriched
     records.sort(
         key=lambda item: (
+            0 if item.overdue else 1,
             INCIDENT_STATUS_ORDER.get(item.status, 99),
-            item.reported_at,
+            item.reported_at or "",
         )
     )
     return records
@@ -1336,16 +1422,91 @@ def update_incident_record(incident_id: str, payload: IncidentUpdateRequest) -> 
     raise HTTPException(status_code=404, detail="incident not found.")
 
 
-def load_admin_dashboard() -> AdminDashboardResponse:
-    checklist_rows = read_csv_rows(CHECKLIST_RUNS_FILE)
+def filter_checklist_rows(rows: list[dict[str, str]], *, days: int, risk_level: str) -> list[dict[str, str]]:
+    target_risk = (risk_level or "").strip().lower()
+    filtered: list[dict[str, str]] = []
+    for row in rows:
+        if days > 0 and not within_days(row.get("submitted_at", ""), days):
+            continue
+        if target_risk and (row.get("risk_level") or "").strip().lower() != target_risk:
+            continue
+        filtered.append(row)
+    return filtered
+
+
+def export_rows_to_csv(headers: list[str], rows: list[dict[str, Any]]) -> str:
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=headers)
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(row)
+    return buffer.getvalue()
+
+
+def build_weekly_report_markdown(days: int, risk_level: str, incident_status: str) -> str:
+    dashboard = load_admin_dashboard(days=days, risk_level=risk_level, incident_status=incident_status)
+    lines = [
+        f"# Weekly Safety Report ({datetime.now().strftime('%Y-%m-%d')})",
+        "",
+        f"- Window: last {days} days",
+        f"- Risk filter: {risk_level or 'all'}",
+        f"- Incident status filter: {incident_status or 'all'}",
+        "",
+        "## Key Metrics",
+    ]
+    for item in dashboard.metrics:
+        lines.append(f"- {item.label}: {item.value} ({item.detail})")
+    lines.extend(["", "## Low-Confidence TOP"])
+    if dashboard.low_confidence_top:
+        for item in dashboard.low_confidence_top:
+            lines.append(f"- {item.label}: {item.count}")
+    else:
+        lines.append("- No low-confidence queue items in this window.")
+    lines.extend(["", "## Recent High-Risk Scenarios"])
+    if dashboard.recent_high_risk_scenarios:
+        for item in dashboard.recent_high_risk_scenarios:
+            lines.append(
+                f"- {item.submitted_at} | {item.risk_level} | {'PASS' if item.allow_start else 'BLOCKED'} | {item.scenario}"
+            )
+    else:
+        lines.append("- No high-risk checklist records in this window.")
+    lines.extend(["", "## Incident Summary"])
+    for key, value in dashboard.incident_summary.items():
+        lines.append(f"- {key}: {value}")
+    if dashboard.overdue_incidents:
+        lines.extend(["", "## Overdue Incident Reminders"])
+        for item in dashboard.overdue_incidents:
+            lines.append(f"- {item}")
+    return "\n".join(lines) + "\n"
+
+
+def load_admin_dashboard(days: int = 30, risk_level: str = "", incident_status: str = "") -> AdminDashboardResponse:
+    checklist_rows = filter_checklist_rows(read_csv_rows(CHECKLIST_RUNS_FILE), days=days, risk_level=risk_level)
     blocked = sum(1 for row in checklist_rows if (row.get("allow_start") or "").strip().lower() == "false")
     checklist_total = len(checklist_rows)
     checklist_block_rate = (blocked / checklist_total) if checklist_total else 0.0
 
+    training_attempt_rows = [
+        row for row in read_csv_rows(TRAINING_ATTEMPTS_FILE) if days <= 0 or within_days(row.get("submitted_at", ""), days)
+    ]
     training_stats = load_training_stats()
+    if training_attempt_rows:
+        scores = [int(float(row.get("score", "0") or "0")) for row in training_attempt_rows]
+        passed = sum(1 for row in training_attempt_rows if (row.get("passed") or "").strip().lower() == "true")
+        training_stats = training_stats.model_copy(
+            update={
+                "attempt_count": len(training_attempt_rows),
+                "pass_rate": round(passed / len(training_attempt_rows), 4),
+                "average_score": round(sum(scores) / len(scores), 2) if scores else 0.0,
+                "latest_submitted_at": training_attempt_rows[-1].get("submitted_at", "") or "",
+                "recent_scores": scores[-10:],
+            }
+        )
 
     low_confidence_counts: dict[str, int] = {}
     for row in read_csv_rows(LOW_CONFIDENCE_QUEUE_FILE):
+        if days > 0 and not within_days(row.get("created_at", ""), days):
+            continue
         label = (row.get("low_confidence_reason") or row.get("question") or "unknown").strip() or "unknown"
         low_confidence_counts[label] = low_confidence_counts.get(label, 0) + 1
 
@@ -1365,7 +1526,12 @@ def load_admin_dashboard() -> AdminDashboardResponse:
         )
     high_risk_rows.sort(key=lambda item: item.submitted_at, reverse=True)
 
-    incidents = load_incident_records()
+    incidents = [
+        item
+        for item in load_incident_records()
+        if (days <= 0 or within_days(item.reported_at, days))
+        and ((incident_status or "").strip().lower() in {"", item.status.lower()})
+    ]
     incident_summary = {
         "open": sum(1 for item in incidents if item.status == "open"),
         "in_review": sum(1 for item in incidents if item.status == "in_review"),
@@ -1395,6 +1561,11 @@ def load_admin_dashboard() -> AdminDashboardResponse:
             value=str(incident_summary["open"] + incident_summary["in_review"] + incident_summary["action_in_progress"]),
             detail="Open + in review + corrective action in progress",
         ),
+        DashboardMetric(
+            label="Overdue corrective actions",
+            value=str(sum(1 for item in incidents if item.overdue)),
+            detail="Incidents past due and not yet verified/closed",
+        ),
     ]
     low_confidence_top = [
         DashboardLowConfidenceItem(label=label, count=count)
@@ -1405,6 +1576,11 @@ def load_admin_dashboard() -> AdminDashboardResponse:
         low_confidence_top=low_confidence_top,
         recent_high_risk_scenarios=high_risk_rows[:5],
         incident_summary=incident_summary,
+        overdue_incidents=[
+            f"{item.incident_id} | {item.title} | overdue {item.overdue_days} day(s)"
+            for item in incidents
+            if item.overdue
+        ][:5],
     )
 
 
@@ -1556,13 +1732,82 @@ def training_stats() -> TrainingStatsResponse:
 
 
 @app.get("/api/admin/dashboard", response_model=AdminDashboardResponse)
-def admin_dashboard() -> AdminDashboardResponse:
-    return load_admin_dashboard()
+def admin_dashboard(days: int = 30, risk_level: str = "", incident_status: str = "") -> AdminDashboardResponse:
+    return load_admin_dashboard(days=days, risk_level=risk_level, incident_status=incident_status)
+
+
+@app.get("/api/admin/export.csv")
+def admin_export_csv(scope: str = "checklists", days: int = 30, risk_level: str = "", incident_status: str = "") -> Response:
+    scope_value = (scope or "").strip().lower()
+    if scope_value == "checklists":
+        rows = filter_checklist_rows(read_csv_rows(CHECKLIST_RUNS_FILE), days=days, risk_level=risk_level)
+        headers = CHECKLIST_HEADERS
+    elif scope_value == "training":
+        rows = [row for row in read_csv_rows(TRAINING_ATTEMPTS_FILE) if days <= 0 or within_days(row.get("submitted_at", ""), days)]
+        headers = TRAINING_ATTEMPT_HEADERS
+    elif scope_value == "low_confidence":
+        rows = [row for row in read_csv_rows(LOW_CONFIDENCE_QUEUE_FILE) if days <= 0 or within_days(row.get("created_at", ""), days)]
+        headers = QUEUE_HEADERS
+    elif scope_value == "incidents":
+        incident_rows = [
+            item for item in load_incident_records()
+            if (days <= 0 or within_days(item.reported_at, days))
+            and ((incident_status or "").strip().lower() in {"", item.status.lower()})
+        ]
+        rows = [
+            {
+                "incident_id": item.incident_id,
+                "reported_at": item.reported_at,
+                "updated_at": item.updated_at,
+                "reporter": item.reporter,
+                "title": item.title,
+                "scenario": item.scenario,
+                "severity": item.severity,
+                "status": item.status,
+                "location": item.location,
+                "cause_categories": " | ".join(item.cause_categories),
+                "immediate_actions": " | ".join(item.immediate_actions),
+                "corrective_actions": " | ".join(item.corrective_actions),
+                "owner": item.owner,
+                "due_date": item.due_date,
+                "closure_notes": item.closure_notes,
+                "recurrence_risk": item.recurrence_risk,
+                "overdue": str(item.overdue).lower(),
+                "overdue_days": item.overdue_days,
+            }
+            for item in incident_rows
+        ]
+        headers = INCIDENT_HEADERS + ["recurrence_risk", "overdue", "overdue_days"]
+    else:
+        raise HTTPException(status_code=400, detail="unsupported export scope.")
+
+    csv_text = export_rows_to_csv(headers, rows)
+    filename = f"{scope_value}_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        content=csv_text,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/api/admin/weekly_report.md")
+def admin_weekly_report(days: int = 7, risk_level: str = "", incident_status: str = "") -> PlainTextResponse:
+    markdown = build_weekly_report_markdown(days=days, risk_level=risk_level, incident_status=incident_status)
+    return PlainTextResponse(
+        content=markdown,
+        headers={"Content-Disposition": f'attachment; filename="weekly_report_{datetime.now().strftime("%Y%m%d")}.md"'},
+    )
 
 
 @app.get("/api/incidents", response_model=list[IncidentRecord])
-def incidents() -> list[IncidentRecord]:
-    return load_incident_records()
+def incidents(status: str = "", only_overdue: bool = False) -> list[IncidentRecord]:
+    rows = load_incident_records()
+    status_value = (status or "").strip().lower()
+    if status_value:
+        rows = [item for item in rows if item.status.lower() == status_value]
+    if only_overdue:
+        rows = [item for item in rows if item.overdue]
+    return rows
 
 
 @app.post("/api/incidents", response_model=IncidentRecord)

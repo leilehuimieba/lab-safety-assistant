@@ -246,6 +246,43 @@
         <article class="card">
           <h2>7. Management Dashboard</h2>
           <p class="muted">Live metrics from checklist submissions, quiz attempts, low-confidence follow-up, and incident review records.</p>
+          <div class="two-col">
+            <select id="dashboardDays">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="0">All time</option>
+            </select>
+            <select id="dashboardRiskLevel">
+              <option value="">All risk levels</option>
+              <option value="low">Low</option>
+              <option value="medium-low">Medium-Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+          <div class="two-col" style="margin-top: 10px;">
+            <select id="dashboardIncidentStatus">
+              <option value="">All incident statuses</option>
+              <option value="open">open</option>
+              <option value="in_review">in_review</option>
+              <option value="action_in_progress">action_in_progress</option>
+              <option value="verified">verified</option>
+              <option value="closed">closed</option>
+            </select>
+            <select id="dashboardExportScope">
+              <option value="checklists">Export checklists</option>
+              <option value="training">Export training</option>
+              <option value="low_confidence">Export low confidence</option>
+              <option value="incidents">Export incidents</option>
+            </select>
+          </div>
+          <div class="actions" style="margin-top: 12px;">
+            <button class="btn-secondary" id="refreshDashboardBtn">Refresh Dashboard</button>
+            <button class="btn-primary" id="exportCsvBtn">Export CSV</button>
+            <button class="btn-accent" id="exportWeeklyBtn">Export Weekly Report</button>
+          </div>
           <div id="adminMetrics" class="stats-grid"></div>
           <div class="two-col" style="margin-top: 12px;">
             <div>
@@ -291,6 +328,20 @@
             <button class="btn-accent" id="createIncidentBtn">Create Incident Review</button>
           </div>
           <div id="incidentCreateStatus" class="alert warn"></div>
+          <div class="two-col" style="margin-top: 12px;">
+            <select id="incidentFilterStatus">
+              <option value="">All statuses</option>
+              <option value="open">open</option>
+              <option value="in_review">in_review</option>
+              <option value="action_in_progress">action_in_progress</option>
+              <option value="verified">verified</option>
+              <option value="closed">closed</option>
+            </select>
+            <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="incidentOnlyOverdue" /> Show overdue only</label>
+          </div>
+          <div class="actions" style="margin-top: 12px;">
+            <button class="btn-secondary" id="refreshIncidentsBtn">Refresh Incident List</button>
+          </div>
           <div id="incidentList" style="margin-top: 12px;"></div>
         </article>
       </div>
@@ -328,6 +379,10 @@
     const createIncidentBtn = document.getElementById('createIncidentBtn');
     const incidentCreateStatus = document.getElementById('incidentCreateStatus');
     const incidentList = document.getElementById('incidentList');
+    const refreshDashboardBtn = document.getElementById('refreshDashboardBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const exportWeeklyBtn = document.getElementById('exportWeeklyBtn');
+    const refreshIncidentsBtn = document.getElementById('refreshIncidentsBtn');
 
     let checklistCache = [];
     let quizSession = null;
@@ -354,6 +409,24 @@
         .split(',')
         .map(item => item.trim())
         .filter(Boolean);
+    }
+
+    function dashboardFilters() {
+      return {
+        days: Number(document.getElementById('dashboardDays').value || 30),
+        risk_level: document.getElementById('dashboardRiskLevel').value || '',
+        incident_status: document.getElementById('dashboardIncidentStatus').value || ''
+      };
+    }
+
+    function queryString(params) {
+      const search = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          search.set(key, String(value));
+        }
+      });
+      return search.toString();
     }
 
     function getMode() {
@@ -638,7 +711,7 @@
     }
 
     async function loadAdminDashboard() {
-      const resp = await fetch('/api/admin/dashboard');
+      const resp = await fetch(`/api/admin/dashboard?${queryString(dashboardFilters())}`);
       const data = await resp.json();
       if (!resp.ok) {
         adminMetrics.innerHTML = '<div class="stats-card">Unable to load dashboard.</div>';
@@ -661,14 +734,14 @@
         ? `<ul>${data.recent_high_risk_scenarios.map(item => `<li>${escapeHtml(item.submitted_at)} | ${escapeHtml(item.risk_level)} | ${item.allow_start ? 'PASS' : 'BLOCKED'} | ${escapeHtml(item.scenario)}</li>`).join('')}</ul>`
         : 'No high-risk checklist records yet.';
       adminIncidentSummary.innerHTML = Object.keys(data.incident_summary || {}).length
-        ? `<div>${Object.entries(data.incident_summary).map(([k, v]) => `${escapeHtml(k)}: ${v}`).join(' | ')}</div>`
+        ? `<div>${Object.entries(data.incident_summary).map(([k, v]) => `${escapeHtml(k)}: ${v}`).join(' | ')}</div>${(data.overdue_incidents || []).length ? `<div style="margin-top:8px;"><strong>Overdue reminders</strong><ul>${data.overdue_incidents.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>` : ''}`
         : 'No incident review records yet.';
     }
 
     function renderIncidentCard(item) {
       return `
         <div class="incident-card">
-          <div><strong>${escapeHtml(item.title)}</strong> <span class="pill">${escapeHtml(item.severity)}</span> <span class="pill">${escapeHtml(item.status)}</span></div>
+          <div><strong>${escapeHtml(item.title)}</strong> <span class="pill">${escapeHtml(item.severity)}</span> <span class="pill">${escapeHtml(item.status)}</span> <span class="pill">recurrence=${escapeHtml(item.recurrence_risk || 'medium')}</span>${item.overdue ? ` <span class="pill" style="background:#fef2f2;color:#b91c1c;">overdue ${item.overdue_days}d</span>` : ''}</div>
           <div class="muted">${escapeHtml(item.reported_at)} | reporter=${escapeHtml(item.reporter)} | owner=${escapeHtml(item.owner || 'unassigned')}</div>
           <div style="margin-top: 8px;">${escapeHtml(item.scenario)}</div>
           <div class="muted" style="margin-top: 6px;">causes=${escapeHtml((item.cause_categories || []).join(', ') || 'none')} | location=${escapeHtml(item.location || '-')}</div>
@@ -689,7 +762,11 @@
     }
 
     async function loadIncidents() {
-      const resp = await fetch('/api/incidents');
+      const params = queryString({
+        status: document.getElementById('incidentFilterStatus').value || '',
+        only_overdue: document.getElementById('incidentOnlyOverdue').checked ? 'true' : ''
+      });
+      const resp = await fetch(`/api/incidents${params ? `?${params}` : ''}`);
       const data = await resp.json();
       if (!resp.ok) {
         incidentList.innerHTML = '<div class="panel">Unable to load incidents.</div>';
@@ -743,6 +820,24 @@
       }
     };
 
+    async function downloadFile(url, fallbackName) {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        const data = await resp.text();
+        throw new Error(data || 'Download failed.');
+      }
+      const blob = await resp.blob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      const disposition = resp.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename=\"?([^"]+)\"?/i);
+      link.download = match ? match[1] : fallbackName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    }
+
     sendBtn.addEventListener('click', ask);
     riskBtn.addEventListener('click', assessRisk);
     checklistBtn.addEventListener('click', generateChecklist);
@@ -751,6 +846,24 @@
     startQuizBtn.addEventListener('click', startQuiz);
     submitQuizBtn.addEventListener('click', submitQuiz);
     createIncidentBtn.addEventListener('click', createIncident);
+    refreshDashboardBtn.addEventListener('click', loadAdminDashboard);
+    refreshIncidentsBtn.addEventListener('click', loadIncidents);
+    exportCsvBtn.addEventListener('click', async () => {
+      try {
+        const filters = dashboardFilters();
+        const scope = document.getElementById('dashboardExportScope').value || 'checklists';
+        await downloadFile(`/api/admin/export.csv?${queryString({ scope, ...filters })}`, `${scope}.csv`);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+    exportWeeklyBtn.addEventListener('click', async () => {
+      try {
+        await downloadFile(`/api/admin/weekly_report.md?${queryString(dashboardFilters())}`, 'weekly_report.md');
+      } catch (err) {
+        alert(err.message);
+      }
+    });
 
     loadEmergencyCards();
     loadTrainingStats();
