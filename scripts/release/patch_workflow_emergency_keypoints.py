@@ -9,11 +9,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-BLOCK_MARKER = "[EMERGENCY_KEYPOINTS_V2]"
-APPEND_BLOCK = """[EMERGENCY_KEYPOINTS_V2]
-应急类回答必须在 steps 或 emergency 段落中包含可检索的关键词锚点（按题型输出）：
+BLOCK_MARKER = "[EMERGENCY_KEYPOINTS_V3]"
+APPEND_BLOCK = """[EMERGENCY_KEYPOINTS_V3]
+重点题型回答必须在 steps 或 emergency 段落中包含可检索的关键词锚点（按题型输出）：
 1) 触电题：必须出现“先断电”“绝缘隔离”“急救”“报警”。
 2) 浓酸溅到手上题：必须出现“大量清水冲洗”“脱去污染物”“就医/报告”。
+3) 气瓶固定/气瓶存放题：必须出现“链条/支架固定”“远离热源”“瓶帽”。
 要求：以上关键词请原样出现，不要仅用近义词替代。
 """
 
