@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$RepoRoot = "",
-    [string]$Host = "175.178.90.193",
+    [string]$ServerHost = "175.178.90.193",
     [string]$User = "root",
     [string]$KeyPath = "$env:USERPROFILE\.ssh\labsafe_new.pem",
     [string]$RemoteReleaseDir = "/root/lab-safe-assistant-github-release",
@@ -77,7 +77,7 @@ $tempDir = New-TempDirectory
 $archivePath = Join-Path $tempDir "lab-safe-release_$timestamp.zip"
 $remoteArchive = "$RemoteStageDir/lab-safe-release_$timestamp.zip"
 $remoteRunner = "$RemoteStageDir/run_release_$timestamp.sh"
-$sshTarget = "$User@$Host"
+$sshTarget = "$User@$ServerHost"
 $sshBaseArgs = @("-i", $KeyPath, "-o", "StrictHostKeyChecking=accept-new", "-o", "ServerAliveInterval=30")
 $scpBaseArgs = @("-i", $KeyPath, "-o", "StrictHostKeyChecking=accept-new")
 
