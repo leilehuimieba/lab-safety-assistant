@@ -4,28 +4,36 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-if [[ ! -f run/web_demo.pid ]]; then
-  echo "[信息] 未找到 PID 文件，服务可能未启动。"
-  exit 0
+declare -a TARGET_PIDS=()
+
+if [[ -f run/web_demo.pid ]]; then
+  pid="$(cat run/web_demo.pid || true)"
+  if [[ -n "${pid}" ]] && ps -p "${pid}" >/dev/null 2>&1; then
+    TARGET_PIDS+=("${pid}")
+  fi
 fi
 
-pid="$(cat run/web_demo.pid || true)"
-if [[ -z "${pid}" ]]; then
-  echo "[信息] PID 文件为空。"
+while IFS= read -r fallback_pid; do
+  if [[ -n "${fallback_pid}" ]]; then
+    TARGET_PIDS+=("${fallback_pid}")
+  fi
+done < <(pgrep -f 'uvicorn web_demo.app:app' || true)
+
+if [[ ${#TARGET_PIDS[@]} -eq 0 ]]; then
+  echo "[info] no running web demo process found."
   rm -f run/web_demo.pid
   exit 0
 fi
 
-if ps -p "${pid}" >/dev/null 2>&1; then
-  kill "${pid}" || true
+UNIQUE_PIDS="$(printf '%s\n' "${TARGET_PIDS[@]}" | awk '!seen[$0]++')"
+while IFS= read -r target_pid; do
+  [[ -z "${target_pid}" ]] && continue
+  kill "${target_pid}" || true
   sleep 1
-  if ps -p "${pid}" >/dev/null 2>&1; then
-    kill -9 "${pid}" || true
+  if ps -p "${target_pid}" >/dev/null 2>&1; then
+    kill -9 "${target_pid}" || true
   fi
-  echo "[成功] 演示服务已停止。PID=${pid}"
-else
-  echo "[信息] 进程不存在，清理 PID 文件。"
-fi
+  echo "[ok] stopped web demo pid=${target_pid}"
+done <<< "${UNIQUE_PIDS}"
 
 rm -f run/web_demo.pid
-

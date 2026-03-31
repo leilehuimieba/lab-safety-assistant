@@ -123,7 +123,12 @@ if [[ -f "$REPO_ROOT/run/web_demo.pid" ]]; then
   if [[ -n "${WEB_PID:-}" ]] && ps -p "$WEB_PID" >/dev/null 2>&1; then
     record_pass "web_demo_pid" "pid=${WEB_PID}"
   else
-    record_fail "web_demo_pid" "pid file exists but process is not running"
+    FALLBACK_PID="$(pgrep -f 'uvicorn web_demo.app:app' | head -n 1 || true)"
+    if [[ -n "${FALLBACK_PID:-}" ]]; then
+      record_pass "web_demo_process" "stale pid file detected; active pid=${FALLBACK_PID}"
+    else
+      record_fail "web_demo_pid" "pid file exists but process is not running"
+    fi
   fi
 else
   FALLBACK_PID="$(pgrep -f 'uvicorn web_demo.app:app' | head -n 1 || true)"
