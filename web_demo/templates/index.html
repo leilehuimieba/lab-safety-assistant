@@ -1,47 +1,59 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lab Safety Assistant Platform Demo</title>
+  <title>实验室安全助手平台演示版</title>
   <style>
     :root {
-      --bg: #f3f6fb;
+      --bg: #eef4fb;
       --card: rgba(255, 255, 255, 0.92);
-      --text: #10233f;
-      --sub: #52637d;
+      --text: #10263e;
+      --sub: #4f647d;
       --line: #d7e0eb;
       --primary: #0f766e;
       --primary-dark: #115e59;
       --secondary: #1d4ed8;
       --secondary-dark: #1e40af;
-      --accent: #b45309;
-      --danger: #b91c1c;
+      --accent: #b96a14;
+      --danger: #b42424;
       --ok: #166534;
-      --soft: #edf4ff;
+      --soft: #edf5ff;
+      --badge: rgba(255, 255, 255, 0.14);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       color: var(--text);
-      font-family: "Segoe UI", "Noto Sans", sans-serif;
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", sans-serif;
       background:
         radial-gradient(circle at top left, rgba(15, 118, 110, 0.18), transparent 28%),
         radial-gradient(circle at top right, rgba(37, 99, 235, 0.16), transparent 30%),
         linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
       min-height: 100vh;
-      padding: 24px;
+      padding: clamp(14px, 2vw, 24px);
     }
-    .container { max-width: 1380px; margin: 0 auto; }
+    .container { max-width: 1420px; margin: 0 auto; }
     .hero {
       background: linear-gradient(135deg, rgba(15, 118, 110, 0.92), rgba(29, 78, 216, 0.9));
       color: white;
-      padding: 26px 28px;
+      padding: clamp(20px, 3vw, 28px);
       border-radius: 24px;
       box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
     }
-    .hero h1 { margin: 0 0 8px; font-size: 34px; }
-    .hero p { margin: 0; line-height: 1.7; max-width: 900px; color: rgba(255,255,255,0.88); }
+    .hero h1 { margin: 0 0 10px; font-size: clamp(28px, 3vw, 38px); }
+    .hero p { margin: 0; line-height: 1.8; max-width: 980px; color: rgba(255,255,255,0.9); font-size: clamp(14px, 1.3vw, 16px); }
+    .hero-badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    .hero-badges span {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--badge);
+      border: 1px solid rgba(255,255,255,0.18);
+      font-size: 13px;
+      letter-spacing: 0.02em;
+    }
     .layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; margin-top: 18px; }
     .stack { display: grid; gap: 18px; }
     .card {
@@ -120,6 +132,29 @@
       padding: 12px;
       margin-top: 10px;
     }
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .preset-btn {
+      background: linear-gradient(135deg, #f7fbff, #edf4ff);
+      border: 1px solid #cfe0f3;
+      color: #18324f;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+    }
+    .preset-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      border-color: #9ab8e0;
+    }
+    .preset-btn strong { display: block; margin-bottom: 4px; font-size: 14px; }
+    .preset-btn span { display: block; font-size: 12px; color: var(--sub); line-height: 1.5; }
     .checklist-item {
       display: flex;
       gap: 10px;
@@ -170,31 +205,55 @@
 <body>
   <main class="container">
     <section class="hero">
-      <h1>Lab Safety Assistant Platform</h1>
-      <p>One demo page for the full pre-task loop: structured Q&amp;A, risk assessment, pre-start checklist with blocking logic, emergency response cards, and a training quiz with mistake tracking.</p>
+      <h1>实验室安全助手平台</h1>
+      <p>这是一个面向实验室安全场景的闭环演示页，覆盖问答、风险评估、开工前阻断、事故应急、培训考核和管理看板。答辩时可以直接用它串起“事前预防、事中提醒、事后复盘”的完整链路。</p>
+      <div class="hero-badges">
+        <span>问答可追溯</span>
+        <span>高风险可阻断</span>
+        <span>看板可展示</span>
+        <span>复盘可闭环</span>
+      </div>
     </section>
 
     <section class="layout">
       <div class="stack">
         <article class="card">
-          <h2>1. Scenario Input</h2>
-          <p class="muted">Use one concrete scenario at a time for the most stable result.</p>
+          <h2>1. 演示问题输入</h2>
+          <p class="muted">建议每次只输入一个明确场景，现场演示会更稳定。也可以直接点下面的推荐问题，一键填充到输入框。</p>
           <div class="row" style="margin-bottom: 10px;">
-            <label><input type="radio" name="mode" value="lab" checked /> Lab Safety Assistant</label>
-            <label><input type="radio" name="mode" value="agent" /> Project Copilot</label>
+            <label><input type="radio" name="mode" value="lab" checked /> 实验室安全助手</label>
+            <label><input type="radio" name="mode" value="agent" /> 通用项目助理</label>
           </div>
-          <textarea id="question" placeholder="Example: We plan to perform ethanol reflux in a fume hood and then collect solvent waste. What controls are required?"></textarea>
+          <textarea id="question" placeholder="示例：夜间准备进行乙醇回流实验，审批未闭环而且现场只有我一个人，这种情况能开工吗？"></textarea>
+          <div class="preset-grid">
+            <button class="preset-btn" type="button" data-preset="危险实验开始前最关键的阻断项是什么？">
+              <strong>推荐问题 1</strong>
+              <span>开工前阻断项</span>
+            </button>
+            <button class="preset-btn" type="button" data-preset="化学品溅入眼睛后第一步应该做什么？">
+              <strong>推荐问题 2</strong>
+              <span>化学飞溅应急</span>
+            </button>
+            <button class="preset-btn" type="button" data-preset="培训没通过，还能独立开展高风险实验吗？">
+              <strong>推荐问题 3</strong>
+              <span>培训与准入</span>
+            </button>
+            <button class="preset-btn" type="button" data-preset="高风险实验审批通过以后，还需要双人复核吗？">
+              <strong>推荐问题 4</strong>
+              <span>审批与双人复核</span>
+            </button>
+          </div>
           <div class="actions" style="margin-top: 12px;">
-            <button class="btn-primary" id="sendBtn">Run Q&amp;A</button>
-            <button class="btn-secondary" id="riskBtn">Run Risk Assessment</button>
-            <button class="btn-accent" id="checklistBtn">Generate Checklist</button>
-            <button class="btn-ghost" id="matchEmergencyBtn">Match Emergency Card</button>
+            <button class="btn-primary" id="sendBtn">运行问答</button>
+            <button class="btn-secondary" id="riskBtn">风险评估</button>
+            <button class="btn-accent" id="checklistBtn">生成开工清单</button>
+            <button class="btn-ghost" id="matchEmergencyBtn">匹配应急卡片</button>
           </div>
         </article>
 
         <article class="card">
-          <h2>2. Assistant Output</h2>
-          <div id="result" class="result">Waiting for a scenario...</div>
+          <h2>2. 助手输出结果</h2>
+          <div id="result" class="result">等待输入演示问题...</div>
           <p id="routeInfo" class="muted"></p>
           <div id="lowConfidenceAlert" class="alert warn"></div>
           <div id="riskBox" class="panel" style="display:none; margin-top:10px;"></div>
@@ -202,15 +261,15 @@
         </article>
 
         <article class="card">
-          <h2>3. Pre-start Checklist</h2>
+          <h2>3. 开工前检查清单</h2>
           <div class="row">
-            <input id="operatorName" placeholder="Operator / reviewer name" />
-            <input id="checklistNotes" placeholder="Notes for blockers or exceptions" />
+            <input id="operatorName" placeholder="操作人 / 复核人" />
+            <input id="checklistNotes" placeholder="阻断说明或补充备注" />
           </div>
-          <div id="checklistMeta" class="muted" style="margin-top: 10px;">Generate a checklist from the current scenario.</div>
-          <div id="checklistItems" class="panel" style="margin-top:10px;">No checklist generated yet.</div>
+          <div id="checklistMeta" class="muted" style="margin-top: 10px;">从当前问题生成清单后，这里会显示风险等级和关键危险源。</div>
+          <div id="checklistItems" class="panel" style="margin-top:10px;">还没有生成清单。</div>
           <div class="actions" style="margin-top: 12px;">
-            <button class="btn-primary" id="submitChecklistBtn" disabled>Submit Checklist</button>
+            <button class="btn-primary" id="submitChecklistBtn" disabled>提交清单</button>
           </div>
           <div id="checklistStatus" class="alert warn"></div>
         </article>
@@ -218,129 +277,129 @@
 
       <div class="stack">
         <article class="card">
-          <h2>4. Emergency Cards</h2>
-          <p class="muted">Four standard response cards for high-value demo scenarios.</p>
-          <div id="emergencyMatch" class="panel">Use “Match Emergency Card” to get the best card for the current scenario.</div>
+          <h2>4. 事故应急卡片</h2>
+          <p class="muted">这里预置了 4 类常见事故卡片。演示时可以先提问，再点“匹配应急卡片”，快速展示系统如何把自然语言问题落到标准处置动作。</p>
+          <div id="emergencyMatch" class="panel">输入一个事故场景后，系统会自动匹配最合适的应急卡片。</div>
           <div id="emergencyCards" class="em-grid" style="margin-top: 12px;"></div>
         </article>
 
         <article class="card">
-          <h2>5. Training MVP</h2>
+          <h2>5. 培训考核 MVP</h2>
           <div class="row">
-            <input id="participantName" placeholder="Participant name" />
+            <input id="participantName" placeholder="参训人姓名" />
             <input id="quizLimit" type="number" min="3" max="10" value="5" />
           </div>
           <div class="actions" style="margin-top: 12px;">
-            <button class="btn-secondary" id="startQuizBtn">Start Quiz</button>
-            <button class="btn-primary" id="submitQuizBtn" disabled>Submit Quiz</button>
+            <button class="btn-secondary" id="startQuizBtn">开始抽题</button>
+            <button class="btn-primary" id="submitQuizBtn" disabled>提交评分</button>
           </div>
-          <div id="quizBox" class="panel" style="margin-top: 10px;">Quiz not started.</div>
-          <div id="quizResult" class="panel" style="margin-top: 10px;">Training result will appear here.</div>
+          <div id="quizBox" class="panel" style="margin-top: 10px;">点击“开始抽题”后，这里会生成一组演示题目。</div>
+          <div id="quizResult" class="panel" style="margin-top: 10px;">提交后会显示成绩、薄弱项和错题复盘。</div>
         </article>
 
         <article class="card">
-          <h2>6. Training Statistics</h2>
+          <h2>6. 培训统计</h2>
           <div id="trainingStats" class="stats-grid"></div>
         </article>
 
         <article class="card">
-          <h2>7. Management Dashboard</h2>
-          <p class="muted">Live metrics from checklist submissions, quiz attempts, low-confidence follow-up, and incident review records.</p>
+          <h2>7. 管理端看板</h2>
+          <p class="muted">这里集中展示清单阻断率、培训通过率、低置信问题、高风险场景和事故复盘摘要，适合答辩时展示“平台化能力”。</p>
           <div class="two-col">
             <select id="dashboardDays">
-              <option value="7">Last 7 days</option>
-              <option value="30" selected>Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="0">All time</option>
+              <option value="7">近 7 天</option>
+              <option value="30" selected>近 30 天</option>
+              <option value="90">近 90 天</option>
+              <option value="0">全部时间</option>
             </select>
             <select id="dashboardRiskLevel">
-              <option value="">All risk levels</option>
-              <option value="low">Low</option>
-              <option value="medium-low">Medium-Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
+              <option value="">全部风险等级</option>
+              <option value="low">低</option>
+              <option value="medium-low">较低</option>
+              <option value="medium">中</option>
+              <option value="high">高</option>
+              <option value="critical">极高</option>
             </select>
           </div>
           <div class="two-col" style="margin-top: 10px;">
             <select id="dashboardIncidentStatus">
-              <option value="">All incident statuses</option>
-              <option value="open">open</option>
-              <option value="in_review">in_review</option>
-              <option value="action_in_progress">action_in_progress</option>
-              <option value="verified">verified</option>
-              <option value="closed">closed</option>
+              <option value="">全部复盘状态</option>
+              <option value="open">待处理</option>
+              <option value="in_review">复盘中</option>
+              <option value="action_in_progress">整改中</option>
+              <option value="verified">已复核</option>
+              <option value="closed">已闭环</option>
             </select>
             <select id="dashboardExportScope">
-              <option value="checklists">Export checklists</option>
-              <option value="training">Export training</option>
-              <option value="low_confidence">Export low confidence</option>
-              <option value="incidents">Export incidents</option>
+              <option value="checklists">导出清单记录</option>
+              <option value="training">导出培训记录</option>
+              <option value="low_confidence">导出低置信问题</option>
+              <option value="incidents">导出事故复盘</option>
             </select>
           </div>
           <div class="actions" style="margin-top: 12px;">
-            <button class="btn-secondary" id="refreshDashboardBtn">Refresh Dashboard</button>
-            <button class="btn-primary" id="exportCsvBtn">Export CSV</button>
-            <button class="btn-accent" id="exportWeeklyBtn">Export Weekly Report</button>
+            <button class="btn-secondary" id="refreshDashboardBtn">刷新看板</button>
+            <button class="btn-primary" id="exportCsvBtn">导出 CSV</button>
+            <button class="btn-accent" id="exportWeeklyBtn">导出周报</button>
           </div>
           <div id="adminMetrics" class="stats-grid"></div>
           <div class="two-col" style="margin-top: 12px;">
             <div>
-              <h3>Low-confidence TOP</h3>
-              <div id="adminLowConfidence" class="panel">No low-confidence records yet.</div>
+              <h3>低置信问题 TOP</h3>
+              <div id="adminLowConfidence" class="panel">这里会显示当前最值得补强的知识问题。</div>
             </div>
             <div>
-              <h3>Recent high-risk scenarios</h3>
-              <div id="adminHighRisk" class="panel">No high-risk checklist records yet.</div>
+              <h3>最近高风险场景</h3>
+              <div id="adminHighRisk" class="panel">这里会显示最近被阻断或被重点关注的场景。</div>
             </div>
           </div>
           <div style="margin-top: 12px;">
-            <h3>Incident status summary</h3>
-            <div id="adminIncidentSummary" class="panel">No incident summary yet.</div>
+            <h3>事故复盘摘要</h3>
+            <div id="adminIncidentSummary" class="panel">这里会汇总事故状态、逾期整改和闭环情况。</div>
           </div>
         </article>
 
         <article class="card">
-          <h2>8. Incident Review</h2>
-          <p class="muted">Record an incident, classify the causes, assign corrective actions, and drive closure state.</p>
+          <h2>8. 事故复盘</h2>
+          <p class="muted">支持录入事故或险情，记录原因分类、整改措施、责任人、逾期状态和复发风险，形成真正可闭环的复盘模块。</p>
           <div class="two-col">
-            <input id="incidentReporter" placeholder="Reporter" />
-            <input id="incidentTitle" placeholder="Incident title" />
+            <input id="incidentReporter" placeholder="报告人" />
+            <input id="incidentTitle" placeholder="事件标题" />
           </div>
           <div class="two-col" style="margin-top: 10px;">
             <select id="incidentSeverity">
-              <option value="low">Low</option>
-              <option value="medium" selected>Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
+              <option value="low">低</option>
+              <option value="medium" selected>中</option>
+              <option value="high">高</option>
+              <option value="critical">极高</option>
             </select>
-            <input id="incidentLocation" placeholder="Location / room" />
+            <input id="incidentLocation" placeholder="地点 / 实验室房间" />
           </div>
-          <textarea id="incidentScenario" class="mini-textarea" style="margin-top: 10px;" placeholder="Incident scenario and what happened"></textarea>
-          <textarea id="incidentCauses" class="mini-textarea" style="margin-top: 10px;" placeholder="Cause categories, separated by comma. Example: labeling error, missing PPE, ventilation failure"></textarea>
-          <textarea id="incidentImmediateActions" class="mini-textarea" style="margin-top: 10px;" placeholder="Immediate containment actions, one per line"></textarea>
-          <textarea id="incidentCorrectiveActions" class="mini-textarea" style="margin-top: 10px;" placeholder="Corrective actions, one per line"></textarea>
+          <textarea id="incidentScenario" class="mini-textarea" style="margin-top: 10px;" placeholder="描述事件经过、暴露风险、当时处置和系统阻断情况。"></textarea>
+          <textarea id="incidentCauses" class="mini-textarea" style="margin-top: 10px;" placeholder="原因分类示例：审批缺失, 单人作业, 复核不足"></textarea>
+          <textarea id="incidentImmediateActions" class="mini-textarea" style="margin-top: 10px;" placeholder="立即处置动作，每行一条"></textarea>
+          <textarea id="incidentCorrectiveActions" class="mini-textarea" style="margin-top: 10px;" placeholder="整改措施，每行一条"></textarea>
           <div class="two-col" style="margin-top: 10px;">
-            <input id="incidentOwner" placeholder="Corrective action owner" />
-            <input id="incidentDueDate" placeholder="Due date, e.g. 2026-04-15" />
+            <input id="incidentOwner" placeholder="整改责任人" />
+            <input id="incidentDueDate" placeholder="整改截止日期，例如 2026-04-15" />
           </div>
           <div class="actions" style="margin-top: 12px;">
-            <button class="btn-accent" id="createIncidentBtn">Create Incident Review</button>
+            <button class="btn-accent" id="createIncidentBtn">创建复盘记录</button>
           </div>
           <div id="incidentCreateStatus" class="alert warn"></div>
           <div class="two-col" style="margin-top: 12px;">
             <select id="incidentFilterStatus">
-              <option value="">All statuses</option>
-              <option value="open">open</option>
-              <option value="in_review">in_review</option>
-              <option value="action_in_progress">action_in_progress</option>
-              <option value="verified">verified</option>
-              <option value="closed">closed</option>
+              <option value="">全部状态</option>
+              <option value="open">待处理</option>
+              <option value="in_review">复盘中</option>
+              <option value="action_in_progress">整改中</option>
+              <option value="verified">已复核</option>
+              <option value="closed">已闭环</option>
             </select>
-            <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="incidentOnlyOverdue" /> Show overdue only</label>
+            <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="incidentOnlyOverdue" /> 仅看逾期整改</label>
           </div>
           <div class="actions" style="margin-top: 12px;">
-            <button class="btn-secondary" id="refreshIncidentsBtn">Refresh Incident List</button>
+            <button class="btn-secondary" id="refreshIncidentsBtn">刷新复盘列表</button>
           </div>
           <div id="incidentList" style="margin-top: 12px;"></div>
         </article>
@@ -383,9 +442,52 @@
     const exportCsvBtn = document.getElementById('exportCsvBtn');
     const exportWeeklyBtn = document.getElementById('exportWeeklyBtn');
     const refreshIncidentsBtn = document.getElementById('refreshIncidentsBtn');
+    const presetButtons = document.querySelectorAll('[data-preset]');
 
     let checklistCache = [];
     let quizSession = null;
+    const riskLevelMap = {
+      low: '低',
+      'medium-low': '较低',
+      medium: '中',
+      high: '高',
+      critical: '极高',
+      Low: '低',
+      'Medium-Low': '较低',
+      Medium: '中',
+      High: '高',
+      Critical: '极高'
+    };
+    const incidentStatusMap = {
+      open: '待处理',
+      in_review: '复盘中',
+      action_in_progress: '整改中',
+      verified: '已复核',
+      closed: '已闭环'
+    };
+    const categoryLabelMap = {
+      Chemical: '化学安全',
+      Emergency: '应急处置',
+      Electrical: '电气安全',
+      Fire: '消防安全',
+      Biosafety: '生物安全',
+      Mechanical: '机械安全',
+      PPE: '个体防护',
+      General: '通用规范',
+      Training: '培训考核'
+    };
+
+    function displayRisk(value) {
+      return riskLevelMap[value] || value || '-';
+    }
+
+    function displayStatus(value) {
+      return incidentStatusMap[value] || value || '-';
+    }
+
+    function displayCategory(value) {
+      return categoryLabelMap[value] || value || '-';
+    }
 
     function escapeHtml(value) {
       return String(value || '').replace(/[&<>"']/g, (ch) => ({
@@ -437,7 +539,7 @@
     function renderMarkdown(target, rawText) {
       const text = String(rawText || '').trim();
       if (!text) {
-        target.textContent = 'No content returned.';
+        target.textContent = '没有返回内容。';
         return;
       }
       if (window.marked && window.DOMPurify) {
@@ -451,14 +553,14 @@
     function renderCitations(citations) {
       citationBox.innerHTML = '';
       if (!Array.isArray(citations) || citations.length === 0) {
-        citationBox.innerHTML = '<p class="muted">No source citations matched.</p>';
+        citationBox.innerHTML = '<p class="muted">当前问题没有匹配到可展示的来源条目。</p>';
         return;
       }
       citationBox.innerHTML = citations.map((item, index) => `
         <div class="citation-item">
-          <div><strong>${index + 1}. [${item.kb_id || '-'}] ${item.title || 'Untitled'}</strong></div>
-          <div class="muted">source: ${item.source_title || '-'} | org: ${item.source_org || '-'} | risk: ${item.risk_level || '-'}</div>
-          <div>${item.snippet || 'No snippet available.'}</div>
+          <div><strong>${index + 1}. [${item.kb_id || '-'}] ${item.title || '未命名条目'}</strong></div>
+          <div class="muted">来源：${item.source_title || '-'} | 机构：${item.source_org || '-'} | 风险：${displayRisk(item.risk_level)}</div>
+          <div>${item.snippet || '暂无摘要片段。'}</div>
           ${item.source_url ? `<a href="${item.source_url}" target="_blank" rel="noopener noreferrer">${item.source_url}</a>` : ''}
         </div>
       `).join('');
@@ -469,14 +571,14 @@
       const items = (arr) => (arr || []).map(v => `<li>${v}</li>`).join('');
       riskBox.style.display = 'block';
       riskBox.innerHTML = `
-        <div><strong>Risk:</strong> ${data.risk_level || '-'} (${data.risk_score || '-'}/5)</div>
-        <div style="margin-top:8px;"><strong>Hazards:</strong><div>${pills(data.key_hazards)}</div></div>
-        <div style="margin-top:8px;"><strong>PPE:</strong><div>${pills(data.ppe)}</div></div>
+        <div><strong>风险等级：</strong>${displayRisk(data.risk_level)} (${data.risk_score || '-'}/5)</div>
+        <div style="margin-top:8px;"><strong>关键危险源：</strong><div>${pills(data.key_hazards)}</div></div>
+        <div style="margin-top:8px;"><strong>建议 PPE：</strong><div>${pills(data.ppe)}</div></div>
         <div class="row" style="margin-top:8px;">
-          <div><strong>Recommended steps</strong><ul>${items(data.recommended_steps)}</ul></div>
-          <div><strong>Forbidden</strong><ul>${items(data.forbidden)}</ul></div>
+          <div><strong>建议步骤</strong><ul>${items(data.recommended_steps)}</ul></div>
+          <div><strong>禁止事项</strong><ul>${items(data.forbidden)}</ul></div>
         </div>
-        <div style="margin-top:8px;"><strong>Emergency actions</strong><ul>${items(data.emergency_actions)}</ul></div>
+        <div style="margin-top:8px;"><strong>应急动作</strong><ul>${items(data.emergency_actions)}</ul></div>
       `;
     }
 
@@ -487,7 +589,7 @@
         return;
       }
       lowConfidenceAlert.style.display = 'block';
-      lowConfidenceAlert.textContent = `Low confidence: ${reason || 'insufficient retrieval confidence'}`;
+      lowConfidenceAlert.textContent = `低置信提醒：${reason || '当前检索支撑还不够充分，建议后续补强知识条目。'}`;
     }
 
     async function postJson(url, payload) {
@@ -497,7 +599,7 @@
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.detail || 'Request failed.');
+      if (!resp.ok) throw new Error(data.detail || '请求失败。');
       return data;
     }
 
@@ -508,7 +610,7 @@
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.detail || 'Request failed.');
+      if (!resp.ok) throw new Error(data.detail || '请求失败。');
       return data;
     }
 
@@ -519,7 +621,7 @@
       try {
         const data = await postJson('/api/chat', { mode: getMode(), question });
         renderMarkdown(result, data.answer || '');
-        routeInfo.textContent = `decision=${data.decision || '-'} | rule=${data.matched_rule_id || '-'} | risk=${data.risk_level || '-'}`;
+        routeInfo.textContent = `决策=${data.decision || '-'} | 规则=${data.matched_rule_id || '-'} | 风险=${displayRisk(data.risk_level)}`;
         showLowConfidence(data.low_confidence, data.low_confidence_reason);
         renderCitations(data.citations || []);
       } catch (err) {
@@ -535,8 +637,8 @@
       riskBtn.disabled = true;
       try {
         const data = await postJson('/api/risk_assess', { scenario });
-        result.textContent = 'Risk assessment completed.';
-        routeInfo.textContent = 'decision=structured_risk_assessment';
+        result.textContent = '风险评估已完成。';
+        routeInfo.textContent = '决策=structured_risk_assessment';
         showLowConfidence(data.low_confidence, data.low_confidence_reason);
         renderRiskPanel(data);
         renderCitations(data.citations || []);
@@ -549,12 +651,12 @@
 
     function renderChecklist(template) {
       checklistCache = template.checklist || [];
-      checklistMeta.textContent = `risk=${template.risk_level} (${template.risk_score}/5) | hazards=${(template.key_hazards || []).join(', ') || 'none'}`;
+      checklistMeta.textContent = `风险=${displayRisk(template.risk_level)} (${template.risk_score}/5) | 危险源=${(template.key_hazards || []).join(', ') || '暂无'}`;
       checklistItems.innerHTML = checklistCache.map(item => `
         <label class="checklist-item">
           <input type="checkbox" data-checklist-id="${item.id}" />
           <div>
-            <strong>${item.label}</strong>${item.critical ? '<span class="critical-tag">critical</span>' : ''}
+            <strong>${item.label}</strong>${item.critical ? '<span class="critical-tag">关键项</span>' : ''}
           </div>
         </label>
       `).join('');
@@ -591,13 +693,13 @@
       try {
         const data = await postJson('/api/checklist/submit', {
           scenario,
-          operator: document.getElementById('operatorName').value || 'anonymous',
+          operator: document.getElementById('operatorName').value || '演示用户',
           notes: document.getElementById('checklistNotes').value || '',
           checklist
         });
         checklistStatus.style.display = 'block';
         checklistStatus.className = `alert ${data.allow_start ? 'ok' : 'bad'}`;
-        checklistStatus.innerHTML = `<strong>${data.allow_start ? 'Checklist PASS' : 'Checklist BLOCKED'}</strong><br>${(data.next_actions || []).join('<br>')}${data.blocking_reasons.length ? `<br><br>Blocking: ${data.blocking_reasons.join(' | ')}` : ''}`;
+        checklistStatus.innerHTML = `<strong>${data.allow_start ? '清单通过，可进入开工准备' : '清单阻断，暂不可开工'}</strong><br>${(data.next_actions || []).join('<br>')}${data.blocking_reasons.length ? `<br><br>阻断原因：${data.blocking_reasons.join(' | ')}` : ''}`;
         loadAdminDashboard();
       } catch (err) {
         checklistStatus.style.display = 'block';
@@ -611,8 +713,8 @@
         <div class="em-card">
           <strong>${card.title}</strong>
           <div class="muted">${card.summary}</div>
-          <div style="margin-top:8px;"><strong>Immediate actions</strong><ul>${(card.immediate_actions || []).map(v => `<li>${v}</li>`).join('')}</ul></div>
-          <div><strong>Forbidden</strong><ul>${(card.forbidden || []).map(v => `<li>${v}</li>`).join('')}</ul></div>
+          <div style="margin-top:8px;"><strong>立即动作</strong><ul>${(card.immediate_actions || []).map(v => `<li>${v}</li>`).join('')}</ul></div>
+          <div><strong>禁止事项</strong><ul>${(card.forbidden || []).map(v => `<li>${v}</li>`).join('')}</ul></div>
         </div>
       `;
     }
@@ -629,10 +731,10 @@
       const resp = await fetch(`/api/emergency/match?q=${encodeURIComponent(scenario)}`);
       const data = await resp.json();
       if (!resp.ok || !data.card) {
-        emergencyMatch.textContent = data.detail || 'No matching emergency card.';
+        emergencyMatch.textContent = data.detail || '暂时没有匹配到合适的应急卡片。';
         return;
       }
-      emergencyMatch.innerHTML = `<strong>Matched card:</strong> ${data.card.title}<br><strong>Confidence:</strong> ${data.confidence}<ul>${(data.card.immediate_actions || []).map(v => `<li>${v}</li>`).join('')}</ul>`;
+      emergencyMatch.innerHTML = `<strong>匹配卡片：</strong>${data.card.title}<br><strong>匹配度：</strong>${data.confidence}<ul>${(data.card.immediate_actions || []).map(v => `<li>${v}</li>`).join('')}</ul>`;
     }
 
     function renderQuiz(session) {
@@ -640,7 +742,7 @@
       quizBox.innerHTML = session.questions.map((question, index) => `
         <div class="quiz-question">
           <strong>${index + 1}. ${question.prompt}</strong>
-          <div class="muted">category=${question.category} | ${question.multiple ? 'multiple' : 'single'} choice</div>
+          <div class="muted">类别=${displayCategory(question.category)} | ${question.multiple ? '多选题' : '单选题'}</div>
           ${(question.options || []).map((option, optionIndex) => `
             <label class="quiz-option">
               <input type="${question.multiple ? 'checkbox' : 'radio'}" name="quiz-${question.id}" value="${optionIndex}" />
@@ -650,7 +752,7 @@
         </div>
       `).join('');
       submitQuizBtn.disabled = false;
-      quizResult.textContent = 'Complete the quiz and submit for scoring.';
+      quizResult.textContent = '请完成答题后提交评分。';
     }
 
     async function startQuiz() {
@@ -659,7 +761,7 @@
         const limit = Math.max(3, Math.min(10, Number(document.getElementById('quizLimit').value || 5)));
         const resp = await fetch(`/api/training/questions?limit=${limit}`);
         const data = await resp.json();
-        if (!resp.ok) throw new Error(data.detail || 'Failed to load questions.');
+        if (!resp.ok) throw new Error(data.detail || '题目加载失败。');
         renderQuiz(data);
       } catch (err) {
         quizBox.textContent = err.message;
@@ -677,14 +779,14 @@
       try {
         const data = await postJson('/api/training/submit', {
           session_id: quizSession.session_id,
-          participant: document.getElementById('participantName').value || 'anonymous',
+          participant: document.getElementById('participantName').value || '演示用户',
           answers
         });
         quizResult.innerHTML = `
-          <strong>Score:</strong> ${data.score}/${100} | threshold=${data.pass_threshold} | ${data.passed ? 'PASS' : 'REVIEW REQUIRED'}
-          <br><strong>Weak categories:</strong> ${(data.weak_categories || []).join(', ') || 'none'}
+          <strong>成绩：</strong>${data.score}/100 | 通过线=${data.pass_threshold} | ${data.passed ? '已通过' : '需要复训'}
+          <br><strong>薄弱类别：</strong>${(data.weak_categories || []).map(displayCategory).join(', ') || '无'}
           <div>${(data.recommended_actions || []).join('<br>')}</div>
-          ${(data.review || []).map(item => `<div class="review-item"><strong>${item.correct ? 'Correct' : 'Needs review'}:</strong> ${item.prompt}<br><span class="muted">${item.explanation}</span></div>`).join('')}
+          ${(data.review || []).map(item => `<div class="review-item"><strong>${item.correct ? '答对' : '需复习'}：</strong>${item.prompt}<br><span class="muted">${item.explanation}</span></div>`).join('')}
         `;
         await Promise.all([loadTrainingStats(), loadAdminDashboard()]);
       } catch (err) {
@@ -696,17 +798,17 @@
       const resp = await fetch('/api/training/stats');
       const data = await resp.json();
       if (!resp.ok) {
-        trainingStats.innerHTML = `<div class="stats-card">Unable to load stats.</div>`;
+        trainingStats.innerHTML = `<div class="stats-card">培训统计加载失败。</div>`;
         return;
       }
       trainingStats.innerHTML = `
-        <div class="stats-card"><div>Attempts</div><strong>${data.attempt_count}</strong></div>
-        <div class="stats-card"><div>Pass rate</div><strong>${Math.round((data.pass_rate || 0) * 100)}%</strong></div>
-        <div class="stats-card"><div>Average score</div><strong>${data.average_score}</strong></div>
-        <div class="stats-card"><div>Last run</div><strong style="font-size:14px;">${data.latest_submitted_at || 'N/A'}</strong></div>
+        <div class="stats-card"><div>总作答次数</div><strong>${data.attempt_count}</strong></div>
+        <div class="stats-card"><div>通过率</div><strong>${Math.round((data.pass_rate || 0) * 100)}%</strong></div>
+        <div class="stats-card"><div>平均分</div><strong>${data.average_score}</strong></div>
+        <div class="stats-card"><div>最近一次</div><strong style="font-size:14px;">${data.latest_submitted_at || '暂无'}</strong></div>
       `;
       if (data.category_mistakes && Object.keys(data.category_mistakes).length) {
-        trainingStats.innerHTML += `<div class="stats-card" style="grid-column: 1 / -1;"><div>Top mistake categories</div><strong style="font-size:16px;">${Object.entries(data.category_mistakes).map(([k, v]) => `${k}: ${v}`).join(' | ')}</strong></div>`;
+        trainingStats.innerHTML += `<div class="stats-card" style="grid-column: 1 / -1;"><div>高频错题类别</div><strong style="font-size:16px;">${Object.entries(data.category_mistakes).map(([k, v]) => `${displayCategory(k)}: ${v}`).join(' | ')}</strong></div>`;
       }
     }
 
@@ -714,10 +816,10 @@
       const resp = await fetch(`/api/admin/dashboard?${queryString(dashboardFilters())}`);
       const data = await resp.json();
       if (!resp.ok) {
-        adminMetrics.innerHTML = '<div class="stats-card">Unable to load dashboard.</div>';
-        adminLowConfidence.textContent = 'Unable to load low-confidence queue.';
-        adminHighRisk.textContent = 'Unable to load high-risk scenarios.';
-        adminIncidentSummary.textContent = 'Unable to load incident summary.';
+        adminMetrics.innerHTML = '<div class="stats-card">管理看板加载失败。</div>';
+        adminLowConfidence.textContent = '低置信问题列表加载失败。';
+        adminHighRisk.textContent = '高风险场景列表加载失败。';
+        adminIncidentSummary.textContent = '事故汇总加载失败。';
         return;
       }
       adminMetrics.innerHTML = (data.metrics || []).map(item => `
@@ -729,34 +831,34 @@
       `).join('');
       adminLowConfidence.innerHTML = (data.low_confidence_top || []).length
         ? `<ul>${data.low_confidence_top.map(item => `<li>${escapeHtml(item.label)} (${item.count})</li>`).join('')}</ul>`
-        : 'No low-confidence records yet.';
+        : '暂时没有低置信问题。';
       adminHighRisk.innerHTML = (data.recent_high_risk_scenarios || []).length
-        ? `<ul>${data.recent_high_risk_scenarios.map(item => `<li>${escapeHtml(item.submitted_at)} | ${escapeHtml(item.risk_level)} | ${item.allow_start ? 'PASS' : 'BLOCKED'} | ${escapeHtml(item.scenario)}</li>`).join('')}</ul>`
-        : 'No high-risk checklist records yet.';
+        ? `<ul>${data.recent_high_risk_scenarios.map(item => `<li>${escapeHtml(item.submitted_at)} | ${displayRisk(item.risk_level)} | ${item.allow_start ? '通过' : '阻断'} | ${escapeHtml(item.scenario)}</li>`).join('')}</ul>`
+        : '暂时没有高风险清单记录。';
       adminIncidentSummary.innerHTML = Object.keys(data.incident_summary || {}).length
-        ? `<div>${Object.entries(data.incident_summary).map(([k, v]) => `${escapeHtml(k)}: ${v}`).join(' | ')}</div>${(data.overdue_incidents || []).length ? `<div style="margin-top:8px;"><strong>Overdue reminders</strong><ul>${data.overdue_incidents.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>` : ''}`
-        : 'No incident review records yet.';
+        ? `<div>${Object.entries(data.incident_summary).map(([k, v]) => `${escapeHtml(displayStatus(k))}: ${v}`).join(' | ')}</div>${(data.overdue_incidents || []).length ? `<div style="margin-top:8px;"><strong>逾期提醒</strong><ul>${data.overdue_incidents.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>` : ''}`
+        : '暂时没有事故复盘记录。';
     }
 
     function renderIncidentCard(item) {
       return `
         <div class="incident-card">
-          <div><strong>${escapeHtml(item.title)}</strong> <span class="pill">${escapeHtml(item.severity)}</span> <span class="pill">${escapeHtml(item.status)}</span> <span class="pill">recurrence=${escapeHtml(item.recurrence_risk || 'medium')}</span>${item.overdue ? ` <span class="pill" style="background:#fef2f2;color:#b91c1c;">overdue ${item.overdue_days}d</span>` : ''}</div>
-          <div class="muted">${escapeHtml(item.reported_at)} | reporter=${escapeHtml(item.reporter)} | owner=${escapeHtml(item.owner || 'unassigned')}</div>
+          <div><strong>${escapeHtml(item.title)}</strong> <span class="pill">${displayRisk(item.severity)}</span> <span class="pill">${displayStatus(item.status)}</span> <span class="pill">复发风险=${displayRisk(item.recurrence_risk || 'medium')}</span>${item.overdue ? ` <span class="pill" style="background:#fef2f2;color:#b91c1c;">逾期 ${item.overdue_days} 天</span>` : ''}</div>
+          <div class="muted">${escapeHtml(item.reported_at)} | 报告人=${escapeHtml(item.reporter)} | 责任人=${escapeHtml(item.owner || '未指定')}</div>
           <div style="margin-top: 8px;">${escapeHtml(item.scenario)}</div>
-          <div class="muted" style="margin-top: 6px;">causes=${escapeHtml((item.cause_categories || []).join(', ') || 'none')} | location=${escapeHtml(item.location || '-')}</div>
+          <div class="muted" style="margin-top: 6px;">原因=${escapeHtml((item.cause_categories || []).join(', ') || '无')} | 地点=${escapeHtml(item.location || '-')}</div>
           <div class="two-col" style="margin-top: 10px;">
             <select id="status-${item.incident_id}">
-              ${['open', 'in_review', 'action_in_progress', 'verified', 'closed'].map(status => `<option value="${status}" ${status === item.status ? 'selected' : ''}>${status}</option>`).join('')}
+              ${['open', 'in_review', 'action_in_progress', 'verified', 'closed'].map(status => `<option value="${status}" ${status === item.status ? 'selected' : ''}>${displayStatus(status)}</option>`).join('')}
             </select>
-            <input id="owner-${item.incident_id}" value="${escapeHtml(item.owner || '')}" placeholder="Owner" />
+            <input id="owner-${item.incident_id}" value="${escapeHtml(item.owner || '')}" placeholder="整改责任人" />
           </div>
           <div class="two-col" style="margin-top: 10px;">
-            <input id="due-${item.incident_id}" value="${escapeHtml(item.due_date || '')}" placeholder="Due date" />
-            <input id="closure-${item.incident_id}" value="${escapeHtml(item.closure_notes || '')}" placeholder="Closure notes" />
+            <input id="due-${item.incident_id}" value="${escapeHtml(item.due_date || '')}" placeholder="整改截止日期" />
+            <input id="closure-${item.incident_id}" value="${escapeHtml(item.closure_notes || '')}" placeholder="闭环备注" />
           </div>
-          <textarea id="actions-${item.incident_id}" class="mini-textarea" style="margin-top: 10px;" placeholder="Corrective actions, one per line">${escapeHtml((item.corrective_actions || []).join('\n'))}</textarea>
-          <div style="margin-top: 10px;"><button class="btn-primary" onclick="updateIncident('${item.incident_id}')">Update Incident</button></div>
+          <textarea id="actions-${item.incident_id}" class="mini-textarea" style="margin-top: 10px;" placeholder="整改措施，每行一条">${escapeHtml((item.corrective_actions || []).join('\n'))}</textarea>
+          <div style="margin-top: 10px;"><button class="btn-primary" onclick="updateIncident('${item.incident_id}')">更新复盘</button></div>
         </div>
       `;
     }
@@ -769,19 +871,19 @@
       const resp = await fetch(`/api/incidents${params ? `?${params}` : ''}`);
       const data = await resp.json();
       if (!resp.ok) {
-        incidentList.innerHTML = '<div class="panel">Unable to load incidents.</div>';
+        incidentList.innerHTML = '<div class="panel">事故复盘列表加载失败。</div>';
         return;
       }
       incidentList.innerHTML = data.length
         ? data.map(renderIncidentCard).join('')
-        : '<div class="panel">No incident review records yet. Create the first one from the form above.</div>';
+        : '<div class="panel">暂时没有复盘记录，可以先用上方表单创建一条。</div>';
     }
 
     async function createIncident() {
       createIncidentBtn.disabled = true;
       try {
         const data = await postJson('/api/incidents', {
-          reporter: document.getElementById('incidentReporter').value || 'anonymous',
+          reporter: document.getElementById('incidentReporter').value || '演示用户',
           title: document.getElementById('incidentTitle').value,
           scenario: document.getElementById('incidentScenario').value,
           severity: document.getElementById('incidentSeverity').value,
@@ -794,7 +896,7 @@
         });
         incidentCreateStatus.style.display = 'block';
         incidentCreateStatus.className = 'alert ok';
-        incidentCreateStatus.textContent = `Incident created: ${data.incident_id}`;
+        incidentCreateStatus.textContent = `已创建复盘记录：${data.incident_id}`;
         await Promise.all([loadIncidents(), loadAdminDashboard()]);
       } catch (err) {
         incidentCreateStatus.style.display = 'block';
@@ -824,7 +926,7 @@
       const resp = await fetch(url);
       if (!resp.ok) {
         const data = await resp.text();
-        throw new Error(data || 'Download failed.');
+        throw new Error(data || '下载失败。');
       }
       const blob = await resp.blob();
       const link = document.createElement('a');
@@ -863,6 +965,12 @@
       } catch (err) {
         alert(err.message);
       }
+    });
+    presetButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        questionInput.value = button.dataset.preset || '';
+        questionInput.focus();
+      });
     });
 
     loadEmergencyCards();

@@ -516,8 +516,21 @@ def normalize_text(text: str) -> str:
 
 
 def extract_tokens(text: str) -> set[str]:
-    chunks = re.findall(r"[a-zA-Z0-9_]+|[\u4e00-\u9fff]+", (text or "").lower())
-    return {chunk for chunk in chunks if len(chunk) >= 2}
+    tokens: set[str] = set()
+    for chunk in re.findall(r"[a-zA-Z0-9_]+|[\u4e00-\u9fff]+", (text or "").lower()):
+        if re.fullmatch(r"[a-zA-Z0-9_]+", chunk):
+            if len(chunk) >= 2:
+                tokens.add(chunk)
+            continue
+        if len(chunk) < 2:
+            continue
+        if len(chunk) <= 8:
+            tokens.add(chunk)
+        max_ngram = min(4, len(chunk))
+        for size in range(2, max_ngram + 1):
+            for idx in range(0, len(chunk) - size + 1):
+                tokens.add(chunk[idx : idx + size])
+    return tokens
 
 
 def write_csv_row(path: Path, headers: list[str], row: dict[str, Any]) -> None:
@@ -577,35 +590,49 @@ def load_kb_entries() -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     with KB_FILE.open("r", encoding="utf-8-sig", newline="") as f:
         for row in csv.DictReader(f):
+            title = (row.get("title") or "").strip()
+            question = (row.get("question") or "").strip()
+            answer = (row.get("answer") or "").strip()
+            steps = (row.get("steps") or "").strip()
+            forbidden = (row.get("forbidden") or "").strip()
+            emergency = (row.get("emergency") or "").strip()
+            ppe = (row.get("ppe") or "").strip()
+            hazard_types = (row.get("hazard_types") or "").strip()
+            tags = (row.get("tags") or "").strip()
             blob = normalize_text(
                 " ".join(
                     [
-                        row.get("title", ""),
-                        row.get("question", ""),
-                        row.get("answer", ""),
-                        row.get("steps", ""),
-                        row.get("forbidden", ""),
-                        row.get("emergency", ""),
-                        row.get("ppe", ""),
-                        row.get("hazard_types", ""),
-                        row.get("tags", ""),
+                        title,
+                        question,
+                        answer,
+                        steps,
+                        forbidden,
+                        emergency,
+                        ppe,
+                        hazard_types,
+                        tags,
                     ]
                 )
             )
             rows.append(
                 {
                     "id": (row.get("id") or "").strip(),
-                    "title": (row.get("title") or "").strip(),
+                    "title": title,
+                    "question": question,
                     "source_title": (row.get("source_title") or "").strip(),
                     "source_org": (row.get("source_org") or "").strip(),
                     "source_url": (row.get("source_url") or "").strip(),
                     "risk_level": (row.get("risk_level") or "").strip(),
-                    "hazard_types": (row.get("hazard_types") or "").strip(),
-                    "answer": (row.get("answer") or "").strip(),
-                    "steps": (row.get("steps") or "").strip(),
-                    "forbidden": (row.get("forbidden") or "").strip(),
-                    "emergency": (row.get("emergency") or "").strip(),
-                    "ppe": (row.get("ppe") or "").strip(),
+                    "hazard_types": hazard_types,
+                    "answer": answer,
+                    "steps": steps,
+                    "forbidden": forbidden,
+                    "emergency": emergency,
+                    "ppe": ppe,
+                    "tags": tags,
+                    "title_blob": normalize_text(" ".join([title, question])),
+                    "tag_blob": normalize_text(" ".join([hazard_types, tags])),
+                    "body_blob": normalize_text(" ".join([answer, steps, forbidden, emergency, ppe])),
                     "blob": blob,
                 }
             )
@@ -662,12 +689,28 @@ def retrieve_citations(question: str, top_k: int = DEFAULT_TOP_K) -> list[Citati
     for row in get_kb_entries():
         score = 0.0
         blob = row.get("blob", "")
+        title_blob = row.get("title_blob", "")
+        tag_blob = row.get("tag_blob", "")
+        body_blob = row.get("body_blob", "")
+        row_question = normalize_text(row.get("question", ""))
+        row_title = normalize_text(row.get("title", ""))
+        if row_question and row_question == q:
+            score += 10.0
+        elif row_question and (row_question in q or q in row_question):
+            score += 5.2
+        if row_title and row_title == q:
+            score += 8.0
+        elif row_title and (row_title in q or q in row_title):
+            score += 4.0
         for token in q_tokens:
-            if token in blob:
-                score += 1.0 + min(len(token), 6) * 0.12
-        title_norm = normalize_text(row.get("title", ""))
-        if title_norm and title_norm in q:
-            score += 2.5
+            if token in title_blob:
+                score += 1.9 + min(len(token), 4) * 0.2
+            elif token in tag_blob:
+                score += 1.35 + min(len(token), 4) * 0.15
+            elif token in body_blob:
+                score += 0.95 + min(len(token), 4) * 0.11
+            elif token in blob:
+                score += 0.65 + min(len(token), 4) * 0.08
         if score > 0:
             scored.append((score, row))
     scored.sort(key=lambda item: item[0], reverse=True)
@@ -1585,29 +1628,29 @@ def load_admin_dashboard(days: int = 30, risk_level: str = "", incident_status: 
 
     metrics = [
         DashboardMetric(
-            label="Checklist block rate",
+            label="清单阻断率",
             value=f"{round(checklist_block_rate * 100)}%",
-            detail=f"{blocked}/{checklist_total or 0} submissions blocked",
+            detail=f"{blocked}/{checklist_total or 0} 次提交被阻断",
         ),
         DashboardMetric(
-            label="Training pass rate",
+            label="培训通过率",
             value=f"{round(training_stats.pass_rate * 100)}%",
-            detail=f"{training_stats.attempt_count} attempts",
+            detail=f"{training_stats.attempt_count} 次作答",
         ),
         DashboardMetric(
-            label="Average training score",
+            label="培训平均分",
             value=f"{training_stats.average_score}",
-            detail="Based on completed quiz attempts",
+            detail="基于已完成的考核记录",
         ),
         DashboardMetric(
-            label="Open incident reviews",
+            label="未闭环复盘数",
             value=str(incident_summary["open"] + incident_summary["in_review"] + incident_summary["action_in_progress"]),
-            detail="Open + in review + corrective action in progress",
+            detail="待处理 + 复盘中 + 整改中",
         ),
         DashboardMetric(
-            label="Overdue corrective actions",
+            label="逾期整改数",
             value=str(sum(1 for item in incidents if item.overdue)),
-            detail="Incidents past due and not yet verified/closed",
+            detail="已超期且尚未复核/闭环",
         ),
     ]
     low_confidence_top = [
