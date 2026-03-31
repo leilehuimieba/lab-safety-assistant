@@ -17,8 +17,8 @@ set -a
 source .env.web_demo
 set +a
 
-if [[ -z "${OPENAI_API_KEY:-}" || "${OPENAI_API_KEY}" == "请替换成你的key" ]]; then
-  echo "[错误] .env.web_demo 中 OPENAI_API_KEY 未配置。"
+if [[ ( -z "${OPENAI_API_KEY:-}" || "${OPENAI_API_KEY}" == "请替换成你的key" ) && -z "${DIFY_APP_API_KEY:-}" ]]; then
+  echo "[错误] .env.web_demo 中至少要配置 DIFY_APP_API_KEY 或 OPENAI_API_KEY。"
   exit 1
 fi
 

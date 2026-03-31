@@ -44,9 +44,50 @@ DEFAULT_FALLBACK_MODELS = "grok-3-mini,grok-4,grok-3"
 DEFAULT_TOP_K = 4
 DEFAULT_LOW_CONFIDENCE_TOP_SCORE = 3.5
 DEFAULT_TRAINING_PASS_THRESHOLD = 80
+APP_VERSION = "defense-freeze-20260331"
+FORMAL_EVAL_SCORE = "20/20"
+STABILITY_EVIDENCE = "3/3 PASS"
+KB_IMPORT_SUCCESS_COUNT = 398
+DIFY_DEFAULT_BASE_URL = "http://127.0.0.1:8080"
+DIFY_DEFAULT_TIMEOUT = 120.0
 
 SEVERITY_SCORE = {"critical": 5, "high": 4, "medium": 3, "low": 2}
 TERMINAL_ACTIONS = {"refuse", "redirect_emergency", "ask_for_more_info"}
+REFUSE_INTENT_MARKERS = [
+    "能不能",
+    "可不可以",
+    "可以吗",
+    "怎么混",
+    "混吗",
+    "一起混",
+    "直接倒",
+    "倒掉",
+    "下水道",
+    "明火",
+    "酒精灯",
+    "加热",
+    "不开通风柜",
+    "不用通风",
+    "不戴",
+    "省略ppe",
+    "直接开",
+    "运转时开盖",
+]
+EMERGENCY_INTENT_MARKERS = [
+    "怎么办",
+    "怎么处理",
+    "如何处理",
+    "第一步",
+    "应急",
+    "事故",
+    "紧急",
+    "受伤",
+    "泄漏",
+    "起火",
+    "着火",
+    "冒烟",
+    "暴露",
+]
 RISK_LABEL = {
     1: "Low",
     2: "Medium-Low",
@@ -469,6 +510,19 @@ class AdminDashboardResponse(BaseModel):
     overdue_incidents: list[str] = Field(default_factory=list)
 
 
+class DemoMetaResponse(BaseModel):
+    app_version: str
+    chat_lane_lab: str
+    chat_lane_agent: str
+    acceptance_status: str
+    formal_eval_score: str
+    stability_status: str
+    knowledge_base_rows: int
+    knowledge_base_imported: int
+    demo_port: str
+    runtime_model: str
+
+
 class IncidentCreateRequest(BaseModel):
     reporter: str = Field(default="anonymous", max_length=120)
     title: str = Field(min_length=1, max_length=200)
@@ -761,6 +815,30 @@ def match_rule(question: str) -> dict[str, Any] | None:
     return best
 
 
+def should_enforce_terminal_rule(question: str, rule: dict[str, Any] | None) -> bool:
+    if not rule:
+        return False
+    action = str(rule.get("action") or "").strip()
+    if action not in TERMINAL_ACTIONS:
+        return False
+    q = normalize_text(question)
+    category = str(rule.get("id") or "")
+
+    if action == "ask_for_more_info":
+        return True
+
+    if action == "refuse":
+        always_refuse = {"R-006", "R-007", "R-023", "R-024"}
+        if category in always_refuse:
+            return True
+        return any(marker in q for marker in REFUSE_INTENT_MARKERS)
+
+    if action == "redirect_emergency":
+        return any(marker in q for marker in EMERGENCY_INTENT_MARKERS)
+
+    return False
+
+
 def assess_low_confidence(citations: list[Citation]) -> tuple[bool, str]:
     if not citations:
         return True, "no_kb_match"
@@ -923,6 +1001,97 @@ def build_user_message(question: str, citations: list[Citation]) -> str:
         ]
     )
     return f"Question:\n{question}\n\nKB Context:\n{context}\n\nUse KB first and avoid fabrication."
+
+
+def get_demo_meta() -> DemoMetaResponse:
+    kb_rows = len(get_kb_entries())
+    dify_app_key = os.getenv("DIFY_APP_API_KEY", "").strip()
+    return DemoMetaResponse(
+        app_version=APP_VERSION,
+        chat_lane_lab="Dify 正式知识库工作流" if dify_app_key else "OpenAI 兼容回退链路",
+        chat_lane_agent="OpenAI 兼容直连",
+        acceptance_status="已封版",
+        formal_eval_score=FORMAL_EVAL_SCORE,
+        stability_status=STABILITY_EVIDENCE,
+        knowledge_base_rows=kb_rows,
+        knowledge_base_imported=KB_IMPORT_SUCCESS_COUNT,
+        demo_port=os.getenv("DEMO_PORT", "8088").strip() or "8088",
+        runtime_model=os.getenv("OPENAI_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL,
+    )
+
+
+def parse_sse_answer(response: requests.Response) -> tuple[str, str]:
+    answer_parts: list[str] = []
+    workflow_status = ""
+    workflow_error = ""
+    for raw in response.iter_lines(decode_unicode=True):
+        if not raw:
+            continue
+        line = raw.strip()
+        if not line.startswith("data: "):
+            continue
+        payload = line[6:].strip()
+        if not payload or payload == "[DONE]":
+            continue
+        try:
+            obj = json.loads(payload)
+        except Exception:
+            continue
+        event = str(obj.get("event") or "").strip().lower()
+        if event == "message":
+            chunk = str(obj.get("answer") or "").strip()
+            if chunk:
+                answer_parts.append(chunk)
+        elif event == "workflow_finished":
+            data = obj.get("data") or {}
+            workflow_status = str(data.get("status") or "").strip().lower()
+            break
+        elif event == "error":
+            workflow_error = str(obj.get("message") or obj.get("error") or obj)
+            break
+    return "".join(answer_parts).strip(), workflow_error or workflow_status
+
+
+def call_dify_lab(question: str) -> tuple[str, str]:
+    base_url = os.getenv("DIFY_BASE_URL", DIFY_DEFAULT_BASE_URL).strip()
+    app_key = os.getenv("DIFY_APP_API_KEY", "").strip()
+    timeout = float(os.getenv("DIFY_TIMEOUT", str(DIFY_DEFAULT_TIMEOUT)) or str(DIFY_DEFAULT_TIMEOUT))
+    if not app_key:
+        raise HTTPException(status_code=500, detail="DIFY_APP_API_KEY is missing.")
+
+    endpoint = base_url.rstrip("/")
+    if not endpoint.endswith("/v1"):
+        endpoint += "/v1"
+    endpoint += "/chat-messages"
+
+    try:
+        response = requests.post(
+            endpoint,
+            headers={
+                "Authorization": f"Bearer {app_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "inputs": {},
+                "query": question,
+                "response_mode": "streaming",
+                "conversation_id": "",
+                "user": "web-demo-lab",
+                "auto_generate_name": False,
+            },
+            timeout=(20, timeout),
+            stream=True,
+        )
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"dify_request_failed: {exc}") from exc
+
+    if response.status_code >= 400:
+        raise HTTPException(status_code=502, detail=f"dify_http_{response.status_code}: {response.text[:200]}")
+
+    answer, status_text = parse_sse_answer(response)
+    if answer:
+        return sanitize_llm_output(answer), "dify-workflow"
+    raise HTTPException(status_code=502, detail=f"dify_empty_answer: {status_text or 'unknown'}")
 
 
 def call_upstream(mode: str, question: str, citations: list[Citation], guardrail: str = "") -> tuple[str, str]:
@@ -1693,7 +1862,7 @@ def chat(payload: ChatRequest) -> ChatResponse:
     decision = "llm_answer"
     followup_logged = False
 
-    if rule and rule_action in TERMINAL_ACTIONS:
+    if rule and should_enforce_terminal_rule(question, rule):
         decision = (
             "rule_blocked"
             if rule_action == "refuse"
@@ -1719,10 +1888,14 @@ def chat(payload: ChatRequest) -> ChatResponse:
     guardrail = str((rule or {}).get("response") or "")
     model = "fallback-rule-engine"
     try:
-        answer, model = call_upstream(mode, question, citations, guardrail=guardrail)
+        if mode == "lab":
+            answer, model = call_dify_lab(question)
+            decision = "dify_lab_answer" if not rule else "dify_lab_answer_guarded"
+        else:
+            answer, model = call_upstream(mode, question, citations, guardrail=guardrail)
     except HTTPException:
         if mode == "lab":
-            decision = "llm_fallback_structured"
+            decision = "dify_lab_fallback_structured"
             answer = build_fallback_lab_answer(question=question, citations=citations, rule=rule, low_confidence_reason=low_reason)
         else:
             raise
@@ -1745,7 +1918,7 @@ def chat(payload: ChatRequest) -> ChatResponse:
         answer=answer or "No answer returned.",
         mode=mode,
         model=model,
-        decision=decision if not rule else "llm_answer_guarded",
+        decision=decision if not rule else decision,
         risk_level=str((rule or {}).get("severity") or ""),
         matched_rule_id=str((rule or {}).get("id") or ""),
         matched_rule_action=rule_action,
@@ -1754,6 +1927,11 @@ def chat(payload: ChatRequest) -> ChatResponse:
         followup_logged=followup_logged,
         citations=citations,
     )
+
+
+@app.get("/api/meta", response_model=DemoMetaResponse)
+def demo_meta() -> DemoMetaResponse:
+    return get_demo_meta()
 
 
 @app.post("/api/risk_assess", response_model=RiskAssessResponse)

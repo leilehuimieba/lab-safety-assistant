@@ -54,6 +54,30 @@
       font-size: 13px;
       letter-spacing: 0.02em;
     }
+    .snapshot-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .snapshot-card {
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 18px;
+      padding: 14px;
+      color: #12355e;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+    .snapshot-card span {
+      font-size: 12px;
+      color: #4f6782;
+    }
+    .snapshot-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 22px;
+      color: #0d2444;
+    }
     .layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; margin-top: 18px; }
     .stack { display: grid; gap: 18px; }
     .card {
@@ -197,7 +221,7 @@
     a:hover { text-decoration: underline; }
     @media (max-width: 1100px) {
       .layout { grid-template-columns: 1fr; }
-      .em-grid, .stats-grid { grid-template-columns: 1fr; }
+      .em-grid, .stats-grid, .snapshot-grid { grid-template-columns: 1fr; }
       .two-col { grid-template-columns: 1fr; }
     }
   </style>
@@ -212,6 +236,24 @@
         <span>高风险可阻断</span>
         <span>看板可展示</span>
         <span>复盘可闭环</span>
+      </div>
+      <div class="snapshot-grid">
+        <div class="snapshot-card">
+          <span>当前版本</span>
+          <strong id="metaVersion">加载中...</strong>
+        </div>
+        <div class="snapshot-card">
+          <span>验收状态</span>
+          <strong id="metaAcceptance">加载中...</strong>
+        </div>
+        <div class="snapshot-card">
+          <span>知识库规模</span>
+          <strong id="metaKbSize">加载中...</strong>
+        </div>
+        <div class="snapshot-card">
+          <span>实验室问答链路</span>
+          <strong id="metaLane">加载中...</strong>
+        </div>
       </div>
     </section>
 
@@ -420,6 +462,10 @@
     const questionInput = document.getElementById('question');
     const result = document.getElementById('result');
     const routeInfo = document.getElementById('routeInfo');
+    const metaVersion = document.getElementById('metaVersion');
+    const metaAcceptance = document.getElementById('metaAcceptance');
+    const metaKbSize = document.getElementById('metaKbSize');
+    const metaLane = document.getElementById('metaLane');
     const lowConfidenceAlert = document.getElementById('lowConfidenceAlert');
     const riskBox = document.getElementById('riskBox');
     const citationBox = document.getElementById('citationBox');
@@ -614,6 +660,23 @@
       return data;
     }
 
+    async function loadDemoMeta() {
+      try {
+        const resp = await fetch('/api/meta');
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || '加载封版信息失败。');
+        metaVersion.textContent = data.app_version || '-';
+        metaAcceptance.textContent = `${data.acceptance_status || '-'} / ${data.formal_eval_score || '-'}`;
+        metaKbSize.textContent = `${data.knowledge_base_imported || 0} 导入 / ${data.knowledge_base_rows || 0} 本地`;
+        metaLane.textContent = data.chat_lane_lab || '-';
+      } catch (err) {
+        metaVersion.textContent = '加载失败';
+        metaAcceptance.textContent = '加载失败';
+        metaKbSize.textContent = '加载失败';
+        metaLane.textContent = '加载失败';
+      }
+    }
+
     async function ask() {
       const question = questionInput.value.trim();
       if (!question) return;
@@ -621,7 +684,7 @@
       try {
         const data = await postJson('/api/chat', { mode: getMode(), question });
         renderMarkdown(result, data.answer || '');
-        routeInfo.textContent = `决策=${data.decision || '-'} | 规则=${data.matched_rule_id || '-'} | 风险=${displayRisk(data.risk_level)}`;
+        routeInfo.textContent = `链路=${data.model || '-'} | 决策=${data.decision || '-'} | 规则=${data.matched_rule_id || '-'} | 风险=${displayRisk(data.risk_level)}`;
         showLowConfidence(data.low_confidence, data.low_confidence_reason);
         renderCitations(data.citations || []);
       } catch (err) {
@@ -977,6 +1040,7 @@
     loadTrainingStats();
     loadAdminDashboard();
     loadIncidents();
+    loadDemoMeta();
   </script>
 </body>
 </html>
