@@ -26,13 +26,13 @@ function Invoke-External {
     param(
         [Parameter(Mandatory = $true)]
         [string]$FilePath,
-        [Parameter(ValueFromRemainingArguments = $true)]
-        [string[]]$ArgumentList
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments
     )
 
-    & $FilePath @ArgumentList
+    & $FilePath @Arguments
     if ($LASTEXITCODE -ne 0) {
-        throw "Command failed ($LASTEXITCODE): $FilePath $($ArgumentList -join ' ')"
+        throw "Command failed ($LASTEXITCODE): $FilePath $($Arguments -join ' ')"
     }
 }
 
@@ -81,13 +81,13 @@ $scpBaseArgs = @("-i", $KeyPath, "-o", "StrictHostKeyChecking=accept-new")
 
 try {
     Write-Step "Creating release archive from git archive"
-    Invoke-External git @("archive", "--format=zip", "--output=$archivePath", $commitSha)
+    Invoke-External -FilePath "git" -Arguments @("archive", "--format=zip", "--output=$archivePath", $commitSha)
 
     Write-Step "Preparing remote staging directory"
-    Invoke-External ssh @($sshBaseArgs + @($sshTarget, "mkdir -p $RemoteStageDir"))
+    Invoke-External -FilePath "ssh" -Arguments ($sshBaseArgs + @($sshTarget, "mkdir -p $RemoteStageDir"))
 
     Write-Step "Uploading release archive"
-    Invoke-External scp @($scpBaseArgs + @($archivePath, "${sshTarget}:$remoteArchive"))
+    Invoke-External -FilePath "scp" -Arguments ($scpBaseArgs + @($archivePath, "${sshTarget}:$remoteArchive"))
 
     $remoteScript = @"
 #!/usr/bin/env bash
@@ -191,10 +191,10 @@ echo "[remote] backup kept at: \${BACKUP_DIR}"
     Set-Content -Path $localRunner -Value $remoteScript -Encoding Ascii
 
     Write-Step "Uploading remote release runner"
-    Invoke-External scp @($scpBaseArgs + @($localRunner, "${sshTarget}:$remoteRunner"))
+    Invoke-External -FilePath "scp" -Arguments ($scpBaseArgs + @($localRunner, "${sshTarget}:$remoteRunner"))
 
     Write-Step "Executing remote deployment"
-    Invoke-External ssh @($sshBaseArgs + @($sshTarget, "bash $remoteRunner"))
+    Invoke-External -FilePath "ssh" -Arguments ($sshBaseArgs + @($sshTarget, "bash $remoteRunner"))
 
     Write-Step "Remote deployment finished"
     Write-Host "Release dir : $RemoteReleaseDir"
