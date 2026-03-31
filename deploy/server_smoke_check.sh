@@ -6,6 +6,9 @@ DIFY_BASE_URL="http://127.0.0.1:8080"
 WEB_BASE_URL=""
 TIMEOUT_SEC=12
 VERBOSE=0
+DIFY_APP_TOKEN=""
+DIFY_SMOKE_QUERY="实验室发生化学品泄漏时，第一步应该做什么？"
+SKIP_DIFY_BUSINESS_SMOKE=0
 
 usage() {
   cat <<'EOF'
@@ -15,6 +18,10 @@ Options:
   --repo-root PATH        Repo root on the server.
   --dify-base-url URL     Dify base URL. Default: http://127.0.0.1:8080
   --web-base-url URL      Web demo base URL. Default: infer from .env.web_demo or 8088
+  --dify-app-token TOKEN  Dify app token. Default: env DIFY_APP_TOKEN or auto-resolve from DB.
+  --dify-smoke-query TXT  Query used for real Dify business smoke.
+  --skip-dify-business-smoke
+                          Skip the real /v1/chat-messages workflow smoke.
   --timeout-sec N         Curl timeout in seconds. Default: 12
   --verbose               Print extra process and docker details.
   -h, --help              Show help.
@@ -34,6 +41,18 @@ while [[ $# -gt 0 ]]; do
     --web-base-url)
       WEB_BASE_URL="$2"
       shift 2
+      ;;
+    --dify-app-token)
+      DIFY_APP_TOKEN="$2"
+      shift 2
+      ;;
+    --dify-smoke-query)
+      DIFY_SMOKE_QUERY="$2"
+      shift 2
+      ;;
+    --skip-dify-business-smoke)
+      SKIP_DIFY_BUSINESS_SMOKE=1
+      shift
       ;;
     --timeout-sec)
       TIMEOUT_SEC="$2"
@@ -145,6 +164,58 @@ check_http "training_stats_api" "${WEB_BASE_URL}/api/training/stats" '^200$'
 check_http "incidents_api" "${WEB_BASE_URL}/api/incidents" '^200$'
 check_http "dify_http" "${DIFY_BASE_URL}" '^(200|301|302|307|308)$'
 
+resolve_dify_app_token() {
+  if [[ -n "$DIFY_APP_TOKEN" ]]; then
+    printf '%s' "$DIFY_APP_TOKEN"
+    return 0
+  fi
+  if [[ -n "${DIFY_APP_TOKEN:-}" ]]; then
+    printf '%s' "$DIFY_APP_TOKEN"
+    return 0
+  fi
+  if ! command -v docker >/dev/null 2>&1; then
+    return 1
+  fi
+  local db_container
+  db_container="$(docker ps --format '{{.Names}}' | grep -E 'db_postgres-1$' | head -n 1 || true)"
+  if [[ -z "$db_container" ]]; then
+    return 1
+  fi
+  docker exec -i "$db_container" psql -U postgres -d dify -At -F '|' -c \
+    "select token from api_tokens order by created_at desc limit 1;" 2>/dev/null | head -n 1 | tr -d '\r'
+}
+
+if [[ "$SKIP_DIFY_BUSINESS_SMOKE" != "1" ]]; then
+  RESOLVED_DIFY_APP_TOKEN="$(resolve_dify_app_token || true)"
+  if [[ -z "$RESOLVED_DIFY_APP_TOKEN" ]]; then
+    record_fail "dify_business_smoke" "unable to resolve Dify app token"
+  else
+    PYTHON_BIN="python3"
+    if [[ -x "$REPO_ROOT/.venv/bin/python" ]]; then
+      PYTHON_BIN="$REPO_ROOT/.venv/bin/python"
+    fi
+    BUSINESS_SMOKE_JSON="$REPO_ROOT/artifacts/ops/dify_business_smoke_latest.json"
+    if "$PYTHON_BIN" "$REPO_ROOT/scripts/release/dify_business_smoke.py" \
+      --api-base "$DIFY_BASE_URL" \
+      --app-token "$RESOLVED_DIFY_APP_TOKEN" \
+      --query "$DIFY_SMOKE_QUERY" \
+      --user "server-smoke-check" \
+      --timeout-sec "$(( TIMEOUT_SEC > 30 ? TIMEOUT_SEC * 10 : 120 ))" \
+      --output-json "$BUSINESS_SMOKE_JSON" >/tmp/dify_business_smoke_stdout.log 2>/tmp/dify_business_smoke_stderr.log; then
+      record_pass "dify_business_smoke" "$BUSINESS_SMOKE_JSON"
+      if [[ "$VERBOSE" == "1" ]]; then
+        cat /tmp/dify_business_smoke_stdout.log
+      fi
+    else
+      detail="$(tr '\n' ' ' </tmp/dify_business_smoke_stderr.log | cut -c1-220)"
+      if [[ -z "$detail" ]]; then
+        detail="$(tr '\n' ' ' </tmp/dify_business_smoke_stdout.log | cut -c1-220)"
+      fi
+      record_fail "dify_business_smoke" "${detail:-business smoke failed}"
+    fi
+  fi
+fi
+
 if command -v docker >/dev/null 2>&1; then
   DIFY_CONTAINERS="$(docker ps --format '{{.Names}} {{.Status}}' | grep -E 'docker-(api|web|worker|db_postgres|redis)-1' || true)"
   if [[ -n "$DIFY_CONTAINERS" ]]; then
@@ -171,6 +242,7 @@ REPORT_PATH="$REPO_ROOT/artifacts/ops/server_smoke_check_latest.txt"
   echo "repo_root=$REPO_ROOT"
   echo "web_base_url=$WEB_BASE_URL"
   echo "dify_base_url=$DIFY_BASE_URL"
+  echo "skip_dify_business_smoke=$SKIP_DIFY_BUSINESS_SMOKE"
   echo "pass_count=$PASS_COUNT"
   echo "fail_count=$FAIL_COUNT"
   printf '%s\n' "${REPORT_LINES[@]}"

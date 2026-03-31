@@ -143,6 +143,7 @@ preserve_dir() {
 preserve_file ".env.web_demo"
 preserve_dir ".venv"
 preserve_dir ".venv-web-demo"
+preserve_dir "deploy/env"
 preserve_dir "logs"
 preserve_dir "run"
 
