@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
+    [string]$RepoRoot = "",
     [string]$Host = "175.178.90.193",
     [string]$User = "root",
     [string]$KeyPath = "$env:USERPROFILE\.ssh\labsafe_new.pem",
@@ -42,6 +42,11 @@ function New-TempDirectory {
     return $path
 }
 
+if (-not (Test-Path $RepoRoot)) {
+    if (-not $RepoRoot) {
+        $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    }
+}
 if (-not (Test-Path $RepoRoot)) {
     throw "Repo root not found: $RepoRoot"
 }
