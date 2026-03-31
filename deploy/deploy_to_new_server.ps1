@@ -42,10 +42,8 @@ function New-TempDirectory {
     return $path
 }
 
-if (-not (Test-Path $RepoRoot)) {
-    if (-not $RepoRoot) {
-        $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-    }
+if (-not $RepoRoot) {
+    $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 }
 if (-not (Test-Path $RepoRoot)) {
     throw "Repo root not found: $RepoRoot"
