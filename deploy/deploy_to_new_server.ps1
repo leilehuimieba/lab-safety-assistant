@@ -167,8 +167,18 @@ if [[ -x ".venv/bin/pip" ]]; then
 fi
 
 if [[ -x ".venv/bin/python" ]]; then
+  echo "[remote] normalizing Dify plugin storage names"
+  NORMALIZE_OUTPUT="$(.venv/bin/python scripts/release/normalize_dify_plugin_storage.py --apply || true)"
+  echo "${NORMALIZE_OUTPUT}"
   echo "[remote] ensuring Dify provider rows"
   .venv/bin/python scripts/release/ensure_dify_provider_rows.py || echo "[remote][warn] ensure_dify_provider_rows failed"
+  if command -v docker >/dev/null 2>&1 && [[ "${NORMALIZE_OUTPUT}" == *'"rename_count": '* ]]; then
+    if ! grep -q '"rename_count": 0' <<<"${NORMALIZE_OUTPUT}"; then
+      echo "[remote] restarting Dify runtime after plugin storage normalization"
+      docker restart docker-plugin_daemon-1 docker-api-1 docker-worker-1 >/dev/null || echo "[remote][warn] docker restart after normalization failed"
+      sleep 8
+    fi
+  fi
 fi
 
 if [[ "${RESEED_DEMO_DATA}" == "1" ]]; then

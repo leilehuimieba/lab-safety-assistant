@@ -25,7 +25,7 @@ import requests
 
 DEFAULT_PROVIDER = "langgenius/openai_api_compatible/openai_api_compatible"
 DEFAULT_MODEL = "gpt-5.2-codex"
-DEFAULT_MODEL_TYPE = "text-generation"
+DEFAULT_MODEL_TYPE = "llm"
 DEFAULT_API_BASE = "http://127.0.0.1:8080"
 DEFAULT_QUERY = "实验室发生化学品泄漏时，第一步怎么做？"
 
@@ -91,7 +91,7 @@ from extensions.ext_database import db
 from extensions.ext_storage import storage
 from libs.rsa import encrypt, generate_key_pair
 from models.account import Tenant
-from models.provider import Provider, ProviderCredential, ProviderModelCredential
+from models.provider import Provider, ProviderCredential, ProviderModel, ProviderModelCredential
 
 TENANT_ID = os.environ["TENANT_ID"]
 PROVIDER_NAME = os.environ["PROVIDER_NAME"]
@@ -164,6 +164,7 @@ with app.app_context():
         created_provider_credential = True
 
     provider_credential.encrypted_config = json.dumps(base_cfg, ensure_ascii=False)
+    provider_credential.credential_name = provider_credential.credential_name or "default"
 
     model_credential = (
         db.session.query(ProviderModelCredential)
@@ -201,6 +202,7 @@ with app.app_context():
     )
     model_credential.encrypted_config = json.dumps(model_cfg, ensure_ascii=False)
     model_credential.model_type = MODEL_TYPE
+    model_credential.credential_name = model_credential.credential_name or provider_credential.credential_name or "default"
 
     provider_row = (
         db.session.query(Provider)
@@ -225,8 +227,49 @@ with app.app_context():
         created_provider_row = True
     else:
         provider_row.is_valid = True
-        if not provider_row.credential_id:
-            provider_row.credential_id = provider_credential.id
+        provider_row.credential_id = provider_credential.id
+
+    # Remove legacy rows that map the same model name through deprecated model types.
+    if MODEL_TYPE == "llm":
+        legacy_provider_model_rows = (
+            db.session.query(ProviderModel)
+            .filter(
+                ProviderModel.tenant_id == TENANT_ID,
+                ProviderModel.provider_name == PROVIDER_NAME,
+                ProviderModel.model_name == MODEL_NAME,
+                ProviderModel.model_type != MODEL_TYPE,
+            )
+            .all()
+        )
+        for legacy_row in legacy_provider_model_rows:
+            db.session.delete(legacy_row)
+
+    provider_model_row = (
+        db.session.query(ProviderModel)
+        .filter(
+            ProviderModel.tenant_id == TENANT_ID,
+            ProviderModel.provider_name == PROVIDER_NAME,
+            ProviderModel.model_name == MODEL_NAME,
+            ProviderModel.model_type == MODEL_TYPE,
+        )
+        .order_by(ProviderModel.updated_at.desc())
+        .first()
+    )
+    created_provider_model_row = False
+    if not provider_model_row:
+        provider_model_row = ProviderModel(
+            tenant_id=TENANT_ID,
+            provider_name=PROVIDER_NAME,
+            model_name=MODEL_NAME,
+            model_type=MODEL_TYPE,
+            is_valid=True,
+            credential_id=model_credential.id,
+        )
+        db.session.add(provider_model_row)
+        created_provider_model_row = True
+    else:
+        provider_model_row.is_valid = True
+        provider_model_row.credential_id = model_credential.id
 
     db.session.commit()
 
@@ -241,6 +284,7 @@ with app.app_context():
                 "provider_credential_created": created_provider_credential,
                 "model_credential_created": created_model_credential,
                 "provider_row_created": created_provider_row,
+                "provider_model_row_created": created_provider_model_row,
                 "key_rotated": key_rotated,
                 "private_key_bytes": len(private_pem),
             },
