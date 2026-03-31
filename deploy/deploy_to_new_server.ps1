@@ -101,17 +101,17 @@ RESEED_DEMO_DATA='__RESEED__'
 SKIP_RESTART='__SKIP_RESTART__'
 SKIP_SMOKE='__SKIP_SMOKE__'
 
-INCOMING_DIR="\${RELEASE_DIR}.__incoming_\${STAMP}"
-BACKUP_DIR="\${RELEASE_DIR}_backup_\${STAMP}"
+INCOMING_DIR="${RELEASE_DIR}.__incoming_${STAMP}"
+BACKUP_DIR="${RELEASE_DIR}_backup_${STAMP}"
 
-echo "[remote] release dir: \${RELEASE_DIR}"
-echo "[remote] incoming dir: \${INCOMING_DIR}"
-echo "[remote] backup dir: \${BACKUP_DIR}"
+echo "[remote] release dir: ${RELEASE_DIR}"
+echo "[remote] incoming dir: ${INCOMING_DIR}"
+echo "[remote] backup dir: ${BACKUP_DIR}"
 
-rm -rf "\${INCOMING_DIR}"
-mkdir -p "\${INCOMING_DIR}"
+rm -rf "${INCOMING_DIR}"
+mkdir -p "${INCOMING_DIR}"
 
-python3 - "\${ARCHIVE_PATH}" "\${INCOMING_DIR}" <<'PY'
+python3 - "${ARCHIVE_PATH}" "${INCOMING_DIR}" <<'PY'
 from pathlib import Path
 from zipfile import ZipFile
 import sys
@@ -126,17 +126,17 @@ PY
 
 preserve_file() {
   local relative_path="$1"
-  if [[ -f "\${RELEASE_DIR}/\${relative_path}" ]]; then
-    mkdir -p "\$(dirname "\${INCOMING_DIR}/\${relative_path}")"
-    cp -a "\${RELEASE_DIR}/\${relative_path}" "\${INCOMING_DIR}/\${relative_path}"
+  if [[ -f "${RELEASE_DIR}/${relative_path}" ]]; then
+    mkdir -p "$(dirname "${INCOMING_DIR}/${relative_path}")"
+    cp -a "${RELEASE_DIR}/${relative_path}" "${INCOMING_DIR}/${relative_path}"
   fi
 }
 
 preserve_dir() {
   local relative_path="$1"
-  if [[ -d "\${RELEASE_DIR}/\${relative_path}" ]]; then
-    mkdir -p "\$(dirname "\${INCOMING_DIR}/\${relative_path}")"
-    cp -a "\${RELEASE_DIR}/\${relative_path}" "\${INCOMING_DIR}/\${relative_path}"
+  if [[ -d "${RELEASE_DIR}/${relative_path}" ]]; then
+    mkdir -p "$(dirname "${INCOMING_DIR}/${relative_path}")"
+    cp -a "${RELEASE_DIR}/${relative_path}" "${INCOMING_DIR}/${relative_path}"
   fi
 }
 
@@ -147,27 +147,27 @@ preserve_dir "logs"
 preserve_dir "run"
 
 for sub_dir in checklists training incidents low_confidence_followups ops; do
-  preserve_dir "artifacts/\${sub_dir}"
+  preserve_dir "artifacts/${sub_dir}"
 done
 
-if [[ -d "\${RELEASE_DIR}" ]]; then
-  mv "\${RELEASE_DIR}" "\${BACKUP_DIR}"
+if [[ -d "${RELEASE_DIR}" ]]; then
+  mv "${RELEASE_DIR}" "${BACKUP_DIR}"
 fi
-mv "\${INCOMING_DIR}" "\${RELEASE_DIR}"
-rm -f "\${ARCHIVE_PATH}"
+mv "${INCOMING_DIR}" "${RELEASE_DIR}"
+rm -f "${ARCHIVE_PATH}"
 
-cd "\${RELEASE_DIR}"
+cd "${RELEASE_DIR}"
 
 if [[ -x ".venv/bin/pip" ]]; then
   .venv/bin/pip install -r web_demo/requirements.txt >/dev/null 2>&1 || true
 fi
 
-if [[ "\${RESEED_DEMO_DATA}" == "1" ]]; then
+if [[ "${RESEED_DEMO_DATA}" == "1" ]]; then
   echo "[remote] reseeding fixed demo data"
   python3 scripts/demo/seed_fixed_demo_data.py
 fi
 
-if [[ "\${SKIP_RESTART}" != "1" ]]; then
+if [[ "${SKIP_RESTART}" != "1" ]]; then
   echo "[remote] restarting web demo"
   bash deploy/stop_web_demo.sh || true
   bash deploy/start_web_demo.sh
@@ -175,16 +175,16 @@ else
   echo "[remote] skip restart requested"
 fi
 
-if [[ "\${SKIP_SMOKE}" != "1" ]]; then
+if [[ "${SKIP_SMOKE}" != "1" ]]; then
   echo "[remote] running smoke check"
-  bash deploy/server_smoke_check.sh --repo-root "\${RELEASE_DIR}"
+  bash deploy/server_smoke_check.sh --repo-root "${RELEASE_DIR}"
 else
   echo "[remote] skip smoke requested"
 fi
 
 echo "[remote] deployment complete"
-echo "[remote] current release: \${RELEASE_DIR}"
-echo "[remote] backup kept at: \${BACKUP_DIR}"
+echo "[remote] current release: ${RELEASE_DIR}"
+echo "[remote] backup kept at: ${BACKUP_DIR}"
 '@
 
     $remoteScript = $remoteScriptTemplate.Replace("__REMOTE_RELEASE_DIR__", $RemoteReleaseDir)
