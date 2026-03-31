@@ -1397,10 +1397,19 @@ def create_incident_record(payload: IncidentCreateRequest) -> IncidentRecord:
         records = load_incident_records()
         records.insert(0, incident)
         write_incident_records(records)
-    for item in load_incident_records():
-        if item.incident_id == incident.incident_id:
-            return item
-    return incident
+        enriched = incident.model_copy(
+            update={
+                "recurrence_risk": compute_incident_recurrence_risk(
+                    severity=incident.severity,
+                    cause_categories=incident.cause_categories,
+                    all_records=records,
+                    current_id=incident.incident_id,
+                ),
+                "overdue": compute_incident_due_state(incident.due_date, incident.status)[0],
+                "overdue_days": compute_incident_due_state(incident.due_date, incident.status)[1],
+            }
+        )
+    return enriched
 
 
 def update_incident_record(incident_id: str, payload: IncidentUpdateRequest) -> IncidentRecord:
@@ -1421,10 +1430,19 @@ def update_incident_record(incident_id: str, payload: IncidentUpdateRequest) -> 
             )
             records[idx] = updated
             write_incident_records(records)
-            for current in load_incident_records():
-                if current.incident_id == incident_id:
-                    return current
-            return updated
+            enriched = updated.model_copy(
+                update={
+                    "recurrence_risk": compute_incident_recurrence_risk(
+                        severity=updated.severity,
+                        cause_categories=updated.cause_categories,
+                        all_records=records,
+                        current_id=updated.incident_id,
+                    ),
+                    "overdue": compute_incident_due_state(updated.due_date, updated.status)[0],
+                    "overdue_days": compute_incident_due_state(updated.due_date, updated.status)[1],
+                }
+            )
+            return enriched
     raise HTTPException(status_code=404, detail="incident not found.")
 
 
