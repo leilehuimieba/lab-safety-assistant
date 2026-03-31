@@ -158,6 +158,9 @@ rm -f "${ARCHIVE_PATH}"
 
 cd "${RELEASE_DIR}"
 
+find deploy scripts -type f -name '*.sh' -exec sed -i 's/\r$//' {} +
+find deploy scripts -type f -name '*.sh' -exec chmod +x {} +
+
 if [[ -x ".venv/bin/pip" ]]; then
   .venv/bin/pip install -r web_demo/requirements.txt >/dev/null 2>&1 || true
 fi
