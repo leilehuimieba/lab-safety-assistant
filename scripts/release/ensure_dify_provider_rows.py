@@ -58,7 +58,7 @@ import os
 from app import create_app
 from extensions.ext_database import db
 from models.account import Tenant
-from models.app import App
+from models.model import App
 from models.provider import Provider, ProviderCredential
 
 tenant_id = (os.environ.get("TENANT_ID") or "").strip()
