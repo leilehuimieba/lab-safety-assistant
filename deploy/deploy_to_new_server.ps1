@@ -166,6 +166,11 @@ if [[ -x ".venv/bin/pip" ]]; then
   .venv/bin/pip install -r web_demo/requirements.txt >/dev/null 2>&1 || true
 fi
 
+if [[ -x ".venv/bin/python" ]]; then
+  echo "[remote] ensuring Dify provider rows"
+  .venv/bin/python scripts/release/ensure_dify_provider_rows.py || echo "[remote][warn] ensure_dify_provider_rows failed"
+fi
+
 if [[ "${RESEED_DEMO_DATA}" == "1" ]]; then
   echo "[remote] reseeding fixed demo data"
   python3 scripts/demo/seed_fixed_demo_data.py

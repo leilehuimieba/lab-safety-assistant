@@ -55,8 +55,19 @@ DEMO_PORT="${DEMO_PORT:-8088}"
 nohup "${RUN_CMD[@]}" web_demo.app:app --host 0.0.0.0 --port "${DEMO_PORT}" > logs/web_demo.log 2>&1 &
 echo $! > run/web_demo.pid
 
-sleep 1
-if ps -p "$(cat run/web_demo.pid)" >/dev/null 2>&1; then
+READY=0
+for _ in $(seq 1 20); do
+  if ! ps -p "$(cat run/web_demo.pid)" >/dev/null 2>&1; then
+    break
+  fi
+  if curl -fsS "http://127.0.0.1:${DEMO_PORT}/health" >/dev/null 2>&1; then
+    READY=1
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$READY" == "1" ]] && ps -p "$(cat run/web_demo.pid)" >/dev/null 2>&1; then
   echo "[成功] 演示服务已启动。"
   echo "PID: $(cat run/web_demo.pid)"
   echo "URL: http://$(hostname -I | awk '{print $1}'):${DEMO_PORT}"
