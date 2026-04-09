@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
 import sys
@@ -247,3 +248,40 @@ def test_main_secondary_policy_block_when_enforced(monkeypatch, tmp_path: Path) 
     report_path = repo_root / "artifacts" / "eval_release_oneclick" / "run_20260329_160003" / "eval_release_oneclick_report.json"
     payload = json.loads(report_path.read_text(encoding="utf-8"))
     assert payload["status"] == "blocked_by_release_policy_secondary"
+
+
+def test_build_failover_eval_cmd_passes_inner_preflight_flags() -> None:
+    args = argparse.Namespace(
+        workflow_id="wf-1",
+        primary_model="m1",
+        fallback_model="m1",
+        temperature=0.2,
+        limit=20,
+        dify_timeout=180.0,
+        dify_response_mode="streaming",
+        eval_concurrency=1,
+        retry_on_timeout=1,
+        canary_limit=3,
+        canary_timeout=20.0,
+        canary_timeout_failover_threshold=1.0,
+        canary_retry_on_timeout=1,
+        timeout_failover_threshold=1.0,
+        dify_base_url="http://127.0.0.1:8080",
+        dify_app_key="app-xxx",
+        fallback_dify_base_url="",
+        fallback_dify_app_key="",
+        allow_skip_live=False,
+        skip_health_check=True,
+        health_allow_chat_timeout_pass=True,
+        skip_preflight=True,
+        skip_chat_preflight=True,
+        skip_canary=True,
+        restore_primary_after_run=False,
+        skip_update_dashboard=False,
+        skip_failure_analysis=False,
+    )
+    cmd = rero.build_failover_eval_cmd(args, Path("/tmp/repo"))
+    assert "--skip-health-check" in cmd
+    assert "--health-allow-chat-timeout-pass" in cmd
+    assert "--skip-preflight" in cmd
+    assert "--skip-chat-preflight" in cmd

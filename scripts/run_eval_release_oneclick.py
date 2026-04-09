@@ -113,6 +113,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Allow health pass when only chat preflight timeout happens.",
     )
+    parser.add_argument(
+        "--skip-preflight",
+        action="store_true",
+        help="Skip inner /parameters preflight in regression runner.",
+    )
+    parser.add_argument(
+        "--skip-chat-preflight",
+        action="store_true",
+        help="Skip inner /chat-messages preflight in regression runner.",
+    )
 
     parser.add_argument(
         "--canary-limit",
@@ -344,6 +354,10 @@ def build_failover_eval_cmd(args: argparse.Namespace, repo_root: Path) -> list[s
         cmd.append("--skip-health-check")
     if args.health_allow_chat_timeout_pass:
         cmd.append("--health-allow-chat-timeout-pass")
+    if args.skip_preflight:
+        cmd.append("--skip-preflight")
+    if args.skip_chat_preflight:
+        cmd.append("--skip-chat-preflight")
     if args.skip_canary:
         cmd.append("--skip-canary")
     if args.restore_primary_after_run:
