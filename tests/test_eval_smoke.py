@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import subprocess
 import threading
 import time
 from unittest.mock import patch
@@ -113,6 +115,15 @@ def test_extract_workflow_output_text_prefers_non_empty_string() -> None:
     assert es.extract_workflow_output_text(outputs) == "final text"
 
 
+def test_sanitize_output_dir_strips_control_chars() -> None:
+    assert es.sanitize_output_dir("artifacts/manual_smoke\r\n") == "artifacts/manual_smoke"
+
+
+def test_resolve_output_root_uses_clean_run_dir() -> None:
+    resolved = es.resolve_output_root("artifacts/manual_smoke\r", "run_20260409_170000")
+    assert resolved.as_posix().endswith("artifacts/manual_smoke/run_20260409_170000")
+
+
 def test_call_dify_accepts_workflow_finished_output_after_message_end() -> None:
     class FakeResponse:
         status_code = 200
@@ -133,6 +144,32 @@ def test_call_dify_accepts_workflow_finished_output_after_message_end() -> None:
         )
 
     assert answer == "最终答案"
+    assert error == ""
+    assert latency_ms >= 0.0
+
+
+def test_call_dify_returns_after_message_end_when_answer_ready() -> None:
+    class FakeResponse:
+        status_code = 200
+        headers = {"Content-Type": "text/event-stream; charset=utf-8"}
+        text = ""
+
+        def iter_lines(self, decode_unicode: bool = True):
+            yield 'data: {"event":"message","answer":"第一段"}'
+            yield 'data: {"event":"message","answer":"最终答案"}'
+            yield 'data: {"event":"message_end"}'
+            raise AssertionError("call_dify should stop after message_end when answer is already complete")
+
+    with patch("eval_smoke.requests.post", return_value=FakeResponse()):
+        answer, latency_ms, error = es.call_dify(
+            base_url="http://localhost:8080",
+            app_key="app-test",
+            question="Q",
+            timeout_sec=5.0,
+            response_mode="streaming",
+        )
+
+    assert answer == "第一段最终答案"
     assert error == ""
     assert latency_ms >= 0.0
 
@@ -163,3 +200,57 @@ def test_fetch_dify_responses_parallel_basic() -> None:
     assert result["EVAL-0004"][2] == ""
     assert result["EVAL-0004"][3] in {"primary", "fallback"}
     assert len(thread_ids) >= 1
+
+
+def test_main_writes_clean_artifacts_and_manifest(tmp_path) -> None:
+    eval_csv = tmp_path / "eval.csv"
+    eval_csv.write_text(
+        ",".join(es.EVAL_REQUIRED_COLUMNS)
+        + "\n"
+        + "EVAL-0001,lab,场景,medium,如何规范佩戴护目镜,护目镜,按SOP,internal,no,qa,\n",
+        encoding="utf-8",
+    )
+    responses_csv = tmp_path / "responses.csv"
+    responses_csv.write_text(
+        "id,question,response,latency_ms\n"
+        "EVAL-0001,如何规范佩戴护目镜,请按SOP佩戴护目镜,123\n",
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [
+            "python",
+            "scripts/eval_smoke.py",
+            "--eval-set",
+            str(eval_csv),
+            "--responses-csv",
+            str(responses_csv),
+            "--output-dir",
+            str(tmp_path / "artifacts" / "manual_smoke\r"),
+        ],
+        cwd="d:\\workspace\\lab-safe-assistant-github",
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "\r/run_" not in completed.stdout
+
+    run_dir = None
+    for line in completed.stdout.splitlines():
+        if line.startswith("Smoke eval done:"):
+            run_dir = line.split(":", 1)[1].strip()
+            break
+
+    assert run_dir
+    output_root = es.Path(run_dir)
+    summary = json.loads((output_root / "summary.json").read_text(encoding="utf-8"))
+    manifest = json.loads((output_root / "artifact_manifest.json").read_text(encoding="utf-8"))
+
+    assert summary["output_dir"] == output_root.as_posix()
+    assert summary["artifacts"]["artifact_manifest"] == (output_root / "artifact_manifest.json").as_posix()
+    assert manifest["output_dir"] == output_root.as_posix()
+    assert (output_root / "summary.md").exists()

@@ -76,9 +76,36 @@ TARGETS = {
     "latency_p95_ms": 5000.0,
 }
 
+CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x1f\x7f]")
+
 
 def now_ts() -> str:
     return datetime.now(timezone.utc).astimezone().strftime("%Y%m%d_%H%M%S")
+
+
+def sanitize_output_dir(value: str) -> str:
+    cleaned = CONTROL_CHAR_PATTERN.sub("", value or "").strip()
+    if not cleaned:
+        raise ValueError("Output directory is empty after sanitization.")
+    return cleaned
+
+
+def resolve_output_root(output_dir: str, run_id: str) -> Path:
+    base_dir = Path(sanitize_output_dir(output_dir)).resolve()
+    return base_dir / run_id
+
+
+def build_artifact_manifest(output_root: Path) -> dict[str, object]:
+    return {
+        "run_id": output_root.name,
+        "output_dir": output_root.as_posix(),
+        "artifacts": {
+            "detail_csv": (output_root / "detailed_results.csv").as_posix(),
+            "summary_json": (output_root / "summary.json").as_posix(),
+            "summary_md": (output_root / "summary.md").as_posix(),
+            "artifact_manifest": (output_root / "artifact_manifest.json").as_posix(),
+        },
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -287,6 +314,7 @@ def call_dify(
             answer_parts: list[str] = []
             stream_error = ""
             workflow_error = ""
+            saw_message_end = False
 
             for raw_line in response.iter_lines(decode_unicode=True):
                 if not raw_line:
@@ -325,6 +353,9 @@ def call_dify(
                             workflow_error = err_val.strip()
                     break
                 elif event_name == "message_end":
+                    saw_message_end = True
+                    if answer_parts:
+                        break
                     continue
                 elif event_name == "error":
                     stream_error = str(event_obj.get("message", "") or event_obj.get("error", "") or "stream_error")
@@ -336,6 +367,8 @@ def call_dify(
                 return "", latency_ms, f"stream_error: {stream_error[:200]}"
             if workflow_error and not answer:
                 return "", latency_ms, f"workflow_error: {workflow_error[:200]}"
+            if saw_message_end and answer:
+                return answer, latency_ms, ""
             if not answer:
                 return "", latency_ms, "empty_stream_answer"
             return answer, latency_ms, ""
@@ -510,6 +543,7 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 def make_summary_markdown(summary: dict[str, object], output_dir: Path) -> str:
     metrics: dict[str, float] = summary["metrics"]  # type: ignore[assignment]
     targets: dict[str, float] = summary["targets"]  # type: ignore[assignment]
+    artifacts: dict[str, str] = summary.get("artifacts", {})  # type: ignore[assignment]
 
     def pct(value: float) -> str:
         return f"{value * 100:.1f}%"
@@ -548,6 +582,18 @@ def make_summary_markdown(summary: dict[str, object], output_dir: Path) -> str:
         "- 本脚本为 smoke 评测，命中判断使用关键词启发式匹配，适合快速回归，不替代人工复核。",
         "- 详细逐条结果见 `detailed_results.csv`。",
     ]
+    if artifacts:
+        lines.extend(
+            [
+                "",
+                "## 产物",
+                "",
+                f"- 明细 CSV: `{artifacts.get('detail_csv', '')}`",
+                f"- 汇总 JSON: `{artifacts.get('summary_json', '')}`",
+                f"- 汇总 Markdown: `{artifacts.get('summary_md', '')}`",
+                f"- 产物索引: `{artifacts.get('artifact_manifest', '')}`",
+            ]
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -562,7 +608,8 @@ def main() -> int:
     if args.limit > 0:
         eval_rows = eval_rows[: args.limit]
 
-    output_root = Path(args.output_dir).resolve() / f"run_{now_ts()}"
+    run_id = f"run_{now_ts()}"
+    output_root = resolve_output_root(args.output_dir, run_id)
     output_root.mkdir(parents=True, exist_ok=True)
 
     if args.generate_template:
@@ -693,6 +740,8 @@ def main() -> int:
 
     summary = {
         "generated_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+        "run_id": run_id,
+        "output_dir": output_root.as_posix(),
         "source_mode": source_mode,
         "total_rows": total,
         "breakdown": {
@@ -704,6 +753,7 @@ def main() -> int:
         "metrics": metrics,
         "targets": TARGETS,
     }
+    summary["artifacts"] = build_artifact_manifest(output_root)["artifacts"]
 
     detail_path = output_root / "detailed_results.csv"
     write_csv(
@@ -736,10 +786,18 @@ def main() -> int:
     summary_md_path = output_root / "summary.md"
     summary_md_path.write_text(make_summary_markdown(summary, output_root), encoding="utf-8")
 
-    print(f"Smoke eval done: {output_root}")
-    print(f"- detail:  {detail_path}")
-    print(f"- summary: {summary_json_path}")
-    print(f"- report:  {summary_md_path}")
+    artifact_manifest = build_artifact_manifest(output_root)
+    artifact_manifest_path = output_root / "artifact_manifest.json"
+    artifact_manifest_path.write_text(
+        json.dumps(artifact_manifest, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    print(f"Smoke eval done: {output_root.as_posix()}")
+    print(f"- detail:    {detail_path.as_posix()}")
+    print(f"- summary:   {summary_json_path.as_posix()}")
+    print(f"- report:    {summary_md_path.as_posix()}")
+    print(f"- manifest:  {artifact_manifest_path.as_posix()}")
     return 0
 
 
