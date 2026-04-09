@@ -231,6 +231,7 @@ def preflight_dify_chat(
         with urllib.request.urlopen(request, timeout=max(timeout_sec, 1.0)) as response:
             content_type = str(response.headers.get("Content-Type", "") or "").lower()
             if "text/event-stream" in content_type:
+                saw_sse_event = False
                 while True:
                     if time.perf_counter() >= hard_deadline:
                         latency_ms = (time.perf_counter() - started) * 1000
@@ -248,11 +249,25 @@ def preflight_dify_chat(
                         event_obj = json.loads(payload_str)
                     except Exception:
                         continue
+                    saw_sse_event = True
                     event_name = str(event_obj.get("event", "") or "").strip().lower()
-                    if event_name in {"workflow_started", "message", "message_end", "workflow_finished"}:
+                    if event_name == "workflow_finished":
                         latency_ms = (time.perf_counter() - started) * 1000
-                        return True, f"ok latency={latency_ms:.0f}ms mode=sse"
+                        workflow_data = event_obj.get("data") if isinstance(event_obj, dict) else {}
+                        workflow_status = ""
+                        workflow_error = ""
+                        if isinstance(workflow_data, dict):
+                            workflow_status = str(workflow_data.get("status", "") or "").strip().lower()
+                            workflow_error = str(workflow_data.get("error", "") or "").strip()
+                        if workflow_status == "failed":
+                            detail = f"workflow_failed latency={latency_ms:.0f}ms"
+                            if workflow_error:
+                                detail += f" error={workflow_error[:160]}"
+                            return False, detail
+                        return True, f"ok latency={latency_ms:.0f}ms mode=sse status={workflow_status or 'unknown'}"
                 latency_ms = (time.perf_counter() - started) * 1000
+                if saw_sse_event:
+                    return False, f"missing_workflow_finished latency={latency_ms:.0f}ms"
                 return False, f"empty_sse_events latency={latency_ms:.0f}ms"
 
             raw = response.read().decode("utf-8", errors="ignore")

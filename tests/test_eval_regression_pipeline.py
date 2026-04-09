@@ -85,6 +85,7 @@ def test_preflight_dify_chat_sse_ok() -> None:
                 b"event: ping\n",
                 b"\n",
                 b'data: {"event":"workflow_started"}\n',
+                b'data: {"event":"workflow_finished","data":{"status":"succeeded","error":null}}\n',
             ]
             if self._idx >= len(lines):
                 return b""
@@ -96,6 +97,36 @@ def test_preflight_dify_chat_sse_ok() -> None:
         ok, detail = rep.preflight_dify_chat("http://localhost", "app-xxx", 2.0, "streaming")
     assert ok is True
     assert "mode=sse" in detail
+    assert "status=succeeded" in detail
+
+
+def test_preflight_dify_chat_sse_workflow_failed() -> None:
+    class _Resp:
+        headers = {"Content-Type": "text/event-stream"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def readline(self) -> bytes:
+            if not hasattr(self, "_idx"):
+                self._idx = 0
+            lines = [
+                b'data: {"event":"workflow_started"}\n',
+                b'data: {"event":"workflow_finished","data":{"status":"failed","error":"upstream 500"}}\n',
+            ]
+            if self._idx >= len(lines):
+                return b""
+            line = lines[self._idx]
+            self._idx += 1
+            return line
+
+    with patch("run_eval_regression_pipeline.urllib.request.urlopen", return_value=_Resp()):
+        ok, detail = rep.preflight_dify_chat("http://localhost", "app-xxx", 2.0, "streaming")
+    assert ok is False
+    assert "workflow_failed" in detail
 
 
 def test_parse_worker_log_hints_embedding_unreachable() -> None:
