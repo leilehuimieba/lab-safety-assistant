@@ -221,11 +221,17 @@ def check_latest_release_oneclick(reports_root: Path, stability_root: Path) -> C
     )
 
 
+def expected_prefetch_status_name(path: Path) -> str:
+    release_name = path.name.strip().lower() or "v8.1"
+    normalized = release_name.replace(".", "_")
+    return f"web_seed_urls_{normalized}_prefetch_status.csv"
+
+
 def check_release_package(path: Path) -> list[CheckResult]:
     required = [
         "knowledge_base_import_ready.csv",
         "README.md",
-        "web_seed_urls_v8_1_prefetch_status.csv",
+        expected_prefetch_status_name(path),
     ]
     results: list[CheckResult] = []
     if not path.exists():
