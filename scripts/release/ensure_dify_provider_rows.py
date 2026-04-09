@@ -57,6 +57,8 @@ import os
 
 from app import create_app
 from extensions.ext_database import db
+from extensions.ext_redis import redis_client
+from core.helper.model_provider_cache import ProviderCredentialsCache, ProviderCredentialsCacheType
 from models.account import Tenant
 from models.model import App
 from models.provider import (
@@ -169,13 +171,13 @@ with app.app_context():
                     model_name=item.model_name,
                     model_type=item.model_type,
                     is_valid=True,
-                    credential_id=credential.id,
+                    credential_id=item.id,
                 )
                 db.session.add(provider_model)
                 model_rows_created += 1
             else:
                 provider_model.is_valid = True
-                provider_model.credential_id = credential.id
+                provider_model.credential_id = item.id
 
             model_setting = (
                 db.session.query(ProviderModelSetting)
@@ -200,6 +202,20 @@ with app.app_context():
                 model_settings_created += 1
             else:
                 model_setting.enabled = True
+
+            ProviderCredentialsCache(
+                tenant_id=tenant_id,
+                identity_id=provider_model.id,
+                cache_type=ProviderCredentialsCacheType.MODEL,
+            ).delete()
+
+        if row and row.id:
+            ProviderCredentialsCache(
+                tenant_id=tenant_id,
+                identity_id=row.id,
+                cache_type=ProviderCredentialsCacheType.PROVIDER,
+            ).delete()
+        redis_client.delete(f"provider_configurations:{tenant_id}")
 
         results.append(
             {

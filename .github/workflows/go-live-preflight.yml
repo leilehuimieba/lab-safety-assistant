@@ -7,8 +7,8 @@ on:
         description: "Release package directory"
         required: true
         default: "release_exports/v8.1"
-      skip_web_health:
-        description: "Skip web health check in CI"
+      enforce_prod_policy:
+        description: "Enforce prod policy as a hard gate"
         required: true
         default: "true"
         type: choice
@@ -34,8 +34,8 @@ jobs:
       - name: Run Go-Live Preflight
         run: |
           EXTRA_FLAGS=""
-          if [ "${{ github.event.inputs.skip_web_health }}" = "true" ]; then
-            EXTRA_FLAGS="--skip-web-health --allow-warning-pass"
+          if [ "${{ github.event.inputs.enforce_prod_policy }}" = "false" ]; then
+            EXTRA_FLAGS="--no-enforce-prod-policy"
           fi
           python scripts/release/go_live_preflight.py \
             --repo-root . \

@@ -38,14 +38,14 @@ if FASTAPI_AVAILABLE:
             "match_rule",
             lambda _q: {"id": "R-LAB-1", "action": "safe_answer", "severity": "high", "response": "Follow strict PPE controls."},
         )
-        monkeypatch.setattr(web_app, "call_upstream", lambda *_args, **_kwargs: ("Structured safe answer.", "gpt-5.2-codex"))
+        monkeypatch.setattr(web_app, "call_dify_lab", lambda *_args, **_kwargs: ("Structured safe answer.", "dify-workflow"))
 
         client = TestClient(web_app.app)
         resp = client.post("/api/chat", json={"mode": "lab", "question": "How to handle concentrated acid safely?"})
         assert resp.status_code == 200
         payload = resp.json()
         assert payload["decision"] == "llm_answer_guarded"
-        assert payload["model"] == "gpt-5.2-codex"
+        assert payload["model"] == "dify-workflow"
         assert payload["matched_rule_id"] == "R-LAB-1"
         assert len(payload["citations"]) >= 1
 

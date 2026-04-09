@@ -130,7 +130,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--canary-retry-on-timeout",
         type=int,
-        default=0,
+        default=1,
         help="Retry count in canary phase.",
     )
     parser.add_argument("--skip-canary", action="store_true", help="Skip canary and run full directly.")
@@ -290,6 +290,10 @@ def write_report(run_dir: Path, payload: dict[str, Any]) -> tuple[Path, Path]:
 
 
 def build_failover_eval_cmd(args: argparse.Namespace, repo_root: Path) -> list[str]:
+    effective_canary_timeout = max(1.0, float(args.canary_timeout))
+    if args.dify_response_mode == "blocking":
+        effective_canary_timeout = max(effective_canary_timeout, min(max(1.0, float(args.dify_timeout)), 60.0))
+
     cmd = [
         sys.executable,
         str(repo_root / "scripts" / "run_eval_with_model_failover.py"),
@@ -316,7 +320,7 @@ def build_failover_eval_cmd(args: argparse.Namespace, repo_root: Path) -> list[s
         "--canary-limit",
         str(max(0, int(args.canary_limit))),
         "--canary-timeout",
-        str(max(1.0, float(args.canary_timeout))),
+        str(effective_canary_timeout),
         "--canary-timeout-failover-threshold",
         str(float(args.canary_timeout_failover_threshold)),
         "--canary-retry-on-timeout",

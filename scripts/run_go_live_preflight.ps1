@@ -3,7 +3,8 @@ param(
   [string]$ReleaseDir = "release_exports/v8.1",
   [string]$WebHealthUrl = "http://127.0.0.1:8088/health",
   [switch]$SkipWebHealth,
-  [switch]$AllowWarningPass
+  [switch]$AllowWarningPass,
+  [switch]$NoEnforceProdPolicy
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,6 +18,7 @@ $argsList = @(
 
 if ($SkipWebHealth) { $argsList += "--skip-web-health" }
 if ($AllowWarningPass) { $argsList += "--allow-warning-pass" }
+if ($NoEnforceProdPolicy) { $argsList += "--no-enforce-prod-policy" }
 
 Write-Host "=== Go-Live Preflight Start ===" -ForegroundColor Cyan
 Write-Host "repo-root: $RepoRoot"

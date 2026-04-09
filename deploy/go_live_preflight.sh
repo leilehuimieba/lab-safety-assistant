@@ -6,10 +6,12 @@ cd "$ROOT_DIR"
 
 WEB_HEALTH_URL="${WEB_HEALTH_URL:-http://127.0.0.1:${DEMO_PORT:-8088}/health}"
 RELEASE_DIR="${RELEASE_DIR:-release_exports/v8.1}"
-GO_LIVE_ENFORCE_PROD_POLICY="${GO_LIVE_ENFORCE_PROD_POLICY:-0}"
+GO_LIVE_ENFORCE_PROD_POLICY="${GO_LIVE_ENFORCE_PROD_POLICY:-1}"
 EXTRA_ARGS=()
 if [[ "$GO_LIVE_ENFORCE_PROD_POLICY" == "1" ]]; then
   EXTRA_ARGS+=(--enforce-prod-policy)
+else
+  EXTRA_ARGS+=(--no-enforce-prod-policy)
 fi
 
 echo "[go-live] repo: $ROOT_DIR"

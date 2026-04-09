@@ -70,11 +70,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dify-app-key", default="", help="Dify app key.")
     parser.add_argument("--limit", type=int, default=20, help="Eval row limit.")
     parser.add_argument("--dify-timeout", type=float, default=180.0, help="Per request timeout seconds.")
+    parser.add_argument(
+        "--dify-response-mode",
+        choices=["streaming", "blocking"],
+        default="streaming",
+        help="Dify response mode passed to one-click eval.",
+    )
     parser.add_argument("--eval-concurrency", type=int, default=1, help="Eval concurrency.")
     parser.add_argument("--retry-on-timeout", type=int, default=1, help="Retry count.")
     parser.add_argument("--skip-health-check", action="store_true", help="Skip health check in one-click.")
+    parser.add_argument(
+        "--health-allow-chat-timeout-pass",
+        action="store_true",
+        help="Allow one-click health check to pass when chat preflight only times out.",
+    )
     parser.add_argument("--skip-canary", action="store_true", help="Skip canary in one-click.")
     parser.add_argument("--skip-failover-eval", action="store_true", help="Skip failover eval stage.")
+    parser.add_argument("--canary-timeout", type=float, default=20.0, help="Canary timeout passed to one-click.")
 
     parser.add_argument("--failover-days", type=int, default=1, help="Failover status window days.")
     parser.add_argument("--failover-fail-streak-threshold", type=int, default=2, help="Fail streak threshold.")
@@ -162,10 +174,14 @@ def build_oneclick_cmd(args: argparse.Namespace, repo_root: Path, round_output_r
                 str(max(0, int(args.limit))),
                 "--dify-timeout",
                 str(max(1.0, float(args.dify_timeout))),
+                "--dify-response-mode",
+                args.dify_response_mode.strip(),
                 "--eval-concurrency",
                 str(max(1, int(args.eval_concurrency))),
                 "--retry-on-timeout",
                 str(max(0, int(args.retry_on_timeout))),
+                "--canary-timeout",
+                str(max(1.0, float(args.canary_timeout))),
             ]
         )
         if args.dify_base_url.strip():
@@ -174,6 +190,8 @@ def build_oneclick_cmd(args: argparse.Namespace, repo_root: Path, round_output_r
             cmd.extend(["--dify-app-key", args.dify_app_key.strip()])
         if args.skip_health_check:
             cmd.append("--skip-health-check")
+        if args.health_allow_chat_timeout_pass or args.dify_response_mode.strip() == "blocking":
+            cmd.append("--health-allow-chat-timeout-pass")
         if args.skip_canary:
             cmd.append("--skip-canary")
 

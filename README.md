@@ -20,7 +20,8 @@
 6. `web_demo` 已支持：
    - 规则命中拦截
    - 低置信度入队
-   - 上游失败时结构化 fallback 回答
+   - Dify 正式知识库工作流
+   - Dify 异常时结构化 fallback 回答
 
 ## 3. 目录结构（清理后）
 
@@ -76,6 +77,8 @@ powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts/run_v8_1_rel
 ### 5.3 运行演示服务
 
 ```powershell
+set DIFY_BASE_URL=http://127.0.0.1:8080
+set DIFY_APP_API_KEY=你的_dify_app_key
 set OPENAI_BASE_URL=https://api.tabcode.cc/openai
 set OPENAI_API_KEY=你的密钥
 set OPENAI_MODEL=gpt-5.2-codex

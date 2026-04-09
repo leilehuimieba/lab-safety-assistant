@@ -60,7 +60,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--enforce-prod-policy",
         action="store_true",
-        help="Treat prod release policy as blocking gate (default: non-blocking info in demo rollout).",
+        default=True,
+        help="Treat prod release policy as blocking gate.",
+    )
+    parser.add_argument(
+        "--no-enforce-prod-policy",
+        action="store_false",
+        dest="enforce_prod_policy",
+        help="Downgrade prod release policy to non-blocking info (demo drill only).",
     )
     parser.add_argument(
         "--output-json",

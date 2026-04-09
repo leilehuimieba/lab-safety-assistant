@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import threading
 import time
+from unittest.mock import patch
 
 import eval_smoke as es
 
@@ -44,7 +45,39 @@ def test_resolve_chat_endpoint_variants() -> None:
 def test_is_retryable_error() -> None:
     assert es.is_retryable_error("request_error: timed out")
     assert es.is_retryable_error("empty_stream_answer")
+    assert es.is_retryable_error(
+        "workflow_error: [models] Server Unavailable Error, ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))"
+    )
+    assert es.is_retryable_error("request_error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection'))")
     assert not es.is_retryable_error("http_401: unauthorized")
+
+
+def test_call_dify_with_failover_retries_connection_reset_on_primary() -> None:
+    calls: list[str] = []
+
+    def fake_caller(
+        base: str, _key: str, _q: str, _timeout: float, _response_mode: str = "streaming"
+    ) -> tuple[str, float, str]:
+        calls.append(base)
+        if len(calls) == 1:
+            return "", 7.0, "workflow_error: [models] Server Unavailable Error, ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))"
+        return "ok-after-retry", 6.0, ""
+
+    answer, latency, error, route = es.call_dify_with_failover(
+        question="Q",
+        base_url="http://primary",
+        app_key="k1",
+        timeout_sec=5.0,
+        retry_on_timeout=1,
+        fallback_base_url="http://fallback",
+        fallback_app_key="k2",
+        caller=fake_caller,
+    )
+    assert answer == "ok-after-retry"
+    assert error == ""
+    assert route == "primary"
+    assert latency == 13.0
+    assert calls == ["http://primary", "http://primary"]
 
 
 def test_call_dify_with_failover_hits_fallback() -> None:
@@ -73,6 +106,35 @@ def test_call_dify_with_failover_hits_fallback() -> None:
     assert route == "fallback"
     assert latency == 18.0
     assert calls == ["http://primary", "http://fallback"]
+
+
+def test_extract_workflow_output_text_prefers_non_empty_string() -> None:
+    outputs = {"foo": "", "result": "final text", "text": ""}
+    assert es.extract_workflow_output_text(outputs) == "final text"
+
+
+def test_call_dify_accepts_workflow_finished_output_after_message_end() -> None:
+    class FakeResponse:
+        status_code = 200
+        headers = {"Content-Type": "text/event-stream; charset=utf-8"}
+        text = ""
+
+        def iter_lines(self, decode_unicode: bool = True):
+            yield 'data: {"event":"message_end"}'
+            yield 'data: {"event":"workflow_finished","data":{"outputs":{"result":"最终答案"},"error":null}}'
+
+    with patch("eval_smoke.requests.post", return_value=FakeResponse()):
+        answer, latency_ms, error = es.call_dify(
+            base_url="http://localhost:8080",
+            app_key="app-test",
+            question="Q",
+            timeout_sec=5.0,
+            response_mode="streaming",
+        )
+
+    assert answer == "最终答案"
+    assert error == ""
+    assert latency_ms >= 0.0
 
 
 def test_fetch_dify_responses_parallel_basic() -> None:

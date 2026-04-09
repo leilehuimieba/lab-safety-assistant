@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-03-30T22:11:25+08:00",
-  "overall": "PASS",
+  "generated_at": "2026-04-08T23:26:04+08:00",
+  "overall": "BLOCK",
   "summary": {
-    "blockers": 0,
+    "blockers": 2,
     "warnings": 0,
     "checks": 9
   },
@@ -29,7 +29,7 @@
       "key": "release_oneclick",
       "ok": true,
       "level": "info",
-      "detail": "latest status=success (/root/lab-safe-assistant-github/artifacts/release_stability_check/run_20260330_220716/round_01/run_20260330_220716/eval_release_oneclick_report.json)"
+      "detail": "latest status=success (D:\\workspace\\lab-safe-assistant-github\\artifacts\\release_stability_check\\run_20260330_114443\\round_01\\run_20260330_114443\\eval_release_oneclick_report.json)"
     },
     {
       "key": "release_policy_demo",
@@ -39,9 +39,9 @@
     },
     {
       "key": "release_policy_prod",
-      "ok": true,
-      "level": "info",
-      "detail": "status=BLOCK; violations=latency_p95_ms too high: 30981.91 > max_latency_p95_ms=30000.00; failover window fail count exceeded: 4 > max_fail_window=1; non-blocking (enforce_prod_policy=false)"
+      "ok": false,
+      "level": "blocker",
+      "detail": "status=BLOCK; violations=failover window fail count exceeded: 4 > max_fail_window=1"
     },
     {
       "key": "risk_note",
@@ -57,9 +57,9 @@
     },
     {
       "key": "web_health",
-      "ok": true,
-      "level": "info",
-      "detail": "http://127.0.0.1:8088/health ok"
+      "ok": false,
+      "level": "blocker",
+      "detail": "http://127.0.0.1:8088/health unreachable: <urlopen error [WinError 10061] 由于目标计算机积极拒绝，无法连接。>"
     }
   ]
 }

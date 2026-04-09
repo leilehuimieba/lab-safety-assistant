@@ -53,7 +53,7 @@ python3 "${PY_SCRIPT}" \
   --api-base "${DIFY_API_BASE:-http://127.0.0.1:8080}" \
   --provider-name "${DIFY_PROVIDER_NAME:-langgenius/openai_api_compatible/openai_api_compatible}" \
   --model-name "${DIFY_MODEL_NAME:-gpt-5.2-codex}" \
-  --model-type "${DIFY_MODEL_TYPE:-text-generation}" \
+  --model-type "${DIFY_MODEL_TYPE:-llm}" \
   --query "${DIFY_SMOKE_QUERY:-实验室发生化学品泄漏时，第一步怎么做？}" \
   --user "${DIFY_SMOKE_USER:-recovery-smoke}" \
   --timeout-sec "${DIFY_SMOKE_TIMEOUT_SEC:-240}" \

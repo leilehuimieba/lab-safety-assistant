@@ -239,6 +239,18 @@ def resolve_chat_endpoint(base_url: str) -> str:
     return f"{normalized}/v1/chat-messages"
 
 
+def extract_workflow_output_text(outputs: dict) -> str:
+    preferred_keys = ("text", "answer", "output", "result", "final_answer")
+    for key in preferred_keys:
+        value = outputs.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    for value in outputs.values():
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
 def call_dify(
     base_url: str,
     app_key: str,
@@ -305,7 +317,7 @@ def call_dify(
                     if isinstance(data, dict):
                         outputs = data.get("outputs")
                         if isinstance(outputs, dict):
-                            text_out = str(outputs.get("text", "") or "")
+                            text_out = extract_workflow_output_text(outputs)
                             if text_out and not answer_parts:
                                 answer_parts.append(text_out)
                         err_val = data.get("error")
@@ -313,7 +325,7 @@ def call_dify(
                             workflow_error = err_val.strip()
                     break
                 elif event_name == "message_end":
-                    break
+                    continue
                 elif event_name == "error":
                     stream_error = str(event_obj.get("message", "") or event_obj.get("error", "") or "stream_error")
                     break
@@ -345,6 +357,16 @@ def is_retryable_error(error: str) -> bool:
     if "timed out" in text or "timeout" in text:
         return True
     if "empty_stream_answer" in text:
+        return True
+    transient_markers = (
+        "connection reset by peer",
+        "connection aborted",
+        "server unavailable",
+        "invoke server unavailable",
+        "remote disconnected",
+        "temporarily unavailable",
+    )
+    if any(marker in text for marker in transient_markers):
         return True
     return False
 

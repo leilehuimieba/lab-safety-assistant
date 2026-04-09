@@ -82,7 +82,7 @@ if FASTAPI_AVAILABLE:
         monkeypatch.setattr(web_app, "match_rule", lambda _q: None)
         monkeypatch.setattr(
             web_app,
-            "call_upstream",
+            "call_dify_lab",
             lambda *_args, **_kwargs: (_ for _ in ()).throw(web_app.HTTPException(status_code=502, detail="x")),
         )
         monkeypatch.setattr(web_app, "append_low_confidence_followup", lambda **_: True)

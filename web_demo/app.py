@@ -57,6 +57,9 @@ REFUSE_INTENT_MARKERS = [
     "能不能",
     "可不可以",
     "可以吗",
+    "绕过",
+    "规避",
+    "跳过",
     "怎么混",
     "混吗",
     "一起混",
@@ -1008,7 +1011,7 @@ def get_demo_meta() -> DemoMetaResponse:
     dify_app_key = os.getenv("DIFY_APP_API_KEY", "").strip()
     return DemoMetaResponse(
         app_version=APP_VERSION,
-        chat_lane_lab="Dify 正式知识库工作流" if dify_app_key else "OpenAI 兼容回退链路",
+        chat_lane_lab="Dify 正式知识库工作流" if dify_app_key else "Dify 未配置，当前处于结构化回退模式",
         chat_lane_agent="OpenAI 兼容直连",
         acceptance_status="已封版",
         formal_eval_score=FORMAL_EVAL_SCORE,
@@ -1890,12 +1893,12 @@ def chat(payload: ChatRequest) -> ChatResponse:
     try:
         if mode == "lab":
             answer, model = call_dify_lab(question)
-            decision = "dify_lab_answer" if not rule else "dify_lab_answer_guarded"
+            decision = "llm_answer_guarded" if rule else "llm_answer"
         else:
             answer, model = call_upstream(mode, question, citations, guardrail=guardrail)
     except HTTPException:
         if mode == "lab":
-            decision = "dify_lab_fallback_structured"
+            decision = "llm_fallback_structured"
             answer = build_fallback_lab_answer(question=question, citations=citations, rule=rule, low_confidence_reason=low_reason)
         else:
             raise

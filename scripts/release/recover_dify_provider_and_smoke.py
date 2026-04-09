@@ -88,10 +88,12 @@ import os
 
 from app import create_app
 from extensions.ext_database import db
+from extensions.ext_redis import redis_client
 from extensions.ext_storage import storage
+from core.helper.model_provider_cache import ProviderCredentialsCache, ProviderCredentialsCacheType
 from libs.rsa import encrypt, generate_key_pair
 from models.account import Tenant
-from models.provider import Provider, ProviderCredential, ProviderModel, ProviderModelCredential
+from models.provider import Provider, ProviderCredential, ProviderModel, ProviderModelCredential, ProviderModelSetting
 
 TENANT_ID = os.environ["TENANT_ID"]
 PROVIDER_NAME = os.environ["PROVIDER_NAME"]
@@ -172,6 +174,7 @@ with app.app_context():
             ProviderModelCredential.tenant_id == TENANT_ID,
             ProviderModelCredential.provider_name == PROVIDER_NAME,
             ProviderModelCredential.model_name == MODEL_NAME,
+            ProviderModelCredential.model_type == MODEL_TYPE,
         )
         .order_by(ProviderModelCredential.updated_at.desc())
         .first()
@@ -202,7 +205,7 @@ with app.app_context():
     )
     model_credential.encrypted_config = json.dumps(model_cfg, ensure_ascii=False)
     model_credential.model_type = MODEL_TYPE
-    model_credential.credential_name = model_credential.credential_name or provider_credential.credential_name or "default"
+    model_credential.credential_name = provider_credential.credential_name or "default"
 
     provider_row = (
         db.session.query(Provider)
@@ -229,8 +232,24 @@ with app.app_context():
         provider_row.is_valid = True
         provider_row.credential_id = provider_credential.id
 
+    legacy_model_credential_ids = []
+
     # Remove legacy rows that map the same model name through deprecated model types.
     if MODEL_TYPE == "llm":
+        legacy_model_credentials = (
+            db.session.query(ProviderModelCredential)
+            .filter(
+                ProviderModelCredential.tenant_id == TENANT_ID,
+                ProviderModelCredential.provider_name == PROVIDER_NAME,
+                ProviderModelCredential.model_name == MODEL_NAME,
+                ProviderModelCredential.model_type != MODEL_TYPE,
+            )
+            .all()
+        )
+        legacy_model_credential_ids = [item.id for item in legacy_model_credentials]
+        for legacy_credential in legacy_model_credentials:
+            db.session.delete(legacy_credential)
+
         legacy_provider_model_rows = (
             db.session.query(ProviderModel)
             .filter(
@@ -271,7 +290,44 @@ with app.app_context():
         provider_model_row.is_valid = True
         provider_model_row.credential_id = model_credential.id
 
+    provider_model_setting = (
+        db.session.query(ProviderModelSetting)
+        .filter(
+            ProviderModelSetting.tenant_id == TENANT_ID,
+            ProviderModelSetting.provider_name == PROVIDER_NAME,
+            ProviderModelSetting.model_name == MODEL_NAME,
+            ProviderModelSetting.model_type == MODEL_TYPE,
+        )
+        .first()
+    )
+    created_provider_model_setting = False
+    if not provider_model_setting:
+        provider_model_setting = ProviderModelSetting(
+            tenant_id=TENANT_ID,
+            provider_name=PROVIDER_NAME,
+            model_name=MODEL_NAME,
+            model_type=MODEL_TYPE,
+            enabled=True,
+            load_balancing_enabled=False,
+        )
+        db.session.add(provider_model_setting)
+        created_provider_model_setting = True
+    else:
+        provider_model_setting.enabled = True
+
     db.session.commit()
+
+    ProviderCredentialsCache(
+        tenant_id=TENANT_ID,
+        identity_id=provider_row.id,
+        cache_type=ProviderCredentialsCacheType.PROVIDER,
+    ).delete()
+    ProviderCredentialsCache(
+        tenant_id=TENANT_ID,
+        identity_id=provider_model_row.id,
+        cache_type=ProviderCredentialsCacheType.MODEL,
+    ).delete()
+    redis_client.delete(f"provider_configurations:{TENANT_ID}")
 
     private_pem = storage.load(priv_path)
 
@@ -285,6 +341,12 @@ with app.app_context():
                 "model_credential_created": created_model_credential,
                 "provider_row_created": created_provider_row,
                 "provider_model_row_created": created_provider_model_row,
+                "provider_model_setting_created": created_provider_model_setting,
+                "provider_credential_id": provider_credential.id,
+                "model_credential_id": model_credential.id,
+                "provider_row_credential_id": provider_row.credential_id,
+                "provider_model_row_credential_id": provider_model_row.credential_id,
+                "legacy_model_credential_ids_removed": legacy_model_credential_ids,
                 "key_rotated": key_rotated,
                 "private_key_bytes": len(private_pem),
             },

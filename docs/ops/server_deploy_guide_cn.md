@@ -4,7 +4,7 @@
 
 - 页面展示
 - 调用“项目协作智能体”
-- 调用“实验室安全小助手”
+- 调用“实验室安全小助手（Dify 正式知识库工作流）”
 
 当前方案是“用户态部署”，不依赖 sudo，可快速上线演示。
 
@@ -49,6 +49,8 @@ vi .env.web_demo
 
 至少配置：
 
+- `DIFY_BASE_URL`
+- `DIFY_APP_API_KEY`
 - `OPENAI_BASE_URL`
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL`
@@ -134,20 +136,22 @@ chmod +x deploy/start_public_tunnel.sh deploy/stop_public_tunnel.sh deploy/statu
 
 ## 4. 常见问题排查
 问题：服务启动失败，日志提示缺少 key。  
-处理：检查 `.env.web_demo` 中 `OPENAI_API_KEY` 是否配置。
+处理：优先检查 `.env.web_demo` 中 `DIFY_APP_API_KEY` 是否配置；若同时启用了 agent 模式或需要 fallback，再检查 `OPENAI_API_KEY`。
 
 问题：本机能访问，外网无法访问。  
 处理：检查云服务器安全组/防火墙是否放行 `8088` 端口；若暂时无法放行，改用临时隧道脚本。
 
-问题：返回 502。  
-处理：上游模型服务不可达、模型名不可用或响应格式不兼容。先查 `/v1/models`，再调整 `OPENAI_MODEL` 与 `OPENAI_FALLBACK_MODELS`。
+问题：实验室安全问答返回 502。  
+处理：先检查 Dify App 链路是否可用，再检查 OpenAI 兼容回退配置。实验室问答正式链路是 Dify，不应长期依赖 fallback。
 
-## 5. 可选增强（后续）
+## 5. 正式链路说明
+
+- 实验室安全问答唯一正式链路：`web_demo -> Dify 正式知识库工作流`
+- OpenAI 兼容接口用途：`agent` 模式直连，以及 `lab` 模式异常时的结构化兜底
+
+## 6. 可选增强（后续）
 - 增加 Nginx/Caddy 反向代理（443 + 域名）
 - 增加 Basic Auth 登录保护
-- 接入 Dify App API，切换为“知识库驱动”的正式问答链路
-
-## 6. 推荐生产化增强（新增）
 
 1. systemd 常驻运行（用户态）  
    参考：`docs/ops/systemd_web_demo_guide_cn.md`  
