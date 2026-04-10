@@ -27,6 +27,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=6, help="Eval row limit.")
     parser.add_argument("--dify-timeout", type=float, default=30.0, help="Per request timeout for smoke.")
     parser.add_argument("--eval-concurrency", type=int, default=4, help="Concurrency for smoke calls.")
+    parser.add_argument("--skip-preflight", action="store_true", help="Skip Dify /parameters preflight.")
+    parser.add_argument("--skip-chat-preflight", action="store_true", help="Skip Dify /chat-messages preflight.")
+    parser.add_argument("--preflight-timeout", type=float, default=8.0, help="Dify /parameters preflight timeout.")
+    parser.add_argument(
+        "--chat-preflight-timeout",
+        type=float,
+        default=20.0,
+        help="Dify /chat-messages preflight timeout.",
+    )
+    parser.add_argument("--worker-log-container", default="docker-worker-1", help="Worker container for diagnosis.")
     parser.add_argument("--db-container", default="docker-db_postgres-1", help="Postgres container name.")
     parser.add_argument("--db-user", default="postgres", help="Postgres user.")
     parser.add_argument("--db-name", default="dify", help="Postgres database.")
@@ -139,6 +149,7 @@ def run_regression(
     limit: int,
     timeout_sec: float,
     concurrency: int,
+    args: argparse.Namespace,
 ) -> tuple[str, dict]:
     cmd = [
         sys.executable,
@@ -155,8 +166,18 @@ def run_regression(
         str(timeout_sec),
         "--eval-concurrency",
         str(max(1, concurrency)),
+        "--preflight-timeout",
+        str(max(1.0, float(args.preflight_timeout))),
+        "--chat-preflight-timeout",
+        str(max(1.0, float(args.chat_preflight_timeout))),
+        "--worker-log-container",
+        args.worker_log_container,
         "--update-dashboard",
     ]
+    if args.skip_preflight:
+        cmd.append("--skip-preflight")
+    if args.skip_chat_preflight:
+        cmd.append("--skip-chat-preflight")
     completed = run_cmd(cmd, cwd=repo_root)
     if completed.returncode != 0:
         detail = (completed.stdout or "") + "\n" + (completed.stderr or "")
@@ -228,6 +249,7 @@ def main() -> int:
                 limit=args.limit,
                 timeout_sec=args.dify_timeout,
                 concurrency=args.eval_concurrency,
+                args=args,
             )
             result["runs"][label] = {
                 "model": model_name,
