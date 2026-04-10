@@ -21,6 +21,11 @@ MODEL_OUTAGE_MARKERS = [
 ]
 
 
+def is_authentication_error(text: str) -> bool:
+    lowered = (text or "").lower()
+    return "authentication failed" in lowered or "invalid_request_error" in lowered or "http_401" in lowered
+
+
 def now_tag() -> str:
     return datetime.now(timezone.utc).astimezone().strftime("%Y%m%d_%H%M%S")
 
@@ -459,6 +464,12 @@ def main() -> int:
             primary_fetch_errors = primary_meta.get("fetch_errors", []) or []
             if primary_run.returncode != 0 and has_model_outage_marker(primary_merged):
                 failover_reason = "primary pipeline failed and output matched model outage markers"
+            elif any(is_authentication_error(item) for item in primary_fetch_errors):
+                raise RuntimeError(
+                    "Primary model regression returned authentication failures.\n"
+                    "This usually means provider credentials/workflow model mapping is inconsistent, "
+                    "not a model outage suitable for automatic failover."
+                )
             elif any(has_model_outage_marker(item) for item in primary_fetch_errors):
                 failover_reason = "primary run completed but fetch_error contained model outage markers"
             elif should_trigger_timeout_failover(primary_fetch_errors, float(args.timeout_failover_threshold)):

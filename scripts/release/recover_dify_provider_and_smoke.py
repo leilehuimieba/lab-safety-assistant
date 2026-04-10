@@ -28,6 +28,7 @@ DEFAULT_MODEL = "gpt-5.2-codex"
 DEFAULT_MODEL_TYPE = "llm"
 DEFAULT_API_BASE = "http://127.0.0.1:8080"
 DEFAULT_QUERY = "实验室发生化学品泄漏时，第一步怎么做？"
+DEFAULT_MODEL_TEMPERATURE = 0.2
 
 
 @dataclass
@@ -47,6 +48,28 @@ def _run(cmd: list[str], input_text: Optional[str] = None) -> subprocess.Complet
         capture_output=True,
         check=False,
     )
+
+
+def patch_workflow_model(repo_root: str, workflow_id: str, model_name: str, temperature: float) -> None:
+    cmd = [
+        sys.executable,
+        os.path.join(repo_root, "scripts", "patch_workflow_model.py"),
+        "--repo-root",
+        repo_root,
+        "--workflow-id",
+        workflow_id,
+        "--model-name",
+        model_name,
+        "--temperature",
+        str(temperature),
+    ]
+    p = _run(cmd)
+    if p.returncode != 0:
+        raise RuntimeError(
+            "Workflow patch failed.\n"
+            f"stdout:\n{p.stdout}\n"
+            f"stderr:\n{p.stderr}"
+        )
 
 
 def detect_api_container(preferred: Optional[str]) -> str:
@@ -475,6 +498,7 @@ def run_workflow_smoke(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Recover Dify provider and run workflow smoke test.")
+    parser.add_argument("--repo-root", default=os.getenv("REPO_ROOT", "."))
     parser.add_argument("--api-container", default=os.getenv("DIFY_API_CONTAINER"))
     parser.add_argument("--tenant-id", default=os.getenv("DIFY_TENANT_ID"), required=os.getenv("DIFY_TENANT_ID") is None)
     parser.add_argument("--provider-name", default=os.getenv("DIFY_PROVIDER_NAME", DEFAULT_PROVIDER))
@@ -485,6 +509,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--api-key", default=os.getenv("OPENAI_COMPAT_API_KEY"), required=os.getenv("OPENAI_COMPAT_API_KEY") is None)
     parser.add_argument("--app-token", default=os.getenv("DIFY_APP_TOKEN"), required=os.getenv("DIFY_APP_TOKEN") is None)
     parser.add_argument("--api-base", default=os.getenv("DIFY_API_BASE", DEFAULT_API_BASE))
+    parser.add_argument("--workflow-id", default=os.getenv("DIFY_WORKFLOW_ID", ""))
+    parser.add_argument(
+        "--patch-workflow-model",
+        action="store_true",
+        help="Patch the target workflow llm node to --model-name before smoke.",
+    )
+    parser.add_argument(
+        "--model-temperature",
+        type=float,
+        default=float(os.getenv("DIFY_MODEL_TEMPERATURE", str(DEFAULT_MODEL_TEMPERATURE))),
+        help="Temperature used when patching workflow model.",
+    )
     parser.add_argument("--query", default=os.getenv("DIFY_SMOKE_QUERY", DEFAULT_QUERY))
     parser.add_argument("--user", default=os.getenv("DIFY_SMOKE_USER", "recovery-smoke"))
     parser.add_argument("--timeout-sec", type=int, default=int(os.getenv("DIFY_SMOKE_TIMEOUT_SEC", "240")))
@@ -518,6 +554,23 @@ def main() -> int:
     print(f"[INFO] model={args.model_name}")
     print(f"[INFO] endpoint={args.endpoint_url}")
 
+    if args.patch_workflow_model:
+        workflow_id = args.workflow_id.strip()
+        if not workflow_id:
+            print("[ERROR] --patch-workflow-model requires --workflow-id (or env DIFY_WORKFLOW_ID).", file=sys.stderr)
+            return 2
+        try:
+            patch_workflow_model(
+                repo_root=os.path.abspath(args.repo_root),
+                workflow_id=workflow_id,
+                model_name=args.model_name,
+                temperature=float(args.model_temperature),
+            )
+        except Exception as e:
+            print(f"[ERROR] workflow patch failed: {e}", file=sys.stderr)
+            return 3
+        print(f"[INFO] workflow patched to model={args.model_name} workflow_id={workflow_id}")
+
     try:
         fix_result = run_fix_in_api_container(
             api_container=api_container,
@@ -532,7 +585,7 @@ def main() -> int:
         )
     except Exception as e:
         print(f"[ERROR] provider recovery failed: {e}", file=sys.stderr)
-        return 3
+        return 4
 
     print("[INFO] provider recovery result:")
     print(json.dumps(fix_result, ensure_ascii=False, indent=2))
@@ -582,7 +635,7 @@ def main() -> int:
         return 0
 
     print("[FAIL] workflow smoke did not pass acceptance.", file=sys.stderr)
-    return 4
+    return 5
 
 
 if __name__ == "__main__":

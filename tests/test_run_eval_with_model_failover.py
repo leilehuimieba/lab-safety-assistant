@@ -14,6 +14,12 @@ def test_has_model_outage_marker_detects_known_patterns() -> None:
     assert remf.has_model_outage_marker("timeout only") is False
 
 
+def test_is_authentication_error_detects_401_patterns() -> None:
+    assert remf.is_authentication_error("HTTP 401 Authentication Failed")
+    assert remf.is_authentication_error("invalid_request_error: Authentication Failed")
+    assert remf.is_authentication_error("model_not_found") is False
+
+
 def test_parse_live_run_dir() -> None:
     stdout = "...\nLive smoke run: D:/repo/artifacts/eval_smoke_auto/run_20260329_130000\n..."
     run_dir = remf.parse_live_run_dir(stdout)
