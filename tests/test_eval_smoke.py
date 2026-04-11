@@ -4,9 +4,12 @@ import json
 import subprocess
 import threading
 import time
+from pathlib import Path
 from unittest.mock import patch
 
 import eval_smoke as es
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_split_segments_handles_cn_and_semicolon() -> None:
@@ -240,7 +243,7 @@ def test_main_writes_clean_artifacts_and_manifest(tmp_path) -> None:
             "--output-dir",
             str(tmp_path / "artifacts" / "manual_smoke\r"),
         ],
-        cwd="d:\\workspace\\lab-safe-assistant-github",
+        cwd=str(REPO_ROOT),
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -294,7 +297,7 @@ def test_fuzzy_metric_defaults_to_pass_when_no_fuzzy_rows(tmp_path) -> None:
             "--output-dir",
             str(tmp_path / "artifacts" / "manual_smoke"),
         ],
-        cwd="d:\\workspace\\lab-safe-assistant-github",
+        cwd=str(REPO_ROOT),
         capture_output=True,
         text=True,
         encoding="utf-8",
