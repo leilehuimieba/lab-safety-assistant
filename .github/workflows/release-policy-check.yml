@@ -1,5 +1,8 @@
 name: Release Policy Check
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:
     inputs:
@@ -50,4 +53,3 @@ jobs:
           path: |
             docs/eval/release_policy_check.json
             docs/eval/release_policy_check.md
-

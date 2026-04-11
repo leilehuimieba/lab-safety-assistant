@@ -1,5 +1,8 @@
 name: Daily Eval Gate Monitor
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   schedule:
     # Every day 01:30 UTC
