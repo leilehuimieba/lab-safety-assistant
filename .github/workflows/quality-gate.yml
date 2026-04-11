@@ -21,7 +21,7 @@ jobs:
       - name: Install Test Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest -r scripts/requirements-web-ingest.txt
+          pip install pytest requests PyYAML fastapi pydantic -r scripts/requirements-web-ingest.txt
 
       - name: Run Quality Gate
         run: |
