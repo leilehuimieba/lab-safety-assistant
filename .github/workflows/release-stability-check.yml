@@ -6,6 +6,10 @@ env:
 on:
   workflow_dispatch:
     inputs:
+      workflow_id:
+        description: "Dify workflow id (required when skip_failover_eval=false)"
+        required: false
+        default: ""
       rounds:
         description: "Stability rounds"
         required: true
@@ -39,21 +43,37 @@ jobs:
           python-version: "3.11"
 
       - name: Run Stability Check
+        shell: bash
+        env:
+          DIFY_BASE_URL: ${{ secrets.DIFY_BASE_URL }}
+          DIFY_APP_API_KEY: ${{ secrets.DIFY_APP_API_KEY }}
         run: |
-          EXTRA_FLAGS=""
+          cmd=(
+            python scripts/release/run_release_stability_check.py
+            --repo-root .
+            --rounds "${{ github.event.inputs.rounds }}"
+            --interval-sec "${{ github.event.inputs.interval_sec }}"
+            --release-policy-profile demo
+            --release-policy-run-secondary
+            --release-policy-secondary-profile prod
+            --release-policy-enforce-secondary
+            --release-policy-strict
+          )
+
           if [ "${{ github.event.inputs.skip_failover_eval }}" = "true" ]; then
-            EXTRA_FLAGS="--skip-failover-eval"
+            cmd+=(--skip-failover-eval)
+          else
+            if [ -z "${{ github.event.inputs.workflow_id }}" ]; then
+              echo "workflow_id is required when skip_failover_eval=false"
+              exit 1
+            fi
+            cmd+=(--workflow-id "${{ github.event.inputs.workflow_id }}")
+            if [ -n "${DIFY_BASE_URL}" ] && [ -n "${DIFY_APP_API_KEY}" ]; then
+              cmd+=(--dify-base-url "${DIFY_BASE_URL}" --dify-app-key "${DIFY_APP_API_KEY}")
+            fi
           fi
-          python scripts/release/run_release_stability_check.py \
-            --repo-root . \
-            --rounds "${{ github.event.inputs.rounds }}" \
-            --interval-sec "${{ github.event.inputs.interval_sec }}" \
-            --release-policy-profile demo \
-            --release-policy-run-secondary \
-            --release-policy-secondary-profile prod \
-            --release-policy-enforce-secondary \
-            --release-policy-strict \
-            ${EXTRA_FLAGS}
+
+          "${cmd[@]}"
 
       - name: Upload Stability Reports
         if: always()
