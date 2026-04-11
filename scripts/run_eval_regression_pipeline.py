@@ -87,6 +87,18 @@ def parse_args() -> argparse.Namespace:
         help="Retry count on primary channel before switching to fallback.",
     )
     parser.add_argument(
+        "--preflight-retries",
+        type=int,
+        default=1,
+        help="Retry count for /parameters preflight before fallback/error.",
+    )
+    parser.add_argument(
+        "--chat-preflight-retries",
+        type=int,
+        default=1,
+        help="Retry count for /chat-messages preflight before fallback/error.",
+    )
+    parser.add_argument(
         "--skip-preflight",
         action="store_true",
         help="Skip Dify /v1/parameters preflight check before smoke run.",
@@ -222,6 +234,30 @@ def should_try_fallback_preflight_detail(detail: str) -> bool:
         return False
     # For non-auth failures, fallback channel is usually worth trying.
     return True
+
+
+def run_preflight_with_retries(
+    check_fn,
+    *,
+    base_url: str,
+    app_key: str,
+    timeout_sec: float,
+    retries: int,
+    response_mode: str = "",
+) -> tuple[bool, str]:
+    attempts = max(1, int(retries) + 1)
+    last_detail = ""
+    for idx in range(attempts):
+        if response_mode:
+            ok, detail = check_fn(base_url, app_key, timeout_sec, response_mode)
+        else:
+            ok, detail = check_fn(base_url, app_key, timeout_sec)
+        if ok:
+            if idx > 0:
+                return True, f"{detail} after_retry={idx}"
+            return True, detail
+        last_detail = detail
+    return False, last_detail
 
 
 def preflight_dify_chat(
@@ -405,7 +441,13 @@ def main() -> int:
     active_route = "primary"
 
     if not args.skip_preflight:
-        ok, detail = preflight_dify(active_dify_base_url, active_dify_app_key, args.preflight_timeout)
+        ok, detail = run_preflight_with_retries(
+            preflight_dify,
+            base_url=active_dify_base_url,
+            app_key=active_dify_app_key,
+            timeout_sec=args.preflight_timeout,
+            retries=args.preflight_retries,
+        )
         if not ok:
             primary_detail = detail
             can_try_fallback = (
@@ -414,8 +456,12 @@ def main() -> int:
                 and should_try_fallback_preflight_detail(primary_detail)
             )
             if can_try_fallback:
-                ok_fb, detail_fb = preflight_dify(
-                    fallback_dify_base_url, fallback_dify_app_key, args.preflight_timeout
+                ok_fb, detail_fb = run_preflight_with_retries(
+                    preflight_dify,
+                    base_url=fallback_dify_base_url,
+                    app_key=fallback_dify_app_key,
+                    timeout_sec=args.preflight_timeout,
+                    retries=args.preflight_retries,
                 )
                 if ok_fb:
                     active_dify_base_url = fallback_dify_base_url
@@ -442,11 +488,13 @@ def main() -> int:
             print(f"Dify preflight passed: route={active_route} detail={detail}")
 
     if not args.skip_chat_preflight:
-        ok, detail = preflight_dify_chat(
-            active_dify_base_url,
-            active_dify_app_key,
-            args.chat_preflight_timeout,
-            args.dify_response_mode,
+        ok, detail = run_preflight_with_retries(
+            preflight_dify_chat,
+            base_url=active_dify_base_url,
+            app_key=active_dify_app_key,
+            timeout_sec=args.chat_preflight_timeout,
+            retries=args.chat_preflight_retries,
+            response_mode=args.dify_response_mode,
         )
         if not ok:
             primary_detail = detail
@@ -457,11 +505,13 @@ def main() -> int:
                 and should_try_fallback_preflight_detail(primary_detail)
             )
             if can_try_fallback:
-                ok_fb, detail_fb = preflight_dify_chat(
-                    fallback_dify_base_url,
-                    fallback_dify_app_key,
-                    args.chat_preflight_timeout,
-                    args.dify_response_mode,
+                ok_fb, detail_fb = run_preflight_with_retries(
+                    preflight_dify_chat,
+                    base_url=fallback_dify_base_url,
+                    app_key=fallback_dify_app_key,
+                    timeout_sec=args.chat_preflight_timeout,
+                    retries=args.chat_preflight_retries,
+                    response_mode=args.dify_response_mode,
                 )
                 if ok_fb:
                     active_dify_base_url = fallback_dify_base_url
