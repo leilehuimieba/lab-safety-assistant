@@ -48,9 +48,30 @@ jobs:
           DIFY_FALLBACK_BASE_URL: ${{ secrets.DIFY_FALLBACK_BASE_URL }}
           DIFY_FALLBACK_APP_API_KEY: ${{ secrets.DIFY_FALLBACK_APP_API_KEY }}
         run: |
+          primary_base="${DIFY_BASE_URL%/}"
+          primary_key="${DIFY_APP_API_KEY}"
+          fallback_base="${DIFY_FALLBACK_BASE_URL}"
+          fallback_key="${DIFY_FALLBACK_APP_API_KEY}"
+
+          if [ -z "${fallback_key}" ]; then
+            fallback_key="${primary_key}"
+          fi
+          if [ -z "${fallback_base}" ]; then
+            fallback_base="${primary_base}/"
+          fi
+          if [ "${fallback_base}" = "${primary_base}" ] && [ "${fallback_key}" = "${primary_key}" ]; then
+            fallback_base="${primary_base}/"
+          fi
+
           python scripts/run_eval_regression_pipeline.py \
             --repo-root . \
             --allow-skip-live \
+            --dify-base-url "${primary_base}" \
+            --dify-app-key "${primary_key}" \
+            --fallback-dify-base-url "${fallback_base}" \
+            --fallback-dify-app-key "${fallback_key}" \
+            --preflight-retries 2 \
+            --chat-preflight-retries 2 \
             --update-dashboard
 
       - name: Generate Release Risk Note
