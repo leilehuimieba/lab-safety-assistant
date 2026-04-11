@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+from typing import Any
 from unittest.mock import patch
 from pathlib import Path
 
@@ -139,3 +140,98 @@ def test_parse_worker_log_hints_embedding_unreachable() -> None:
     assert "11434" in merged
     assert "Plugin Daemon 500" in merged
     assert "InvokeServerUnavailableError" in merged
+
+
+def test_classify_preflight_detail_variants() -> None:
+    assert rep.classify_preflight_detail("") == "empty"
+    assert rep.classify_preflight_detail("http_401: unauthorized") == "auth_error"
+    assert rep.classify_preflight_detail("http_403: error code 1010") == "http_403_1010"
+    assert rep.classify_preflight_detail("request_error: timed out") == "timeout"
+    assert rep.classify_preflight_detail("http_502: bad gateway") == "http_error"
+    assert rep.classify_preflight_detail("request_error: [Errno 111] connection refused") == "request_error"
+    assert rep.classify_preflight_detail("workflow_failed latency=123ms") == "workflow_failed"
+
+
+def test_route_label_masks_path_details() -> None:
+    assert rep.route_label("https://example.com/v1") == "https://example.com/v1"
+    assert rep.route_label("https://example.com/v1/chat-messages") == "https://example.com/*"
+    assert rep.route_label("") == "(empty)"
+
+
+def test_evaluate_fallback_attempt_reasons() -> None:
+    ok, reason = rep.evaluate_fallback_attempt(
+        primary_base_url="https://a/v1",
+        primary_app_key="k1",
+        fallback_base_url="https://b/v1",
+        fallback_app_key="k2",
+        primary_detail="request_error: timed out",
+    )
+    assert ok is True
+    assert reason == "fallback_allowed"
+
+    ok, reason = rep.evaluate_fallback_attempt(
+        primary_base_url="https://a/v1",
+        primary_app_key="k1",
+        fallback_base_url="",
+        fallback_app_key="",
+        primary_detail="request_error: timed out",
+    )
+    assert ok is False
+    assert reason == "fallback_missing_config"
+
+    ok, reason = rep.evaluate_fallback_attempt(
+        primary_base_url="https://a/v1",
+        primary_app_key="k1",
+        fallback_base_url="https://a/v1",
+        fallback_app_key="k1",
+        primary_detail="request_error: timed out",
+    )
+    assert ok is False
+    assert reason == "fallback_same_as_primary"
+
+    ok, reason = rep.evaluate_fallback_attempt(
+        primary_base_url="https://a/v1",
+        primary_app_key="k1",
+        fallback_base_url="https://b/v1",
+        fallback_app_key="k2",
+        primary_detail="http_401: authentication failed",
+    )
+    assert ok is False
+    assert reason == "fallback_blocked_auth_error"
+
+    ok, reason = rep.evaluate_fallback_attempt(
+        primary_base_url="https://a/v1",
+        primary_app_key="k1",
+        fallback_base_url="https://b/v1",
+        fallback_app_key="k2",
+        primary_detail="request_error: timed out",
+        active_route="fallback",
+    )
+    assert ok is False
+    assert reason == "active_route_not_primary"
+
+
+def test_run_preflight_with_retries_emits_diagnostics(capsys: Any) -> None:
+    state = {"n": 0}
+
+    def _check(_: str, __: str, ___: float) -> tuple[bool, str]:
+        state["n"] += 1
+        if state["n"] == 1:
+            return False, "request_error: timed out"
+        return True, "ok latency=3ms"
+
+    ok, detail = rep.run_preflight_with_retries(
+        _check,
+        base_url="https://example.com/v1",
+        app_key="k",
+        timeout_sec=1.0,
+        retries=2,
+        stage="unit_preflight",
+        route="primary",
+    )
+    out = capsys.readouterr().out
+    assert ok is True
+    assert "after_retry=1" in detail
+    assert "unit_preflight attempt failed" in out
+    assert "detail_category=timeout" in out
+    assert "unit_preflight succeeded after retries" in out

@@ -20,6 +20,7 @@ import urllib.error
 import urllib.request
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 def parse_args() -> argparse.Namespace:
@@ -236,6 +237,57 @@ def should_try_fallback_preflight_detail(detail: str) -> bool:
     return True
 
 
+def classify_preflight_detail(detail: str) -> str:
+    lowered = (detail or "").strip().lower()
+    if not lowered:
+        return "empty"
+    if is_auth_related_preflight_error(lowered):
+        return "auth_error"
+    if "1010" in lowered and "http_403" in lowered:
+        return "http_403_1010"
+    if "timed out" in lowered or "timeout" in lowered:
+        return "timeout"
+    if lowered.startswith("http_"):
+        return "http_error"
+    if "request_error" in lowered:
+        return "request_error"
+    if "workflow_failed" in lowered:
+        return "workflow_failed"
+    return "other"
+
+
+def route_label(base_url: str) -> str:
+    raw = (base_url or "").strip()
+    if not raw:
+        return "(empty)"
+    parsed = urlparse(raw)
+    if parsed.scheme and parsed.netloc:
+        path = parsed.path or ""
+        path_suffix = path if path in ("", "/v1") else "/*"
+        return f"{parsed.scheme}://{parsed.netloc}{path_suffix}"
+    return raw
+
+
+def evaluate_fallback_attempt(
+    *,
+    primary_base_url: str,
+    primary_app_key: str,
+    fallback_base_url: str,
+    fallback_app_key: str,
+    primary_detail: str,
+    active_route: str = "primary",
+) -> tuple[bool, str]:
+    if active_route != "primary":
+        return False, "active_route_not_primary"
+    if not fallback_base_url or not fallback_app_key:
+        return False, "fallback_missing_config"
+    if fallback_base_url == primary_base_url and fallback_app_key == primary_app_key:
+        return False, "fallback_same_as_primary"
+    if not should_try_fallback_preflight_detail(primary_detail):
+        return False, "fallback_blocked_auth_error"
+    return True, "fallback_allowed"
+
+
 def run_preflight_with_retries(
     check_fn,
     *,
@@ -244,6 +296,8 @@ def run_preflight_with_retries(
     timeout_sec: float,
     retries: int,
     response_mode: str = "",
+    stage: str = "preflight",
+    route: str = "primary",
 ) -> tuple[bool, str]:
     attempts = max(1, int(retries) + 1)
     last_detail = ""
@@ -254,9 +308,17 @@ def run_preflight_with_retries(
             ok, detail = check_fn(base_url, app_key, timeout_sec)
         if ok:
             if idx > 0:
+                print(
+                    f"{stage} succeeded after retries: route={route} endpoint={route_label(base_url)} "
+                    f"attempt={idx + 1}/{attempts} detail={detail}"
+                )
                 return True, f"{detail} after_retry={idx}"
             return True, detail
         last_detail = detail
+        print(
+            f"{stage} attempt failed: route={route} endpoint={route_label(base_url)} "
+            f"attempt={idx + 1}/{attempts} detail_category={classify_preflight_detail(detail)} detail={detail}"
+        )
     return False, last_detail
 
 
@@ -440,6 +502,16 @@ def main() -> int:
     active_dify_app_key = dify_app_key
     active_route = "primary"
 
+    print(
+        "Live regression preflight config: "
+        f"primary={route_label(dify_base_url)} "
+        f"fallback={route_label(fallback_dify_base_url)} "
+        f"fallback_configured={bool(fallback_dify_base_url and fallback_dify_app_key)} "
+        f"fallback_distinct={bool(fallback_dify_base_url and fallback_dify_app_key and (fallback_dify_base_url != dify_base_url or fallback_dify_app_key != dify_app_key))} "
+        f"preflight_retries={max(0, args.preflight_retries)} "
+        f"chat_preflight_retries={max(0, args.chat_preflight_retries)}"
+    )
+
     if not args.skip_preflight:
         ok, detail = run_preflight_with_retries(
             preflight_dify,
@@ -447,13 +519,23 @@ def main() -> int:
             app_key=active_dify_app_key,
             timeout_sec=args.preflight_timeout,
             retries=args.preflight_retries,
+            stage="dify_parameters_preflight",
+            route=active_route,
         )
         if not ok:
             primary_detail = detail
-            can_try_fallback = (
-                bool(fallback_dify_base_url and fallback_dify_app_key)
-                and (fallback_dify_base_url != dify_base_url or fallback_dify_app_key != dify_app_key)
-                and should_try_fallback_preflight_detail(primary_detail)
+            can_try_fallback, fallback_reason = evaluate_fallback_attempt(
+                primary_base_url=dify_base_url,
+                primary_app_key=dify_app_key,
+                fallback_base_url=fallback_dify_base_url,
+                fallback_app_key=fallback_dify_app_key,
+                primary_detail=primary_detail,
+                active_route=active_route,
+            )
+            print(
+                "Dify preflight fallback decision: "
+                f"allowed={can_try_fallback} reason={fallback_reason} "
+                f"primary_detail_category={classify_preflight_detail(primary_detail)}"
             )
             if can_try_fallback:
                 ok_fb, detail_fb = run_preflight_with_retries(
@@ -462,6 +544,8 @@ def main() -> int:
                     app_key=fallback_dify_app_key,
                     timeout_sec=args.preflight_timeout,
                     retries=args.preflight_retries,
+                    stage="dify_parameters_preflight",
+                    route="fallback",
                 )
                 if ok_fb:
                     active_dify_base_url = fallback_dify_base_url
@@ -482,6 +566,7 @@ def main() -> int:
                 raise RuntimeError(
                     "Dify preflight failed. "
                     f"base_url={active_dify_base_url} detail={primary_detail}. "
+                    f"fallback_reason={fallback_reason}. "
                     "You can use --skip-preflight to bypass temporarily."
                 )
         else:
@@ -495,14 +580,23 @@ def main() -> int:
             timeout_sec=args.chat_preflight_timeout,
             retries=args.chat_preflight_retries,
             response_mode=args.dify_response_mode,
+            stage="dify_chat_preflight",
+            route=active_route,
         )
         if not ok:
             primary_detail = detail
-            can_try_fallback = (
-                active_route == "primary"
-                and bool(fallback_dify_base_url and fallback_dify_app_key)
-                and (fallback_dify_base_url != dify_base_url or fallback_dify_app_key != dify_app_key)
-                and should_try_fallback_preflight_detail(primary_detail)
+            can_try_fallback, fallback_reason = evaluate_fallback_attempt(
+                primary_base_url=dify_base_url,
+                primary_app_key=dify_app_key,
+                fallback_base_url=fallback_dify_base_url,
+                fallback_app_key=fallback_dify_app_key,
+                primary_detail=primary_detail,
+                active_route=active_route,
+            )
+            print(
+                "Dify chat preflight fallback decision: "
+                f"allowed={can_try_fallback} reason={fallback_reason} "
+                f"primary_detail_category={classify_preflight_detail(primary_detail)}"
             )
             if can_try_fallback:
                 ok_fb, detail_fb = run_preflight_with_retries(
@@ -512,6 +606,8 @@ def main() -> int:
                     timeout_sec=args.chat_preflight_timeout,
                     retries=args.chat_preflight_retries,
                     response_mode=args.dify_response_mode,
+                    stage="dify_chat_preflight",
+                    route="fallback",
                 )
                 if ok_fb:
                     active_dify_base_url = fallback_dify_base_url
@@ -541,6 +637,7 @@ def main() -> int:
                 raise RuntimeError(
                     "Dify chat preflight failed. "
                     f"base_url={active_dify_base_url} detail={primary_detail}. "
+                    f"fallback_reason={fallback_reason}. "
                     "You can use --skip-chat-preflight temporarily, but live regression may time out."
                     f"{hint_block}"
                 )
