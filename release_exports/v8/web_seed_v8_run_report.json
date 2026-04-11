@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-03-30T09:30:10+08:00",
+  "generated_at": "2026-04-11T03:51:46+00:00",
   "requested_pages": 30,
   "fetched_successfully": 30,
   "blocked_pages": 0,
   "providers": {
     "legacy_html": 30
   },
-  "clean_documents": 21,
-  "knowledge_rows": 109
+  "clean_documents": 23,
+  "knowledge_rows": 3274
 }
