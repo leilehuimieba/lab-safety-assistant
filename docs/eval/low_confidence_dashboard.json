@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-03-30T09:23:22+08:00",
-  "queue_csv": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\low_confidence_followups\\data_gap_queue.csv",
+  "generated_at": "2026-04-11T03:51:32+00:00",
+  "queue_csv": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/artifacts/low_confidence_followups/data_gap_queue.csv",
   "total": 0,
   "open": 0,
   "closed": 0,

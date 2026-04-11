@@ -1,51 +1,49 @@
 {
-  "generated_at": "2026-03-30T09:44:38+08:00",
+  "generated_at": "2026-04-11T03:51:32+00:00",
   "overall_status": "BLOCK",
   "profiles": [
     {
-      "generated_at": "2026-03-30T09:44:38+08:00",
+      "generated_at": "2026-04-11T03:51:32+00:00",
       "profile": "demo",
-      "policy_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_v5.json",
-      "risk_note_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_risk_note_auto.json",
-      "failover_status_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\failover_status.json",
+      "policy_path": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_policy_v5.json",
+      "risk_note_path": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_risk_note_auto.json",
+      "failover_status_path": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/failover_status.json",
       "strict": true,
       "status": "BLOCK",
       "violations": [
-        "metric emergency_pass_rate too low: 0.0000 < min=0.8000",
-        "metric coverage_rate too low: 0.0000 < min=0.7500"
+        "gate_decision not allowed: BLOCK not in ['PASS', 'WARN', 'WARN_ONLY']",
+        "metric missing/invalid in latest_metrics: emergency_pass_rate",
+        "metric missing/invalid in latest_metrics: coverage_rate"
       ],
       "warnings": [],
-      "risk_gate_decision": "WARN_ONLY",
-      "risk_violation_count": 2,
+      "risk_gate_decision": "BLOCK",
+      "risk_violation_count": 1,
       "risk_warning_count": 0,
-      "override_active": true,
+      "override_active": false,
       "override_mode": "warn_only",
       "exit_code": 1
     },
     {
-      "generated_at": "2026-03-30T09:44:38+08:00",
+      "generated_at": "2026-04-11T03:51:32+00:00",
       "profile": "prod",
-      "policy_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_v5.json",
-      "risk_note_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_risk_note_auto.json",
-      "failover_status_path": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\failover_status.json",
+      "policy_path": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_policy_v5.json",
+      "risk_note_path": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_risk_note_auto.json",
+      "failover_status_path": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/failover_status.json",
       "strict": true,
       "status": "BLOCK",
       "violations": [
-        "gate_decision not allowed: WARN_ONLY not in ['PASS', 'WARN']",
-        "risk violation count exceeded: 2 > max_violation_count=0",
-        "override mode not allowed for profile prod: warn_only not in []",
+        "gate_decision not allowed: BLOCK not in ['PASS', 'WARN']",
+        "risk violation count exceeded: 1 > max_violation_count=0",
         "route_success_rate too low: 0.0000 < min_route_success_rate=0.8000",
-        "route_timeout_rate too high: 1.0000 > max_route_timeout_rate=0.2000",
-        "latency_p95_ms too high: 60139.45 > max_latency_p95_ms=30000.00",
-        "metric emergency_pass_rate too low: 0.0000 < min=0.9000",
-        "metric coverage_rate too low: 0.0000 < min=0.8500",
-        "metric qa_pass_rate too low: 0.0000 < min=0.8500"
+        "metric missing/invalid in latest_metrics: emergency_pass_rate",
+        "metric missing/invalid in latest_metrics: coverage_rate",
+        "metric missing/invalid in latest_metrics: qa_pass_rate"
       ],
       "warnings": [],
-      "risk_gate_decision": "WARN_ONLY",
-      "risk_violation_count": 2,
+      "risk_gate_decision": "BLOCK",
+      "risk_violation_count": 1,
       "risk_warning_count": 0,
-      "override_active": true,
+      "override_active": false,
       "override_mode": "warn_only",
       "exit_code": 1
     }
@@ -53,31 +51,31 @@
   "blocker_topn": [
     {
       "rank": "1",
-      "reason": "metric emergency_pass_rate too low: 0.0000 < min=0.8000",
-      "count": "1",
-      "profiles": "demo",
+      "reason": "metric missing/invalid in latest_metrics: emergency_pass_rate",
+      "count": "2",
+      "profiles": "demo,prod",
       "priority": "P2",
       "recommended_action": "Fix listed blockers and rerun one-click release validation."
     },
     {
       "rank": "2",
-      "reason": "metric coverage_rate too low: 0.0000 < min=0.7500",
+      "reason": "metric missing/invalid in latest_metrics: coverage_rate",
+      "count": "2",
+      "profiles": "demo,prod",
+      "priority": "P2",
+      "recommended_action": "Fix listed blockers and rerun one-click release validation."
+    },
+    {
+      "rank": "3",
+      "reason": "gate_decision not allowed: BLOCK not in ['PASS', 'WARN', 'WARN_ONLY']",
       "count": "1",
       "profiles": "demo",
       "priority": "P2",
       "recommended_action": "Fix listed blockers and rerun one-click release validation."
     },
     {
-      "rank": "3",
-      "reason": "gate_decision not allowed: WARN_ONLY not in ['PASS', 'WARN']",
-      "count": "1",
-      "profiles": "prod",
-      "priority": "P2",
-      "recommended_action": "Fix listed blockers and rerun one-click release validation."
-    },
-    {
       "rank": "4",
-      "reason": "risk violation count exceeded: 2 > max_violation_count=0",
+      "reason": "gate_decision not allowed: BLOCK not in ['PASS', 'WARN']",
       "count": "1",
       "profiles": "prod",
       "priority": "P2",
@@ -85,11 +83,11 @@
     },
     {
       "rank": "5",
-      "reason": "override mode not allowed for profile prod: warn_only not in []",
+      "reason": "risk violation count exceeded: 1 > max_violation_count=0",
       "count": "1",
       "profiles": "prod",
-      "priority": "P1",
-      "recommended_action": "Disable temporary override or switch to an allowed release profile before release."
+      "priority": "P2",
+      "recommended_action": "Fix listed blockers and rerun one-click release validation."
     },
     {
       "rank": "6",
@@ -101,31 +99,7 @@
     },
     {
       "rank": "7",
-      "reason": "route_timeout_rate too high: 1.0000 > max_route_timeout_rate=0.2000",
-      "count": "1",
-      "profiles": "prod",
-      "priority": "P0",
-      "recommended_action": "Reduce concurrency and investigate SSE timeout path; enable fallback channel and rerun canary."
-    },
-    {
-      "rank": "8",
-      "reason": "latency_p95_ms too high: 60139.45 > max_latency_p95_ms=30000.00",
-      "count": "1",
-      "profiles": "prod",
-      "priority": "P1",
-      "recommended_action": "Optimize prompt and retrieval path, reduce latency, and tune rate limits."
-    },
-    {
-      "rank": "9",
-      "reason": "metric emergency_pass_rate too low: 0.0000 < min=0.9000",
-      "count": "1",
-      "profiles": "prod",
-      "priority": "P2",
-      "recommended_action": "Fix listed blockers and rerun one-click release validation."
-    },
-    {
-      "rank": "10",
-      "reason": "metric coverage_rate too low: 0.0000 < min=0.8500",
+      "reason": "metric missing/invalid in latest_metrics: qa_pass_rate",
       "count": "1",
       "profiles": "prod",
       "priority": "P2",
@@ -138,20 +112,20 @@
       "exit_code": 1,
       "stdout_tail": "",
       "stderr_tail": "",
-      "output_json": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_check_demo.json",
-      "output_md": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_check_demo.md"
+      "output_json": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_policy_check_demo.json",
+      "output_md": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_policy_check_demo.md"
     },
     {
       "profile": "prod",
       "exit_code": 1,
       "stdout_tail": "",
       "stderr_tail": "",
-      "output_json": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_check_prod.json",
-      "output_md": "D:\\workspace\\lab-safe-assistant-github\\docs\\eval\\release_policy_check_prod.md"
+      "output_json": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_policy_check_prod.json",
+      "output_md": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/release_policy_check_prod.md"
     }
   ],
   "action_plan": {
-    "count": 10,
+    "count": 7,
     "csv": "docs/ops/release_fix_plan_auto.csv",
     "md": "docs/ops/release_fix_plan_auto.md"
   }

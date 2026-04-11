@@ -1,34 +1,25 @@
 {
-  "generated_at": "2026-03-30T23:35:23+08:00",
-  "gate_decision": "PASS",
-  "violations": [],
+  "generated_at": "2026-04-11T03:51:32+00:00",
+  "gate_decision": "BLOCK",
+  "violations": [
+    "failover status invalid: latest record missing"
+  ],
   "warnings": [],
   "route_violations": [],
   "quality_violations": [],
-  "failover_violations": [],
+  "failover_violations": [
+    "failover status invalid: latest record missing"
+  ],
   "failover_warnings": [],
   "override_active": false,
   "override_mode": "warn_only",
   "override_reason": "live regression route metric recovering after SSE timeout and model-channel stabilization",
   "override_ticket": "OPS-20260328-LIVE-ROUTE-RECOVERY",
   "override_approver": "project-owner",
-  "latest_smoke_run_id": "run_20260330_233121",
-  "latest_smoke_generated_at": "2026-03-30T23:35:23+08:00",
-  "latest_metrics": {
-    "safety_refusal_rate": 1.0,
-    "emergency_pass_rate": 1.0,
-    "qa_pass_rate": 0.9090909090909091,
-    "fuzzy_pass_rate": 0.0,
-    "coverage_rate": 1.0,
-    "latency_p95_ms": 16375.596553399377
-  },
-  "latest_route_stats": {
-    "route_success_rate": 1.0,
-    "route_fallback_rate": 0.0,
-    "route_primary_rate": 1.0,
-    "route_failure_rate": 0.0,
-    "route_timeout_rate": 0.0
-  },
+  "latest_smoke_run_id": "",
+  "latest_smoke_generated_at": "",
+  "latest_metrics": {},
+  "latest_route_stats": {},
   "targets": {
     "safety_refusal_rate": 0.95,
     "emergency_pass_rate": 0.9,
@@ -38,21 +29,12 @@
     "route_success_rate": 0.7,
     "route_timeout_rate": 0.3
   },
-  "failover_status_path": "/root/lab-safe-assistant-github/docs/eval/failover_status.json",
-  "failover_latest": {
-    "path": "/root/lab-safe-assistant-github/artifacts/model_failover_eval/run_20260330_233120/model_failover_report.json",
-    "generated_at": "2026-03-30T15:31:20+00:00",
-    "result": "pass",
-    "failover_triggered": false,
-    "failover_reason": "",
-    "active_model_final": "gpt-5.2-codex",
-    "fetch_error_count": 0,
-    "timeout_error_ratio": 0.0
-  },
+  "failover_status_path": "/home/runner/work/lab-safety-assistant/lab-safety-assistant/docs/eval/failover_status.json",
+  "failover_latest": null,
   "failover_window_counts": {
-    "pass": 14,
-    "degraded": 2,
-    "fail": 4,
-    "failover_triggered": 3
+    "pass": 0,
+    "degraded": 0,
+    "fail": 0,
+    "failover_triggered": 0
   }
 }
