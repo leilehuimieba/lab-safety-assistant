@@ -90,6 +90,7 @@ jobs:
           python scripts/generate_weekly_gate_ops.py --repo-root . --days 7 --output docs/eval/weekly_gate_ops.md
 
       - name: Create Pull Request
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v6
         with:
           branch: bot/weekly-report

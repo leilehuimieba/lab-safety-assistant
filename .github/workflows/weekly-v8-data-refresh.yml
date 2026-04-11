@@ -43,6 +43,7 @@ jobs:
           python scripts/validate_data_sources.py --repo-root .
 
       - name: Create Pull Request
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v6
         with:
           branch: bot/weekly-v8-data-refresh
