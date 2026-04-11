@@ -9,26 +9,26 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$Manifest = "data_sources\web_seed_urls_v8_candidates.csv"
-$PrefetchDir = "artifacts\web_seed_v8_prefetch"
-$FetchResults = "$PrefetchDir\fetch_results.jsonl"
-$KbCsv = "$PrefetchDir\knowledge_base_web.csv"
-$KbRewrittenCsv = "$PrefetchDir\knowledge_base_web_rewritten.csv"
-$RewriteLogCsv = "$PrefetchDir\rewrite_log.csv"
-$StatusCsv = "data_sources\web_seed_urls_v8_prefetch_status.csv"
-$ReportMd = "docs\pipeline\web_seed_v8_prefetch_report.md"
-$AssignmentCsv = "data_sources\web_seed_v8_task_assignment.csv"
-$BundleDir = "artifacts\import_bundle_v8"
-$ReleaseDir = "release_exports\v8"
+$Manifest = "data_sources/web_seed_urls_v8_candidates.csv"
+$PrefetchDir = "artifacts/web_seed_v8_prefetch"
+$FetchResults = "$PrefetchDir/fetch_results.jsonl"
+$KbCsv = "$PrefetchDir/knowledge_base_web.csv"
+$KbRewrittenCsv = "$PrefetchDir/knowledge_base_web_rewritten.csv"
+$RewriteLogCsv = "$PrefetchDir/rewrite_log.csv"
+$StatusCsv = "data_sources/web_seed_urls_v8_prefetch_status.csv"
+$ReportMd = "docs/pipeline/web_seed_v8_prefetch_report.md"
+$AssignmentCsv = "data_sources/web_seed_v8_task_assignment.csv"
+$BundleDir = "artifacts/import_bundle_v8"
+$ReleaseDir = "release_exports/v8"
 $CuratedCsv = "knowledge_base_curated.csv"
-$BaseReleaseCsv = "release_exports\v7\knowledge_base_import_ready.csv"
+$BaseReleaseCsv = "release_exports/v7/knowledge_base_import_ready.csv"
 
 if (-not (Test-Path $Manifest)) { throw "Missing manifest: $Manifest" }
 if (-not (Test-Path $CuratedCsv)) { throw "Missing curated CSV: $CuratedCsv" }
 
 if (-not $SkipFetch) {
   Write-Host "=== Step 1/6: Fetch V8 web seeds ===" -ForegroundColor Cyan
-  & $PythonExe scripts\web_ingest_pipeline.py `
+  & $PythonExe scripts/web_ingest_pipeline.py `
     --manifest $Manifest `
     --output-dir $PrefetchDir `
     --fetcher-mode auto `
@@ -42,14 +42,14 @@ if (-not (Test-Path $FetchResults)) { throw "Missing fetch results: $FetchResult
 if (-not (Test-Path $KbCsv)) { throw "Missing KB output: $KbCsv" }
 
 Write-Host "=== Step 2/6: Generate V8 prefetch status ===" -ForegroundColor Cyan
-& $PythonExe scripts\generate_web_prefetch_status.py `
+& $PythonExe scripts/generate_web_prefetch_status.py `
   --manifest $Manifest `
   --fetch-results $FetchResults `
   --output $StatusCsv
 if ($LASTEXITCODE -ne 0) { throw "Generate V8 prefetch status failed." }
 
 Write-Host "=== Step 3/6: Generate report and task assignment ===" -ForegroundColor Cyan
-& $PythonExe scripts\generate_web_prefetch_report.py `
+& $PythonExe scripts/generate_web_prefetch_report.py `
   --status-csv $StatusCsv `
   --output-report $ReportMd `
   --output-assignment $AssignmentCsv `
@@ -58,7 +58,7 @@ Write-Host "=== Step 3/6: Generate report and task assignment ===" -ForegroundCo
 if ($LASTEXITCODE -ne 0) { throw "Generate V8 prefetch report failed." }
 
 Write-Host "=== Step 4/6: Rewrite low-quality rows ===" -ForegroundColor Cyan
-& $PythonExe scripts\rewrite_low_quality_rows.py `
+& $PythonExe scripts/rewrite_low_quality_rows.py `
   --input-csv $KbCsv `
   --status-csv $StatusCsv `
   --output-csv $KbRewrittenCsv `
@@ -68,7 +68,7 @@ if ($LASTEXITCODE -ne 0) { throw "Rewrite low-quality rows failed." }
 
 Write-Host "=== Step 5/6: Build import-ready bundle (curated + v8 + previous v7 if exists) ===" -ForegroundColor Cyan
 $buildArgs = @(
-  "scripts\build_import_ready_bundle.py",
+  "scripts/build_import_ready_bundle.py",
   "--output-dir", $BundleDir,
   "--source", "curated=$CuratedCsv",
   "--source", "v8_web_rewritten=$KbRewrittenCsv"
@@ -82,18 +82,18 @@ if ($LASTEXITCODE -ne 0) { throw "Build V8 import bundle failed." }
 Write-Host "=== Step 6/6: Export V8 release directory ===" -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path $ReleaseDir | Out-Null
 
-Copy-Item "$BundleDir\knowledge_base_import_ready.csv" "$ReleaseDir\knowledge_base_import_ready.csv" -Force
-Copy-Item "$BundleDir\import_bundle_report.json" "$ReleaseDir\import_bundle_report.json" -Force
-Copy-Item "$BundleDir\import_bundle_report.md" "$ReleaseDir\import_bundle_report.md" -Force
-Copy-Item $Manifest "$ReleaseDir\web_seed_urls_v8_candidates.csv" -Force
-Copy-Item $StatusCsv "$ReleaseDir\web_seed_urls_v8_prefetch_status.csv" -Force
-Copy-Item $AssignmentCsv "$ReleaseDir\web_seed_v8_task_assignment.csv" -Force
-Copy-Item $ReportMd "$ReleaseDir\web_seed_v8_prefetch_report.md" -Force
-Copy-Item $KbCsv "$ReleaseDir\knowledge_base_web_v8.csv" -Force
-Copy-Item $KbRewrittenCsv "$ReleaseDir\knowledge_base_web_v8_rewritten.csv" -Force
-Copy-Item $RewriteLogCsv "$ReleaseDir\rewrite_log_v8.csv" -Force
-if (Test-Path "$PrefetchDir\run_report.json") {
-  Copy-Item "$PrefetchDir\run_report.json" "$ReleaseDir\web_seed_v8_run_report.json" -Force
+Copy-Item "$BundleDir/knowledge_base_import_ready.csv" "$ReleaseDir/knowledge_base_import_ready.csv" -Force
+Copy-Item "$BundleDir/import_bundle_report.json" "$ReleaseDir/import_bundle_report.json" -Force
+Copy-Item "$BundleDir/import_bundle_report.md" "$ReleaseDir/import_bundle_report.md" -Force
+Copy-Item $Manifest "$ReleaseDir/web_seed_urls_v8_candidates.csv" -Force
+Copy-Item $StatusCsv "$ReleaseDir/web_seed_urls_v8_prefetch_status.csv" -Force
+Copy-Item $AssignmentCsv "$ReleaseDir/web_seed_v8_task_assignment.csv" -Force
+Copy-Item $ReportMd "$ReleaseDir/web_seed_v8_prefetch_report.md" -Force
+Copy-Item $KbCsv "$ReleaseDir/knowledge_base_web_v8.csv" -Force
+Copy-Item $KbRewrittenCsv "$ReleaseDir/knowledge_base_web_v8_rewritten.csv" -Force
+Copy-Item $RewriteLogCsv "$ReleaseDir/rewrite_log_v8.csv" -Force
+if (Test-Path "$PrefetchDir/run_report.json") {
+  Copy-Item "$PrefetchDir/run_report.json" "$ReleaseDir/web_seed_v8_run_report.json" -Force
 }
 
 $statusRows = Import-Csv $StatusCsv
@@ -106,7 +106,7 @@ $low = ($statusRows | Where-Object {
   [double]::TryParse($_.quality_score, [ref]$score) | Out-Null
   $score -lt $LowQualityThreshold
 }).Count
-$rows = (Import-Csv "$ReleaseDir\knowledge_base_import_ready.csv" | Measure-Object).Count
+$rows = (Import-Csv "$ReleaseDir/knowledge_base_import_ready.csv" | Measure-Object).Count
 $now = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 $releaseNote = @"
@@ -134,10 +134,10 @@ $releaseNote = @"
 9. rewrite_log_v8.csv
 10. web_seed_v8_run_report.json (if available)
 "@
-$releaseNote | Set-Content -Path "$ReleaseDir\README.md" -Encoding UTF8
+$releaseNote | Set-Content -Path "$ReleaseDir/README.md" -Encoding UTF8
 
 Write-Host ""
 Write-Host "=== V8 release pipeline done ===" -ForegroundColor Green
-Write-Host "Import CSV: $ReleaseDir\knowledge_base_import_ready.csv"
+Write-Host "Import CSV: $ReleaseDir/knowledge_base_import_ready.csv"
 Write-Host "Rows: $rows"
 Write-Host "Prefetch OK: $ok/$total"

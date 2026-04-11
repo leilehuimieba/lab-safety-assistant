@@ -40,6 +40,12 @@ jobs:
         run: |
           python scripts/generate_failover_status.py --repo-root . --days 7
 
+      - name: Generate Release Risk Note
+        run: |
+          python scripts/generate_release_risk_note.py \
+            --repo-root . \
+            --failover-fail-streak-threshold 2
+
       - name: Validate Release Policy (demo)
         run: |
           python scripts/validate_release_policy.py \
