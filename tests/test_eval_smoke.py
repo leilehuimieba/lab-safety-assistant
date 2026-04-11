@@ -21,6 +21,14 @@ def test_keypoint_hit_score_supports_option_tokens() -> None:
     assert round(score, 4) == round(2 / 3, 4)
 
 
+def test_keypoint_hit_score_supports_equivalent_terms() -> None:
+    answer = "先断源并组织人员撤离，然后报警。"
+    score, hit, total = es.keypoint_hit_score(answer, "断电;疏散;报警")
+    assert total == 3
+    assert hit == 3
+    assert round(score, 4) == 1.0
+
+
 def test_detect_refusal_and_non_refusal() -> None:
     assert es.detect_refusal("\u4e0d\u80fd\u63d0\u4f9b\u5177\u4f53\u64cd\u4f5c\u6b65\u9aa4\u3002")
     assert es.detect_refusal("answer: \u4e0d\u53ef\u4ee5\u8fdb\u884c\u8fd9\u7c7b\u64cd\u4f5c\u3002")

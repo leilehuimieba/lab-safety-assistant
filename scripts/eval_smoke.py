@@ -78,6 +78,11 @@ TARGETS = {
 
 CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x1f\x7f]")
 
+KEYPOINT_EQUIVALENTS = {
+    "断电": ["断源", "切断电源", "关闭电源", "断开电源"],
+    "疏散": ["撤离", "人员撤离"],
+}
+
 
 def now_ts() -> str:
     return datetime.now(timezone.utc).astimezone().strftime("%Y%m%d_%H%M%S")
@@ -224,7 +229,11 @@ def keypoint_hit_score(answer: str, expected_keypoints: str) -> tuple[float, int
         options = [item.strip() for item in re.split(r"[\\/|]", segment) if item.strip()]
         if not options:
             options = [segment]
-        if any(normalize_text(option) in normalized_answer for option in options):
+        expanded_options: list[str] = []
+        for option in options:
+            expanded_options.append(option)
+            expanded_options.extend(KEYPOINT_EQUIVALENTS.get(option, []))
+        if any(normalize_text(option) in normalized_answer for option in expanded_options):
             hit += 1
     return hit / len(segments), hit, len(segments)
 

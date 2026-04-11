@@ -356,7 +356,7 @@ def main() -> int:
     checks.extend(check_release_package(release_dir))
     checks.append(check_latest_release_oneclick(oneclick_root, stability_root))
     checks.append(check_release_policy(repo_root / "docs" / "eval" / "release_policy_check.json", "demo"))
-    prod_policy_result = check_release_policy(repo_root / "docs" / "eval" / "release_policy_check_prod.json", "prod")
+    prod_policy_result = check_release_policy(repo_root / "docs" / "eval" / "release_policy_check.json", "prod")
     if args.enforce_prod_policy:
         checks.append(prod_policy_result)
     else:
