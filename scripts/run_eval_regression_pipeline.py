@@ -200,6 +200,30 @@ def preflight_dify(base_url: str, app_key: str, timeout_sec: float) -> tuple[boo
         return False, f"request_error: {exc}"
 
 
+def is_auth_related_preflight_error(detail: str) -> bool:
+    lowered = (detail or "").strip().lower()
+    if not lowered:
+        return False
+    auth_markers = (
+        "http_401",
+        "authentication failed",
+        "invalid_request_error",
+        "invalid api key",
+        "unauthorized",
+    )
+    return any(marker in lowered for marker in auth_markers)
+
+
+def should_try_fallback_preflight_detail(detail: str) -> bool:
+    lowered = (detail or "").strip().lower()
+    if not lowered:
+        return True
+    if is_auth_related_preflight_error(lowered):
+        return False
+    # For non-auth failures, fallback channel is usually worth trying.
+    return True
+
+
 def preflight_dify_chat(
     base_url: str,
     app_key: str,
@@ -358,6 +382,8 @@ def main() -> int:
 
     dify_base_url = args.dify_base_url.strip() or os.environ.get("DIFY_BASE_URL", "").strip()
     dify_app_key = args.dify_app_key.strip() or os.environ.get("DIFY_APP_API_KEY", "").strip()
+    fallback_dify_base_url = args.fallback_dify_base_url.strip()
+    fallback_dify_app_key = args.fallback_dify_app_key.strip()
 
     if not dify_base_url or not dify_app_key:
         if args.allow_skip_live:
@@ -374,39 +400,119 @@ def main() -> int:
             return 0
         raise SystemExit("Missing DIFY_BASE_URL or DIFY_APP_API_KEY for live regression.")
 
+    active_dify_base_url = dify_base_url
+    active_dify_app_key = dify_app_key
+    active_route = "primary"
+
     if not args.skip_preflight:
-        ok, detail = preflight_dify(dify_base_url, dify_app_key, args.preflight_timeout)
+        ok, detail = preflight_dify(active_dify_base_url, active_dify_app_key, args.preflight_timeout)
         if not ok:
-            raise RuntimeError(
-                "Dify preflight failed. "
-                f"base_url={dify_base_url} detail={detail}. "
-                "You can use --skip-preflight to bypass temporarily."
+            primary_detail = detail
+            can_try_fallback = (
+                bool(fallback_dify_base_url and fallback_dify_app_key)
+                and (fallback_dify_base_url != dify_base_url or fallback_dify_app_key != dify_app_key)
+                and should_try_fallback_preflight_detail(primary_detail)
             )
-        print(f"Dify preflight passed: {detail}")
+            if can_try_fallback:
+                ok_fb, detail_fb = preflight_dify(
+                    fallback_dify_base_url, fallback_dify_app_key, args.preflight_timeout
+                )
+                if ok_fb:
+                    active_dify_base_url = fallback_dify_base_url
+                    active_dify_app_key = fallback_dify_app_key
+                    active_route = "fallback"
+                    print(
+                        "Dify preflight switched to fallback route: "
+                        f"primary_detail={primary_detail} fallback_detail={detail_fb}"
+                    )
+                else:
+                    raise RuntimeError(
+                        "Dify preflight failed on primary and fallback channels. "
+                        f"primary_base_url={dify_base_url} primary_detail={primary_detail}; "
+                        f"fallback_base_url={fallback_dify_base_url} fallback_detail={detail_fb}. "
+                        "You can use --skip-preflight to bypass temporarily."
+                    )
+            else:
+                raise RuntimeError(
+                    "Dify preflight failed. "
+                    f"base_url={active_dify_base_url} detail={primary_detail}. "
+                    "You can use --skip-preflight to bypass temporarily."
+                )
+        else:
+            print(f"Dify preflight passed: route={active_route} detail={detail}")
 
     if not args.skip_chat_preflight:
         ok, detail = preflight_dify_chat(
-            dify_base_url,
-            dify_app_key,
+            active_dify_base_url,
+            active_dify_app_key,
             args.chat_preflight_timeout,
             args.dify_response_mode,
         )
         if not ok:
-            auto_hints = collect_worker_log_hints(args.worker_log_container)
-            hint_block = ""
-            if auto_hints:
-                hint_block = " Auto diagnosis: " + " | ".join(auto_hints)
-            raise RuntimeError(
-                "Dify chat preflight failed. "
-                f"base_url={dify_base_url} detail={detail}. "
-                "You can use --skip-chat-preflight temporarily, but live regression may time out."
-                f"{hint_block}"
+            primary_detail = detail
+            can_try_fallback = (
+                active_route == "primary"
+                and bool(fallback_dify_base_url and fallback_dify_app_key)
+                and (fallback_dify_base_url != dify_base_url or fallback_dify_app_key != dify_app_key)
+                and should_try_fallback_preflight_detail(primary_detail)
             )
-        print(f"Dify chat preflight passed: {detail}")
+            if can_try_fallback:
+                ok_fb, detail_fb = preflight_dify_chat(
+                    fallback_dify_base_url,
+                    fallback_dify_app_key,
+                    args.chat_preflight_timeout,
+                    args.dify_response_mode,
+                )
+                if ok_fb:
+                    active_dify_base_url = fallback_dify_base_url
+                    active_dify_app_key = fallback_dify_app_key
+                    active_route = "fallback"
+                    print(
+                        "Dify chat preflight switched to fallback route: "
+                        f"primary_detail={primary_detail} fallback_detail={detail_fb}"
+                    )
+                else:
+                    auto_hints = collect_worker_log_hints(args.worker_log_container)
+                    hint_block = ""
+                    if auto_hints:
+                        hint_block = " Auto diagnosis: " + " | ".join(auto_hints)
+                    raise RuntimeError(
+                        "Dify chat preflight failed on primary and fallback channels. "
+                        f"primary_base_url={dify_base_url} primary_detail={primary_detail}; "
+                        f"fallback_base_url={fallback_dify_base_url} fallback_detail={detail_fb}. "
+                        "You can use --skip-chat-preflight temporarily, but live regression may time out."
+                        f"{hint_block}"
+                    )
+            else:
+                auto_hints = collect_worker_log_hints(args.worker_log_container)
+                hint_block = ""
+                if auto_hints:
+                    hint_block = " Auto diagnosis: " + " | ".join(auto_hints)
+                raise RuntimeError(
+                    "Dify chat preflight failed. "
+                    f"base_url={active_dify_base_url} detail={primary_detail}. "
+                    "You can use --skip-chat-preflight temporarily, but live regression may time out."
+                    f"{hint_block}"
+                )
+        else:
+            print(f"Dify chat preflight passed: route={active_route} detail={detail}")
+
+    print(f"Live regression route selected: {active_route} ({active_dify_base_url})")
 
     eval_set = resolve_path(repo_root, args.eval_set)
     smoke_output = resolve_path(repo_root, args.smoke_output_dir)
     review_output = resolve_path(repo_root, args.review_output_dir)
+
+    smoke_fallback_base_url = fallback_dify_base_url
+    smoke_fallback_app_key = fallback_dify_app_key
+    if (
+        active_route == "fallback"
+        and dify_base_url
+        and dify_app_key
+        and (dify_base_url != active_dify_base_url or dify_app_key != active_dify_app_key)
+    ):
+        smoke_fallback_base_url = dify_base_url
+        smoke_fallback_app_key = dify_app_key
 
     smoke_cmd = [
         python,
@@ -415,9 +521,9 @@ def main() -> int:
         str(eval_set),
         "--use-dify",
         "--dify-base-url",
-        dify_base_url,
+        active_dify_base_url,
         "--dify-app-key",
-        dify_app_key,
+        active_dify_app_key,
         "--dify-timeout",
         str(args.dify_timeout),
         "--dify-response-mode",
@@ -429,10 +535,10 @@ def main() -> int:
         "--output-dir",
         str(smoke_output),
     ]
-    if args.fallback_dify_base_url.strip():
-        smoke_cmd.extend(["--fallback-dify-base-url", args.fallback_dify_base_url.strip()])
-    if args.fallback_dify_app_key.strip():
-        smoke_cmd.extend(["--fallback-dify-app-key", args.fallback_dify_app_key.strip()])
+    if smoke_fallback_base_url and smoke_fallback_app_key:
+        if smoke_fallback_base_url != active_dify_base_url or smoke_fallback_app_key != active_dify_app_key:
+            smoke_cmd.extend(["--fallback-dify-base-url", smoke_fallback_base_url])
+            smoke_cmd.extend(["--fallback-dify-app-key", smoke_fallback_app_key])
     if args.limit > 0:
         smoke_cmd.extend(["--limit", str(args.limit)])
 
