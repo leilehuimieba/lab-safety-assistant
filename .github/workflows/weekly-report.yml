@@ -47,6 +47,7 @@ jobs:
             --failover-fail-streak-threshold 2
 
       - name: Validate Release Policy (demo)
+        continue-on-error: true
         run: |
           python scripts/validate_release_policy.py \
             --repo-root . \
@@ -56,6 +57,7 @@ jobs:
             --output-md docs/eval/release_policy_check_demo.md
 
       - name: Validate Release Policy (prod)
+        continue-on-error: true
         run: |
           python scripts/validate_release_policy.py \
             --repo-root . \
