@@ -64,7 +64,7 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
         "generic_secret_assignment",
         re.compile(
             r"(?i)\b(api[_ -]?key|token|secret|password|passwd)\b"
-            r"[^=\n\r:]{0,24}[:=]\s*[`\"']?[A-Za-z0-9_\-=/+]{12,}"
+            r"\s*[:=]\s*[`\"'][A-Za-z0-9_\-=/+]{12,}[`\"']"
         ),
     ),
 ]
