@@ -25,6 +25,11 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install requests
+
       - name: Detect Live Eval Credentials
         id: live_mode
         env:
