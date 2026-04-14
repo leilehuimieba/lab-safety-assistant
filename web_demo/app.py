@@ -14,8 +14,8 @@ from typing import Any
 from uuid import uuid4
 
 import requests
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, PlainTextResponse, Response
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, PlainTextResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 try:
@@ -1055,17 +1055,31 @@ def parse_sse_answer(response: requests.Response) -> tuple[str, str]:
     return "".join(answer_parts).strip(), workflow_error or workflow_status
 
 
-def call_dify_lab(question: str) -> tuple[str, str]:
+def resolve_dify_api_base() -> str:
     base_url = os.getenv("DIFY_BASE_URL", DIFY_DEFAULT_BASE_URL).strip()
+    endpoint = base_url.rstrip("/")
+    if not endpoint.endswith("/v1"):
+        endpoint += "/v1"
+    return endpoint
+
+
+def build_dify_proxy_auth(request: Request) -> str:
+    inbound_auth = (request.headers.get("authorization") or "").strip()
+    if inbound_auth:
+        return inbound_auth
+    app_key = os.getenv("DIFY_APP_API_KEY", "").strip()
+    if app_key:
+        return f"Bearer {app_key}"
+    return ""
+
+
+def call_dify_lab(question: str) -> tuple[str, str]:
     app_key = os.getenv("DIFY_APP_API_KEY", "").strip()
     timeout = float(os.getenv("DIFY_TIMEOUT", str(DIFY_DEFAULT_TIMEOUT)) or str(DIFY_DEFAULT_TIMEOUT))
     if not app_key:
         raise HTTPException(status_code=500, detail="DIFY_APP_API_KEY is missing.")
 
-    endpoint = base_url.rstrip("/")
-    if not endpoint.endswith("/v1"):
-        endpoint += "/v1"
-    endpoint += "/chat-messages"
+    endpoint = f"{resolve_dify_api_base()}/chat-messages"
 
     try:
         response = requests.post(
@@ -1853,6 +1867,67 @@ def index() -> FileResponse:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/v1/parameters")
+def dify_parameters_proxy(request: Request) -> Response:
+    endpoint = f"{resolve_dify_api_base()}/parameters"
+    headers: dict[str, str] = {}
+    auth = build_dify_proxy_auth(request)
+    if auth:
+        headers["Authorization"] = auth
+
+    try:
+        upstream = requests.get(endpoint, headers=headers, timeout=(8, 20))
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"dify_proxy_request_failed: {exc}") from exc
+
+    media_type = upstream.headers.get("Content-Type", "application/json")
+    return Response(content=upstream.content, status_code=upstream.status_code, media_type=media_type)
+
+
+@app.post("/v1/chat-messages")
+async def dify_chat_messages_proxy(request: Request) -> Response:
+    endpoint = f"{resolve_dify_api_base()}/chat-messages"
+    timeout = float(os.getenv("DIFY_TIMEOUT", str(DIFY_DEFAULT_TIMEOUT)) or str(DIFY_DEFAULT_TIMEOUT))
+    try:
+        payload = await request.json()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"invalid_json_body: {exc}") from exc
+
+    headers = {"Content-Type": "application/json"}
+    auth = build_dify_proxy_auth(request)
+    if auth:
+        headers["Authorization"] = auth
+
+    try:
+        upstream = requests.post(
+            endpoint,
+            headers=headers,
+            json=payload,
+            timeout=(20, timeout),
+            stream=True,
+        )
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"dify_proxy_request_failed: {exc}") from exc
+
+    content_type = str(upstream.headers.get("Content-Type", "") or "").lower()
+    if "text/event-stream" in content_type:
+        def _iter_sse():
+            try:
+                for chunk in upstream.iter_content(chunk_size=1024):
+                    if chunk:
+                        yield chunk
+            finally:
+                upstream.close()
+
+        return StreamingResponse(_iter_sse(), status_code=upstream.status_code, media_type="text/event-stream")
+
+    body = upstream.content
+    media_type = upstream.headers.get("Content-Type", "application/json")
+    status_code = upstream.status_code
+    upstream.close()
+    return Response(content=body, status_code=status_code, media_type=media_type)
 
 
 @app.post("/api/chat", response_model=ChatResponse)
