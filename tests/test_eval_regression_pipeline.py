@@ -182,7 +182,7 @@ def test_evaluate_fallback_attempt_reasons() -> None:
     ok, reason = rep.evaluate_fallback_attempt(
         primary_base_url="https://a/v1",
         primary_app_key="k1",
-        fallback_base_url="https://a/v1",
+        fallback_base_url="https://a/v1/",
         fallback_app_key="k1",
         primary_detail="request_error: timed out",
     )
@@ -209,6 +209,38 @@ def test_evaluate_fallback_attempt_reasons() -> None:
     )
     assert ok is False
     assert reason == "active_route_not_primary"
+
+
+def test_evaluate_alternate_route_attempt_reasons() -> None:
+    ok, reason = rep.evaluate_alternate_route_attempt(
+        current_base_url="https://b/v1/",
+        current_app_key="k2",
+        alternate_base_url="https://a/v1",
+        alternate_app_key="k1",
+        current_detail="request_error: timed out",
+    )
+    assert ok is True
+    assert reason == "alternate_allowed"
+
+    ok, reason = rep.evaluate_alternate_route_attempt(
+        current_base_url="https://b/v1",
+        current_app_key="k2",
+        alternate_base_url="https://b/v1/",
+        alternate_app_key="k2",
+        current_detail="request_error: timed out",
+    )
+    assert ok is False
+    assert reason == "alternate_same_as_current"
+
+    ok, reason = rep.evaluate_alternate_route_attempt(
+        current_base_url="https://b/v1",
+        current_app_key="k2",
+        alternate_base_url="https://a/v1",
+        alternate_app_key="k1",
+        current_detail="http_401: authentication failed",
+    )
+    assert ok is False
+    assert reason == "alternate_blocked_auth_error"
 
 
 def test_run_preflight_with_retries_emits_diagnostics(capsys: Any) -> None:

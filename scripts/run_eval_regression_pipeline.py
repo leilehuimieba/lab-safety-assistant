@@ -281,11 +281,32 @@ def evaluate_fallback_attempt(
         return False, "active_route_not_primary"
     if not fallback_base_url or not fallback_app_key:
         return False, "fallback_missing_config"
-    if fallback_base_url == primary_base_url and fallback_app_key == primary_app_key:
+    normalized_primary = primary_base_url.rstrip("/")
+    normalized_fallback = fallback_base_url.rstrip("/")
+    if normalized_fallback == normalized_primary and fallback_app_key == primary_app_key:
         return False, "fallback_same_as_primary"
     if not should_try_fallback_preflight_detail(primary_detail):
         return False, "fallback_blocked_auth_error"
     return True, "fallback_allowed"
+
+
+def evaluate_alternate_route_attempt(
+    *,
+    current_base_url: str,
+    current_app_key: str,
+    alternate_base_url: str,
+    alternate_app_key: str,
+    current_detail: str,
+) -> tuple[bool, str]:
+    if not alternate_base_url or not alternate_app_key:
+        return False, "alternate_missing_config"
+    normalized_current = current_base_url.rstrip("/")
+    normalized_alternate = alternate_base_url.rstrip("/")
+    if normalized_alternate == normalized_current and alternate_app_key == current_app_key:
+        return False, "alternate_same_as_current"
+    if not should_try_fallback_preflight_detail(current_detail):
+        return False, "alternate_blocked_auth_error"
+    return True, "alternate_allowed"
 
 
 def run_preflight_with_retries(
@@ -585,14 +606,29 @@ def main() -> int:
         )
         if not ok:
             primary_detail = detail
-            can_try_fallback, fallback_reason = evaluate_fallback_attempt(
-                primary_base_url=dify_base_url,
-                primary_app_key=dify_app_key,
-                fallback_base_url=fallback_dify_base_url,
-                fallback_app_key=fallback_dify_app_key,
-                primary_detail=primary_detail,
-                active_route=active_route,
-            )
+            if active_route == "primary":
+                can_try_fallback, fallback_reason = evaluate_fallback_attempt(
+                    primary_base_url=dify_base_url,
+                    primary_app_key=dify_app_key,
+                    fallback_base_url=fallback_dify_base_url,
+                    fallback_app_key=fallback_dify_app_key,
+                    primary_detail=primary_detail,
+                    active_route=active_route,
+                )
+                target_base_url = fallback_dify_base_url
+                target_app_key = fallback_dify_app_key
+                target_route = "fallback"
+            else:
+                can_try_fallback, fallback_reason = evaluate_alternate_route_attempt(
+                    current_base_url=active_dify_base_url,
+                    current_app_key=active_dify_app_key,
+                    alternate_base_url=dify_base_url,
+                    alternate_app_key=dify_app_key,
+                    current_detail=primary_detail,
+                )
+                target_base_url = dify_base_url
+                target_app_key = dify_app_key
+                target_route = "primary"
             print(
                 "Dify chat preflight fallback decision: "
                 f"allowed={can_try_fallback} reason={fallback_reason} "
@@ -601,18 +637,18 @@ def main() -> int:
             if can_try_fallback:
                 ok_fb, detail_fb = run_preflight_with_retries(
                     preflight_dify_chat,
-                    base_url=fallback_dify_base_url,
-                    app_key=fallback_dify_app_key,
+                    base_url=target_base_url,
+                    app_key=target_app_key,
                     timeout_sec=args.chat_preflight_timeout,
                     retries=args.chat_preflight_retries,
                     response_mode=args.dify_response_mode,
                     stage="dify_chat_preflight",
-                    route="fallback",
+                    route=target_route,
                 )
                 if ok_fb:
-                    active_dify_base_url = fallback_dify_base_url
-                    active_dify_app_key = fallback_dify_app_key
-                    active_route = "fallback"
+                    active_dify_base_url = target_base_url
+                    active_dify_app_key = target_app_key
+                    active_route = target_route
                     print(
                         "Dify chat preflight switched to fallback route: "
                         f"primary_detail={primary_detail} fallback_detail={detail_fb}"
@@ -624,8 +660,8 @@ def main() -> int:
                         hint_block = " Auto diagnosis: " + " | ".join(auto_hints)
                     raise RuntimeError(
                         "Dify chat preflight failed on primary and fallback channels. "
-                        f"primary_base_url={dify_base_url} primary_detail={primary_detail}; "
-                        f"fallback_base_url={fallback_dify_base_url} fallback_detail={detail_fb}. "
+                        f"active_base_url={active_dify_base_url} primary_detail={primary_detail}; "
+                        f"alternate_base_url={target_base_url} fallback_detail={detail_fb}. "
                         "You can use --skip-chat-preflight temporarily, but live regression may time out."
                         f"{hint_block}"
                     )
