@@ -1,13 +1,13 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>实验室安全助手平台演示版</title>
+  <title>实验室安全小助手工作台</title>
   <style>
     :root {
       --bg: #eef4fb;
-      --card: rgba(255, 255, 255, 0.92);
+      --card: rgba(255, 255, 255, 0.94);
       --text: #10263e;
       --sub: #4f647d;
       --line: #d7e0eb;
@@ -20,6 +20,13 @@
       --ok: #166534;
       --soft: #edf5ff;
       --badge: rgba(255, 255, 255, 0.14);
+      --sidebar-bg: rgba(10, 31, 53, 0.96);
+      --sidebar-line: rgba(255, 255, 255, 0.08);
+      --sidebar-text: rgba(255, 255, 255, 0.92);
+      --sidebar-sub: rgba(226, 232, 240, 0.72);
+      --view-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
     }
     * { box-sizing: border-box; }
     body {
@@ -31,9 +38,268 @@
         radial-gradient(circle at top right, rgba(37, 99, 235, 0.16), transparent 30%),
         linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
       min-height: 100vh;
-      padding: clamp(14px, 2vw, 24px);
     }
-    .container { max-width: 1420px; margin: 0 auto; }
+    .app-shell {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      overflow: hidden;
+      min-height: 100vh;
+    }
+    .sidebar {
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      border-right: 1px solid var(--sidebar-line);
+      position: sticky;
+      top: 0;
+      min-height: 100vh;
+    }
+    .sidebar-brand {
+      padding: 8px 10px 0;
+    }
+    .sidebar-toprow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .sidebar-kicker {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #dbeafe;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .sidebar-toggle {
+      display: none;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      color: #eff6ff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .sidebar-brand h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+    .sidebar-brand p {
+      color: var(--sidebar-sub);
+      margin: 12px 0 0;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .sidebar-nav {
+      display: grid;
+      gap: 10px;
+    }
+    .nav-btn {
+      width: 100%;
+      text-align: left;
+      padding: 14px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--sidebar-text);
+      cursor: pointer;
+      transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+    }
+    .nav-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .nav-btn.is-active {
+      background: linear-gradient(135deg, rgba(15, 118, 110, 0.95), rgba(29, 78, 216, 0.92));
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 14px 24px rgba(15, 23, 42, 0.22);
+    }
+    .nav-btn strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+    .nav-btn span {
+      display: block;
+      font-size: 12px;
+      line-height: 1.55;
+      color: rgba(241, 245, 249, 0.82);
+    }
+    .sidebar-note {
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .sidebar-note strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .sidebar-note p {
+      margin: 0;
+      color: var(--sidebar-sub);
+      line-height: 1.6;
+      font-size: 13px;
+    }
+    .content-shell {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+    .content-toolbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .content-pulse {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .pulse-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(246,250,255,0.98));
+      border: 1px solid rgba(215, 224, 235, 0.95);
+      border-radius: 18px;
+      padding: 14px 16px;
+      box-shadow: var(--view-shadow);
+    }
+    .pulse-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.6) 32%, transparent 62%);
+      transform: translateX(-120%);
+      animation: pulseShimmer 7s linear infinite;
+      pointer-events: none;
+    }
+    .pulse-card span {
+      display: block;
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+    .pulse-card strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #0d2444;
+    }
+    .context-card {
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(215, 224, 235, 0.95);
+      border-radius: 18px;
+      padding: 14px 16px;
+      box-shadow: var(--view-shadow);
+    }
+    .context-card span {
+      display: block;
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+    .context-card strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-end;
+    }
+    .content-kicker {
+      margin: 0 0 8px;
+      color: var(--secondary);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .content-header h2 {
+      margin: 0;
+      font-size: clamp(26px, 3vw, 34px);
+    }
+    .content-header p {
+      margin: 8px 0 0;
+      color: var(--sub);
+      max-width: 760px;
+    }
+    .process-strip {
+      display: grid;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(215, 224, 235, 0.95);
+      box-shadow: var(--view-shadow);
+      backdrop-filter: blur(10px);
+    }
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .flow-step {
+      text-align: left;
+      border-radius: 16px;
+      border: 1px solid #d8e5f4;
+      background: linear-gradient(180deg, #f8fbff, #eef5ff);
+      color: #18324f;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), border-color 180ms var(--ease-out), background 180ms var(--ease-out);
+    }
+    .flow-step:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+      border-color: #a9c0df;
+    }
+    .flow-step.is-active {
+      color: white;
+      border-color: rgba(255,255,255,0.2);
+      background: linear-gradient(135deg, rgba(15, 118, 110, 0.96), rgba(29, 78, 216, 0.92));
+      box-shadow: 0 14px 24px rgba(15, 23, 42, 0.14);
+    }
+    .flow-step strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .flow-step small {
+      display: block;
+      font-size: 12px;
+      line-height: 1.55;
+      color: inherit;
+      opacity: 0.86;
+    }
+    .process-note {
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px dashed #cbd9e8;
+      background: #f8fbff;
+      color: #33506f;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .view-section { display: none; }
+    .view-section.is-active {
+      display: block;
+      animation: sectionFadeIn 260ms var(--ease-out);
+      transform-origin: top center;
+    }
     .hero {
       background: linear-gradient(135deg, rgba(15, 118, 110, 0.92), rgba(29, 78, 216, 0.9));
       color: white;
@@ -41,7 +307,7 @@
       border-radius: 24px;
       box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
     }
-    .hero h1 { margin: 0 0 10px; font-size: clamp(28px, 3vw, 38px); }
+    .hero h3 { margin: 0 0 10px; font-size: clamp(28px, 3vw, 38px); }
     .hero p { margin: 0; line-height: 1.8; max-width: 980px; color: rgba(255,255,255,0.9); font-size: clamp(14px, 1.3vw, 16px); }
     .hero-badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
     .hero-badges span {
@@ -54,13 +320,13 @@
       font-size: 13px;
       letter-spacing: 0.02em;
     }
-    .snapshot-grid {
+    .snapshot-grid, .overview-grid, .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
-      margin-top: 18px;
     }
-    .snapshot-card {
+    .snapshot-grid { margin-top: 18px; }
+    .snapshot-card, .overview-card, .stats-card {
       background: rgba(255, 255, 255, 0.82);
       border: 1px solid rgba(255,255,255,0.22);
       border-radius: 18px;
@@ -68,24 +334,549 @@
       color: #12355e;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     }
-    .snapshot-card span {
+    .card,
+    .snapshot-card,
+    .overview-card,
+    .stats-card,
+    .insight-card,
+    .summary-card,
+    .knowledge-item,
+    .status-item,
+    .incident-highlight-card,
+    .citation-item,
+    .review-item,
+    .em-card,
+    .incident-card {
+      transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), border-color 180ms var(--ease-out);
+    }
+    .card:hover,
+    .snapshot-card:hover,
+    .overview-card:hover,
+    .stats-card:hover,
+    .insight-card:hover,
+    .summary-card:hover,
+    .knowledge-item:hover,
+    .status-item:hover,
+    .incident-highlight-card:hover,
+    .citation-item:hover,
+    .review-item:hover,
+    .em-card:hover,
+    .incident-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 30px rgba(15, 23, 42, 0.09);
+      border-color: #b5cae2;
+    }
+    .snapshot-card span, .overview-card span {
       font-size: 12px;
       color: #4f6782;
     }
-    .snapshot-card strong {
+    .snapshot-card strong, .overview-card strong {
       display: block;
       margin-top: 6px;
       font-size: 22px;
       color: #0d2444;
     }
-    .layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; margin-top: 18px; }
+    .overview-grid {
+      margin-top: 18px;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      align-items: stretch;
+    }
+    .overview-card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    .overview-card p {
+      margin: 0;
+      color: var(--sub);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .overview-actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 18px;
+    }
+    .training-shell {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 18px;
+    }
+    .status-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid #d6e1ee;
+    }
+    .status-item strong {
+      font-size: 14px;
+    }
+    .status-item span {
+      color: var(--sub);
+      font-size: 12px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #e8f5ee;
+      color: #166534;
+    }
+    .status-badge.warn {
+      background: #fff7e6;
+      color: #8a5600;
+    }
+    .status-badge.bad {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+    .tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: #eef5ff;
+      color: #27405e;
+      border: 1px solid #cfe0f3;
+      font-size: 12px;
+    }
+    .knowledge-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .section-caption {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: #eef5ff;
+      border: 1px solid #d9e6f8;
+      color: #284666;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .section-heading {
+      margin-bottom: 12px;
+    }
+    .section-heading h2,
+    .section-heading h3 {
+      margin-bottom: 8px;
+    }
+    .section-heading p {
+      margin: 0;
+      color: var(--sub);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .filter-item {
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid #d7e4f1;
+      padding: 10px 12px;
+    }
+    .filter-item label {
+      display: block;
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .insight-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .insight-card {
+      background: #f8fbff;
+      border: 1px solid #d6e2ef;
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .insight-card h3 {
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .summary-card {
+      border-radius: 18px;
+      border: 1px solid #d8e5f4;
+      background: linear-gradient(180deg, #f7fbff, #eef5ff);
+      padding: 14px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+    .summary-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #16314c;
+    }
+    .summary-card span {
+      display: block;
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .empty-state {
+      display: grid;
+      gap: 8px;
+      place-items: start;
+      min-height: 110px;
+      align-content: center;
+      color: var(--sub);
+    }
+    .empty-state strong {
+      color: var(--text);
+      font-size: 15px;
+    }
+    .knowledge-summary {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .knowledge-summary-card {
+      border-radius: 16px;
+      border: 1px solid #d7e4f2;
+      background: linear-gradient(180deg, #f7fbff, #f0f6ff);
+      padding: 14px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+    .knowledge-summary-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #16314c;
+    }
+    .knowledge-summary-card span {
+      display: block;
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .knowledge-item {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: linear-gradient(180deg, #ffffff, #fbfdff);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+    .knowledge-item strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .knowledge-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .knowledge-meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef5ff;
+      border: 1px solid #d7e6f8;
+      color: #284666;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .knowledge-explain {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .knowledge-explain-row {
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid #dde8f5;
+      padding: 10px 12px;
+    }
+    .knowledge-explain-row strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #17324e;
+    }
+    .knowledge-explain-row span {
+      display: block;
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .jump-btn {
+      width: 100%;
+      text-align: left;
+      border-radius: 14px;
+      border: 1px solid #d7e0eb;
+      background: #f8fbff;
+      color: #18324f;
+      padding: 12px 14px;
+      cursor: pointer;
+    }
+    .jump-btn:hover {
+      background: #eef5ff;
+      border-color: #b9cde6;
+    }
+    .section-shell {
+      display: grid;
+      grid-template-columns: 1.15fr 0.95fr;
+      gap: 18px;
+    }
+    .assistant-shell {
+      display: grid;
+      gap: 18px;
+    }
+    .assistant-workbench {
+      display: grid;
+      grid-template-columns: 1.02fr 0.98fr;
+      gap: 18px;
+      align-items: start;
+    }
+    .assistant-input-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,250,255,0.96));
+    }
+    .assistant-output-stack {
+      display: grid;
+      gap: 18px;
+    }
+    .assistant-status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .assistant-status-card {
+      border-radius: 16px;
+      border: 1px solid #d8e5f4;
+      background: linear-gradient(180deg, #f8fbff, #eef5ff);
+      padding: 12px 14px;
+      min-height: 98px;
+    }
+    .assistant-status-card span {
+      display: block;
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+    .assistant-status-card strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.65;
+      color: #16314c;
+    }
+    .result-shell {
+      display: grid;
+      gap: 14px;
+    }
+    .result-shell .result {
+      min-height: 180px;
+    }
+    .result-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .result-tab {
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid #d0ddef;
+      background: #f8fbff;
+      color: #18324f;
+      cursor: pointer;
+      transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background 160ms var(--ease-out), border-color 160ms var(--ease-out);
+    }
+    .result-tab:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+      border-color: #aac2e1;
+    }
+    .result-tab.is-active {
+      color: white;
+      border-color: rgba(255,255,255,0.16);
+      background: linear-gradient(135deg, rgba(15, 118, 110, 0.95), rgba(29, 78, 216, 0.92));
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
+    }
+    .result-panel {
+      display: none;
+    }
+    .result-panel.is-active {
+      display: block;
+      animation: sectionFadeIn 220ms var(--ease-out);
+    }
+    .citation-list {
+      display: grid;
+      gap: 12px;
+    }
+    .citation-card {
+      border-radius: 18px;
+      border: 1px solid #d8e5f4;
+      background: linear-gradient(180deg, #ffffff, #f7fbff);
+      padding: 14px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+    .citation-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .citation-card strong {
+      display: block;
+      color: #16314c;
+      line-height: 1.55;
+    }
+    .citation-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef5ff;
+      border: 1px solid #d3e3f6;
+      color: #284666;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .citation-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .citation-meta-item {
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid #d7e4f2;
+      padding: 10px 12px;
+    }
+    .citation-meta-item span {
+      display: block;
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 4px;
+    }
+    .citation-meta-item strong {
+      font-size: 13px;
+      color: #18324f;
+    }
+    .prediction-card {
+      margin-top: 12px;
+      border-radius: 16px;
+      border: 1px solid #d8e5f4;
+      background: linear-gradient(180deg, #f8fbff, #eef5ff);
+      padding: 14px;
+    }
+    .prediction-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #16314c;
+    }
+    .prediction-card ul {
+      margin-top: 8px;
+    }
+    .result-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .result-metric-card {
+      border-radius: 16px;
+      border: 1px solid #d7e4f2;
+      background: linear-gradient(180deg, #f7fbff, #eef5ff);
+      padding: 12px 14px;
+    }
+    .result-metric-card span {
+      display: block;
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+    .result-metric-card strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #16314c;
+    }
+    .gate-shell {
+      display: grid;
+      grid-template-columns: 0.92fr 1.08fr;
+      gap: 18px;
+      align-items: start;
+    }
+    .gate-status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .gate-status-card {
+      border-radius: 16px;
+      border: 1px solid #d8e5f4;
+      background: linear-gradient(180deg, #f8fbff, #eef5ff);
+      padding: 12px 14px;
+    }
+    .gate-status-card span {
+      display: block;
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+    .gate-status-card strong {
+      display: block;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #16314c;
+    }
+    .section-shell--single {
+      grid-template-columns: 1fr;
+    }
     .stack { display: grid; gap: 18px; }
     .card {
       background: var(--card);
       border: 1px solid rgba(215, 224, 235, 0.95);
       border-radius: 20px;
       padding: 18px;
-      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+      box-shadow: var(--view-shadow);
       backdrop-filter: blur(10px);
     }
     h2, h3 { margin: 0 0 12px; }
@@ -100,6 +891,16 @@
       background: white;
     }
     textarea { min-height: 160px; resize: vertical; line-height: 1.7; }
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible,
+    .nav-btn:focus-visible,
+    .jump-btn:focus-visible,
+    .preset-btn:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.24);
+      outline-offset: 2px;
+    }
     .actions, .row { display: flex; gap: 10px; flex-wrap: wrap; }
     .row > * { flex: 1 1 220px; }
     button {
@@ -128,6 +929,23 @@
       min-height: 120px;
       line-height: 1.7;
       overflow-wrap: anywhere;
+    }
+    .result.is-loading,
+    .panel.is-loading {
+      color: #45617f;
+      background: linear-gradient(135deg, #f4f8fd, #eef5ff);
+      background-size: 200% 200%;
+      animation: loadingPulse 1.4s ease-in-out infinite;
+    }
+    .inline-tip {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f3f8ff;
+      border: 1px solid #d8e6f7;
+      color: #2a4664;
+      font-size: 13px;
+      line-height: 1.65;
     }
     .pill {
       display: inline-block;
@@ -187,6 +1005,14 @@
       border-bottom: 1px solid #eef2f7;
     }
     .checklist-item:last-child { border-bottom: none; }
+    .checklist-item.is-checked {
+      opacity: 0.82;
+    }
+    .checklist-item.is-checked strong {
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
+      text-decoration-color: rgba(16, 38, 62, 0.35);
+    }
     .critical-tag {
       background: #fff1f2;
       color: #be123c;
@@ -195,11 +1021,36 @@
       padding: 2px 8px;
       margin-left: 8px;
     }
+    .progress-track {
+      margin-top: 10px;
+      height: 10px;
+      width: 100%;
+      border-radius: 999px;
+      background: #e6eef7;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #0f766e, #1d4ed8);
+      transition: width 220ms var(--ease-out);
+    }
+    .checklist-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .btn-soft {
+      background: linear-gradient(180deg, #f7fbff, #edf4ff);
+      color: #18324f;
+      border: 1px solid #cfe0f3;
+    }
     .em-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .quiz-question { padding: 12px 0; border-bottom: 1px solid #edf2f7; }
     .quiz-question:last-child { border-bottom: none; }
     .quiz-option { display: block; margin-top: 8px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
     .stats-card {
       border-radius: 14px;
       padding: 12px;
@@ -214,237 +1065,1130 @@
       padding: 12px;
       margin-top: 10px;
     }
+    .incident-shell {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 18px;
+      align-items: start;
+    }
+    .incident-form-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,250,255,0.96));
+    }
+    .incident-lead {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .incident-highlight {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .incident-highlight-card {
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, #f4f9ff, #eef4ff);
+      border: 1px solid #d8e6f6;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+    .incident-highlight-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #16314c;
+    }
+    .incident-highlight-card span {
+      display: block;
+      color: var(--sub);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .incident-form-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .incident-block {
+      border-radius: 18px;
+      border: 1px solid #dce6f3;
+      background: rgba(248, 251, 255, 0.86);
+      padding: 16px;
+    }
+    .incident-block--accent {
+      background: linear-gradient(180deg, rgba(242,247,255,0.96), rgba(248,251,255,0.98));
+      border-color: #cfe0f3;
+    }
+    .incident-block--soft {
+      background: rgba(251, 253, 255, 0.96);
+    }
+    .incident-block h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    .incident-block p {
+      margin: 0 0 12px;
+      color: var(--sub);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .incident-block .muted {
+      display: block;
+      margin-top: 6px;
+    }
+    .incident-timeline {
+      display: grid;
+      gap: 12px;
+    }
+    .incident-timeline-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .incident-step {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(15,118,110,0.95), rgba(29,78,216,0.9));
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 10px 22px rgba(29, 78, 216, 0.16);
+    }
+    .incident-step-body {
+      padding-top: 4px;
+    }
+    .incident-step-body strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #16314c;
+    }
+    .incident-sidecard {
+      border-radius: 18px;
+      border: 1px solid #dce6f3;
+      background: rgba(248, 251, 255, 0.9);
+      padding: 16px;
+    }
+    .incident-sidecard h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+    .incident-checklist {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--sub);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .incident-filter-card {
+      border-radius: 16px;
+      background: #f8fbff;
+      border: 1px solid #d6e2ef;
+      padding: 14px;
+    }
+    .incident-filter-card .two-col {
+      margin-top: 0;
+    }
     .mini-textarea { min-height: 84px; }
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     ul { margin: 8px 0 0; padding-left: 18px; }
     a { color: #1d4ed8; text-decoration: none; }
     a:hover { text-decoration: underline; }
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .quick-dock {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 20;
+      display: grid;
+      gap: 10px;
+      width: min(220px, calc(100vw - 32px));
+    }
+    .quick-dock button {
+      width: 100%;
+      border-radius: 16px;
+      padding: 12px 14px;
+      text-align: left;
+      background: rgba(10, 31, 53, 0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: white;
+      box-shadow: 0 14px 26px rgba(15, 23, 42, 0.18);
+    }
+    .quick-dock button:hover {
+      background: rgba(15, 118, 110, 0.96);
+    }
+    .quick-dock strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .quick-dock span {
+      display: block;
+      font-size: 12px;
+      line-height: 1.55;
+      color: rgba(255,255,255,0.82);
+    }
+    @keyframes sectionFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes pulseShimmer {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(120%); }
+    }
+    @keyframes loadingPulse {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @media (max-width: 1240px) {
+      .section-shell, .overview-grid, .content-toolbar, .content-pulse, .training-shell, .incident-shell, .assistant-workbench, .gate-shell {
+        grid-template-columns: 1fr;
+      }
+    }
     @media (max-width: 1100px) {
-      .layout { grid-template-columns: 1fr; }
-      .em-grid, .stats-grid, .snapshot-grid { grid-template-columns: 1fr; }
-      .two-col { grid-template-columns: 1fr; }
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+        min-height: auto;
+      }
+      .sidebar-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .snapshot-grid, .stats-grid, .em-grid, .two-col, .filter-grid, .insight-grid, .incident-highlight, .knowledge-summary, .summary-grid, .flow-steps, .assistant-status-grid, .result-metrics, .gate-status-grid, .citation-meta-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 720px) {
+      .content-shell {
+        padding: 16px;
+      }
+      .sidebar {
+        padding: 14px 12px;
+        gap: 14px;
+      }
+      .sidebar-toggle {
+        display: inline-flex;
+      }
+      .sidebar-brand {
+        padding: 0;
+      }
+      .sidebar-brand p,
+      .sidebar-note {
+        display: none;
+      }
+      .sidebar.is-collapsed .sidebar-nav {
+        display: none;
+      }
+      .sidebar-nav {
+        grid-template-columns: 1fr;
+      }
+      .nav-btn {
+        padding: 12px;
+      }
+      .nav-btn span {
+        display: none;
+      }
+      .content-header {
+        align-items: flex-start;
+      }
+      .hero {
+        padding: 18px;
+      }
+      .snapshot-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .quick-dock {
+        right: 12px;
+        bottom: 12px;
+        width: min(180px, calc(100vw - 24px));
+      }
+      .quick-dock span {
+        display: none;
+      }
+    }
+    /* Frontend redesign 2026-04-25: clean product dashboard style */
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --sub: #667085;
+      --line: #e4e7ec;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #0f766e;
+      --secondary-dark: #115e59;
+      --accent: #f59e0b;
+      --danger: #dc2626;
+      --ok: #16a34a;
+      --soft: #eff6ff;
+      --badge: rgba(37, 99, 235, 0.1);
+      --sidebar-bg: #101828;
+      --sidebar-line: rgba(255, 255, 255, 0.08);
+      --sidebar-text: #f9fafb;
+      --sidebar-sub: #cbd5e1;
+      --view-shadow: 0 18px 45px rgba(16, 24, 40, 0.08);
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.10), transparent 28%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    }
+
+    .app-shell { grid-template-columns: 280px minmax(0, 1fr); }
+
+    .sidebar {
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      padding: 22px 16px;
+      box-shadow: 8px 0 30px rgba(15, 23, 42, 0.16);
+    }
+
+    .sidebar-kicker,
+    .section-caption,
+    .content-kicker {
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-brand h1 { font-size: 24px; }
+    .sidebar-brand p { font-size: 13px; line-height: 1.65; }
+
+    .nav-btn {
+      border-radius: 14px;
+      padding: 13px 14px;
+      background: transparent;
+      border: 1px solid transparent;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,.07); transform: none; }
+    .nav-btn.is-active {
+      background: #2563eb;
+      border-color: rgba(255,255,255,.16);
+      box-shadow: 0 12px 28px rgba(37, 99, 235, .32);
+    }
+    .nav-btn strong { font-size: 15px; }
+    .nav-btn span { font-size: 12px; line-height: 1.55; }
+
+    .sidebar-note {
+      border-radius: 16px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    .content-shell {
+      padding: 28px 34px 110px;
+      max-width: 1500px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .content-header {
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      padding: 4px 2px 10px;
+    }
+    .content-header h2 { font-size: 30px; letter-spacing: -0.03em; }
+    .content-header p { max-width: 760px; }
+
+    .content-pulse,
+    .content-toolbar,
+    .snapshot-grid,
+    .overview-grid,
+    .assistant-status-grid,
+    .result-metrics,
+    .gate-status-grid,
+    .summary-grid,
+    .stats-grid {
+      gap: 14px;
+    }
+
+    .pulse-card,
+    .context-card,
+    .snapshot-card,
+    .overview-card,
+    .card,
+    .result-metric-card,
+    .assistant-status-card,
+    .gate-status-card,
+    .stats-card,
+    .summary-card,
+    .insight-card,
+    .knowledge-summary-card,
+    .incident-highlight-card {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 14px 34px rgba(16, 24, 40, .07);
+    }
+
+    .card { padding: 20px; }
+
+    .hero {
+      border: 1px solid rgba(37,99,235,.18);
+      background:
+        linear-gradient(135deg, rgba(37,99,235,.96), rgba(15,118,110,.90)),
+        #2563eb;
+      color: #fff;
+      border-radius: 28px;
+      box-shadow: 0 24px 60px rgba(37,99,235,.24);
+    }
+    .hero h3 { font-size: 34px; letter-spacing: -0.04em; }
+    .hero p { color: rgba(255,255,255,.86); max-width: 860px; }
+    .hero-badges span {
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.18);
+      color: #fff;
+    }
+    .hero .snapshot-card {
+      background: rgba(255,255,255,.14);
+      border-color: rgba(255,255,255,.18);
+      box-shadow: none;
+    }
+    .hero .snapshot-card span,
+    .hero .snapshot-card strong { color: #fff; }
+
+    .process-strip {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.78);
+      border-radius: 22px;
+      box-shadow: 0 14px 34px rgba(16, 24, 40, .06);
+    }
+    .flow-step {
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+    }
+    .flow-step.is-active {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: #1d4ed8;
+    }
+
+    textarea,
+    input,
+    select {
+      border-radius: 14px;
+      border: 1px solid #d0d5dd;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(16,24,40,.04);
+    }
+    textarea:focus,
+    input:focus,
+    select:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+      outline: none;
+    }
+
+    button {
+      font-family: inherit;
+    }
+    .btn-primary,
+    .btn-secondary,
+    .btn-accent,
+    .btn-ghost,
+    .btn-soft,
+    .jump-btn {
+      border-radius: 14px;
+      font-weight: 700;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .btn-primary,
+    .jump-btn {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: white;
+      box-shadow: 0 10px 22px rgba(37,99,235,.20);
+    }
+    .btn-primary:hover,
+    .jump-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+    .btn-secondary { background: #0f766e; border-color: #0f766e; color: white; }
+    .btn-accent { background: #f59e0b; border-color: #f59e0b; color: #111827; }
+    .btn-ghost,
+    .btn-soft { background: #f8fafc; border-color: #d0d5dd; color: #344054; }
+
+    .preset-btn,
+    .result-tab,
+    .quiz-option,
+    .checklist-item,
+    .incident-block,
+    .incident-filter-card,
+    .inline-tip {
+      border-radius: 16px;
+      border-color: #e4e7ec;
+      background: #fff;
+    }
+    .preset-btn:hover,
+    .quiz-option:hover { border-color: #93c5fd; background: #eff6ff; }
+    .result-tab.is-active { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+    .result,
+    .panel,
+    .result-panel,
+    .knowledge-list,
+    .citation-card,
+    .em-card,
+    .incident-card {
+      border-radius: 18px;
+      border: 1px solid #e4e7ec;
+      background: #fff;
+    }
+
+    .status-badge,
+    .pill,
+    .tag-chip,
+    .knowledge-meta-badge,
+    .citation-badge {
+      border-radius: 999px;
+    }
+
+    .quick-dock { width: 210px; }
+    .quick-dock button {
+      background: rgba(15, 23, 42, .92);
+      backdrop-filter: blur(10px);
+      border-radius: 18px;
+    }
+
+    @media (max-width: 1100px) {
+      .content-shell { padding: 22px 18px 100px; }
+      .sidebar { box-shadow: none; }
+    }
+    @media (max-width: 720px) {
+      .content-header h2 { font-size: 24px; }
+      .hero h3 { font-size: 26px; }
+      .card { padding: 16px; }
+      .quick-dock { display: none; }
+    }
+    /* Simplify layout pass: less content, clearer rhythm */
+    .app-shell { grid-template-columns: 250px minmax(0, 1fr); }
+    .sidebar { padding: 24px 14px; }
+    .sidebar-brand h1 { font-size: 22px; line-height: 1.25; }
+    .sidebar-brand p { font-size: 13px; color: rgba(255,255,255,.74); }
+    .sidebar-nav { gap: 8px; }
+    .nav-btn { padding: 14px 16px; min-height: 70px; }
+    .nav-btn strong { font-size: 16px; }
+    .nav-btn span { margin-top: 5px; font-size: 12px; color: rgba(255,255,255,.70); }
+    .sidebar-note { padding: 16px; }
+    .sidebar-note p { font-size: 13px; line-height: 1.6; }
+
+    .content-shell { padding: 36px 42px 80px; }
+    .content-header { margin-bottom: 28px; }
+    .content-header h2 { font-size: 38px; }
+    .content-header p { font-size: 17px; }
+
+    .view-section { margin-top: 0; }
+    .overview-grid { grid-template-columns: 1.1fr .9fr; align-items: stretch; }
+    .overview-card { padding: 24px; }
+    .overview-card p { max-width: 58ch; }
+    .overview-card:nth-child(3) { grid-column: 1 / -1; }
+    .overview-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .assistant-shell { display: block; }
+    .assistant-workbench {
+      display: grid;
+      grid-template-columns: minmax(380px, 0.85fr) minmax(520px, 1.15fr);
+      gap: 28px;
+      align-items: start;
+    }
+    .assistant-input-card { position: sticky; top: 28px; }
+    .assistant-input-card h2,
+    .assistant-output-stack > .card h2 { font-size: 26px; margin-bottom: 8px; }
+    #question { min-height: 220px; font-size: 16px; line-height: 1.7; }
+    .preset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .preset-btn { padding: 14px; min-height: 74px; }
+    .preset-btn strong { font-size: 15px; }
+    .preset-btn span { font-size: 12px; }
+    .actions { gap: 10px; }
+    .actions button { min-height: 44px; padding: 10px 16px; }
+
+    .assistant-output-stack { gap: 18px; }
+    .result-tabs { margin-top: 4px; }
+    .result-panel { margin-top: 16px; }
+    .result,
+    .panel { min-height: 320px; padding: 20px; font-size: 16px; line-height: 1.75; }
+    #routeInfo,
+    #lowConfidenceAlert:empty { display: none; }
+
+    .quick-dock { display: none; }
+
+    @media (max-width: 1240px) {
+      .assistant-workbench { grid-template-columns: 1fr; }
+      .assistant-input-card { position: static; }
     }
   </style>
 </head>
 <body>
-  <main class="container">
-    <section class="hero">
-      <h1>实验室安全助手平台</h1>
-      <p>这是一个面向实验室安全场景的闭环演示页，覆盖问答、风险评估、开工前阻断、事故应急、培训考核和管理看板。实验室安全问答唯一正式链路为 Dify 正式知识库工作流，页面中的结构化回退仅用于链路异常时兜底。</p>
-      <div class="hero-badges">
-        <span>问答可追溯</span>
-        <span>高风险可阻断</span>
-        <span>看板可展示</span>
-        <span>复盘可闭环</span>
-      </div>
-      <div class="snapshot-grid">
-        <div class="snapshot-card">
-          <span>当前版本</span>
-          <strong id="metaVersion">加载中...</strong>
+  <main class="app-shell">
+    <aside class="sidebar">
+      <section class="sidebar-brand">
+        <div class="sidebar-toprow">
+          <span class="sidebar-kicker">Safety Workspace</span>
+          <button class="sidebar-toggle" type="button" id="sidebarToggle" aria-expanded="true">收起导航</button>
         </div>
-        <div class="snapshot-card">
-          <span>验收状态</span>
-          <strong id="metaAcceptance">加载中...</strong>
+        <h1>实验室安全小助手</h1>
+        <p>问答、风险、准入、培训，一页清楚展示。</p>
+      </section>
+
+      <nav class="sidebar-nav" aria-label="功能导航">
+        <button class="nav-btn is-active" type="button" data-view-target="overview" aria-current="page">
+          <strong>平台总览</strong>
+          <span>版本和系统状态</span>
+        </button>
+        <button class="nav-btn" type="button" data-view-target="assistant" aria-current="false">
+          <strong>智能问答</strong>
+          <span>提问、评估风险</span>
+        </button>
+        <button class="nav-btn" type="button" data-view-target="gate" aria-current="false">
+          <strong>准入阻断</strong>
+          <span>生成开工检查</span>
+        </button>
+        <button class="nav-btn" type="button" data-view-target="workspace" aria-current="false">
+          <strong>知识库状态</strong>
+          <span>查看配置和知识库</span>
+        </button>
+        <button class="nav-btn" type="button" data-view-target="training" aria-current="false">
+          <strong>培训与看板</strong>
+          <span>培训、统计、看板</span>
+        </button>
+        <button class="nav-btn" type="button" data-view-target="incident" aria-current="false">
+          <strong>事故复盘</strong>
+          <span>记录事故和整改</span>
+        </button>
+      </nav>
+
+      <section class="sidebar-note">
+        <strong>推荐流程</strong>
+        <p>先问答，再评估风险，最后生成开工检查。</p>
+      </section>
+    </aside>
+
+    <section class="content-shell">
+      <header class="content-header">
+        <div>
+          <p class="content-kicker">Lab Safety Assistant</p>
+          <h2 id="pageTitle">平台总览</h2>
+          <p id="pageDesc">选择左侧功能，按步骤完成演示。</p>
         </div>
-        <div class="snapshot-card">
-          <span>知识库规模</span>
-          <strong id="metaKbSize">加载中...</strong>
-        </div>
-        <div class="snapshot-card">
-          <span>实验室问答链路</span>
-          <strong id="metaLane">加载中...</strong>
-        </div>
-      </div>
-    </section>
+      </header>
+      <div id="liveRegion" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
 
-    <section class="layout">
-      <div class="stack">
-        <article class="card">
-          <h2>1. 演示问题输入</h2>
-          <p class="muted">建议每次只输入一个明确场景，现场演示会更稳定。也可以直接点下面的推荐问题，一键填充到输入框。</p>
-          <div class="row" style="margin-bottom: 10px;">
-            <label><input type="radio" name="mode" value="lab" checked /> 实验室安全助手</label>
-            <label><input type="radio" name="mode" value="agent" /> 通用项目助理</label>
-          </div>
-          <textarea id="question" placeholder="示例：夜间准备进行乙醇回流实验，审批未闭环而且现场只有我一个人，这种情况能开工吗？"></textarea>
-          <div class="preset-grid">
-            <button class="preset-btn" type="button" data-preset="危险实验开始前最关键的阻断项是什么？">
-              <strong>推荐问题 1</strong>
-              <span>开工前阻断项</span>
-            </button>
-            <button class="preset-btn" type="button" data-preset="化学品溅入眼睛后第一步应该做什么？">
-              <strong>推荐问题 2</strong>
-              <span>化学飞溅应急</span>
-            </button>
-            <button class="preset-btn" type="button" data-preset="培训没通过，还能独立开展高风险实验吗？">
-              <strong>推荐问题 3</strong>
-              <span>培训与准入</span>
-            </button>
-            <button class="preset-btn" type="button" data-preset="高风险实验审批通过以后，还需要双人复核吗？">
-              <strong>推荐问题 4</strong>
-              <span>审批与双人复核</span>
-            </button>
-          </div>
-          <div class="actions" style="margin-top: 12px;">
-            <button class="btn-primary" id="sendBtn">运行问答</button>
-            <button class="btn-secondary" id="riskBtn">风险评估</button>
-            <button class="btn-accent" id="checklistBtn">生成开工清单</button>
-            <button class="btn-ghost" id="matchEmergencyBtn">匹配应急卡片</button>
-          </div>
-        </article>
-
-        <article class="card">
-          <h2>2. 助手输出结果</h2>
-          <div id="result" class="result">等待输入演示问题...</div>
-          <p id="routeInfo" class="muted"></p>
-          <div id="lowConfidenceAlert" class="alert warn"></div>
-          <div id="riskBox" class="panel" style="display:none; margin-top:10px;"></div>
-          <div id="citationBox"></div>
-        </article>
-
-        <article class="card">
-          <h2>3. 开工前检查清单</h2>
-          <div class="row">
-            <input id="operatorName" placeholder="操作人 / 复核人" />
-            <input id="checklistNotes" placeholder="阻断说明或补充备注" />
-          </div>
-          <div id="checklistMeta" class="muted" style="margin-top: 10px;">从当前问题生成清单后，这里会显示风险等级和关键危险源。</div>
-          <div id="checklistItems" class="panel" style="margin-top:10px;">还没有生成清单。</div>
-          <div class="actions" style="margin-top: 12px;">
-            <button class="btn-primary" id="submitChecklistBtn" disabled>提交清单</button>
-          </div>
-          <div id="checklistStatus" class="alert warn"></div>
-        </article>
-      </div>
-
-      <div class="stack">
-        <article class="card">
-          <h2>4. 事故应急卡片</h2>
-          <p class="muted">这里预置了 4 类常见事故卡片。演示时可以先提问，再点“匹配应急卡片”，快速展示系统如何把自然语言问题落到标准处置动作。</p>
-          <div id="emergencyMatch" class="panel">输入一个事故场景后，系统会自动匹配最合适的应急卡片。</div>
-          <div id="emergencyCards" class="em-grid" style="margin-top: 12px;"></div>
-        </article>
-
-        <article class="card">
-          <h2>5. 培训考核 MVP</h2>
-          <div class="row">
-            <input id="participantName" placeholder="参训人姓名" />
-            <input id="quizLimit" type="number" min="3" max="10" value="5" />
-          </div>
-          <div class="actions" style="margin-top: 12px;">
-            <button class="btn-secondary" id="startQuizBtn">开始抽题</button>
-            <button class="btn-primary" id="submitQuizBtn" disabled>提交评分</button>
-          </div>
-          <div id="quizBox" class="panel" style="margin-top: 10px;">点击“开始抽题”后，这里会生成一组演示题目。</div>
-          <div id="quizResult" class="panel" style="margin-top: 10px;">提交后会显示成绩、薄弱项和错题复盘。</div>
-        </article>
-
-        <article class="card">
-          <h2>6. 培训统计</h2>
-          <div id="trainingStats" class="stats-grid"></div>
-        </article>
-
-        <article class="card">
-          <h2>7. 管理端看板</h2>
-          <p class="muted">这里集中展示清单阻断率、培训通过率、低置信问题、高风险场景和事故复盘摘要，适合答辩时展示“平台化能力”。</p>
-          <div class="two-col">
-            <select id="dashboardDays">
-              <option value="7">近 7 天</option>
-              <option value="30" selected>近 30 天</option>
-              <option value="90">近 90 天</option>
-              <option value="0">全部时间</option>
-            </select>
-            <select id="dashboardRiskLevel">
-              <option value="">全部风险等级</option>
-              <option value="low">低</option>
-              <option value="medium-low">较低</option>
-              <option value="medium">中</option>
-              <option value="high">高</option>
-              <option value="critical">极高</option>
-            </select>
-          </div>
-          <div class="two-col" style="margin-top: 10px;">
-            <select id="dashboardIncidentStatus">
-              <option value="">全部复盘状态</option>
-              <option value="open">待处理</option>
-              <option value="in_review">复盘中</option>
-              <option value="action_in_progress">整改中</option>
-              <option value="verified">已复核</option>
-              <option value="closed">已闭环</option>
-            </select>
-            <select id="dashboardExportScope">
-              <option value="checklists">导出清单记录</option>
-              <option value="training">导出培训记录</option>
-              <option value="low_confidence">导出低置信问题</option>
-              <option value="incidents">导出事故复盘</option>
-            </select>
-          </div>
-          <div class="actions" style="margin-top: 12px;">
-            <button class="btn-secondary" id="refreshDashboardBtn">刷新看板</button>
-            <button class="btn-primary" id="exportCsvBtn">导出 CSV</button>
-            <button class="btn-accent" id="exportWeeklyBtn">导出周报</button>
-          </div>
-          <div id="adminMetrics" class="stats-grid"></div>
-          <div class="two-col" style="margin-top: 12px;">
-            <div>
-              <h3>低置信问题 TOP</h3>
-              <div id="adminLowConfidence" class="panel">这里会显示当前最值得补强的知识问题。</div>
+      <section class="view-section is-active" data-view-panel="overview">
+        <section class="overview-grid">
+          <article class="overview-card">
+            <span>当前工作场景</span>
+            <strong id="currentScenarioText">还没有输入场景。</strong>
+            <p>输入场景后，后续功能会自动沿用。</p>
+          </article>
+          <article class="overview-card">
+            <h3>常用入口</h3>
+            <p>选择一个入口开始。</p>
+            <div class="overview-actions">
+              <button class="jump-btn" type="button" data-view-jump="assistant">智能问答</button>
+              <button class="jump-btn" type="button" data-view-jump="gate">准入阻断</button>
+              <button class="jump-btn" type="button" data-view-jump="workspace">知识库状态</button>
+              <button class="jump-btn" type="button" data-view-jump="training">培训看板</button>
             </div>
-            <div>
-              <h3>最近高风险场景</h3>
-              <div id="adminHighRisk" class="panel">这里会显示最近被阻断或被重点关注的场景。</div>
-            </div>
-          </div>
-          <div style="margin-top: 12px;">
-            <h3>事故复盘摘要</h3>
-            <div id="adminIncidentSummary" class="panel">这里会汇总事故状态、逾期整改和闭环情况。</div>
-          </div>
-        </article>
+          </article>
+          <article class="overview-card">
+            <h3>使用建议</h3>
+            <p>推荐：问答 → 风险评估 → 开工检查。</p>
+          </article>
+        </section>
+      </section>
 
-        <article class="card">
-          <h2>8. 事故复盘</h2>
-          <p class="muted">支持录入事故或险情，记录原因分类、整改措施、责任人、逾期状态和复发风险，形成真正可闭环的复盘模块。</p>
-          <div class="two-col">
-            <input id="incidentReporter" placeholder="报告人" />
-            <input id="incidentTitle" placeholder="事件标题" />
+      <section class="view-section" data-view-panel="assistant">
+        <section class="assistant-shell">
+          <section class="assistant-workbench">
+            <article class="card assistant-input-card">
+              <h2>输入场景</h2>
+              <p class="muted">输入一个实验室问题，点击下方按钮。</p>
+              <div class="row" style="margin-bottom: 10px;">
+                <label><input type="radio" name="mode" value="lab" checked /> 实验室安全助手</label>
+                <label><input type="radio" name="mode" value="agent" /> 通用项目助理</label>
+              </div>
+              <textarea id="question" placeholder="示例：夜间准备进行乙醇回流实验，审批未闭环而且现场只有我一个人，这种情况能开工吗？"></textarea>
+              <div class="preset-grid">
+                <button class="preset-btn" type="button" data-preset="危险实验开始前最关键的阻断项是什么？">
+                  <strong>开工阻断</strong>
+                  <span>开工前阻断项</span>
+                </button>
+                <button class="preset-btn" type="button" data-preset="化学品溅入眼睛后第一步应该做什么？">
+                  <strong>化学飞溅</strong>
+                  <span>化学飞溅应急</span>
+                </button>
+                <button class="preset-btn" type="button" data-preset="培训没通过，还能独立开展高风险实验吗？">
+                  <strong>培训准入</strong>
+                  <span>培训与准入</span>
+                </button>
+                <button class="preset-btn" type="button" data-preset="高风险实验审批通过以后，还需要双人复核吗？">
+                  <strong>双人复核</strong>
+                  <span>审批与双人复核</span>
+                </button>
+              </div>
+              <div class="actions" style="margin-top: 12px;">
+                <button class="btn-primary" id="sendBtn">运行问答</button>
+                <button class="btn-secondary" id="riskBtn">风险评估</button>
+                <button class="btn-accent" id="checklistBtn">生成开工清单</button>
+                <button class="btn-ghost" id="matchEmergencyBtn">匹配应急卡片</button>
+              </div>
+            </article>
+
+            <div class="assistant-output-stack">
+            <article class="card">
+              <h2>输出结果</h2>
+              <div class="result-shell"><div class="result-tabs" aria-label="结果分组导航">
+                  <button class="result-tab is-active" type="button" data-result-target="answer">回答</button>
+                  <button class="result-tab" type="button" data-result-target="risk">风险</button>
+                  <button class="result-tab" type="button" data-result-target="citations">来源</button>
+                  <button class="result-tab" type="button" data-result-target="emergency">应急</button>
+                </div>
+                <div class="result-panel is-active" data-result-panel="answer">
+                  <div id="result" class="result">等待输入演示问题...</div>
+                </div>
+                <div class="result-panel" data-result-panel="risk">
+                  <div id="riskBox" class="panel">运行风险评估后，这里会显示结构化风险结果。</div>
+                </div>
+                <div class="result-panel" data-result-panel="citations">
+                  <div id="citationBox" class="panel">运行问答或风险评估后，这里会展示可引用的来源条目。</div>
+                </div>
+                <div class="result-panel" data-result-panel="emergency">
+                  <div id="emergencyMatch" class="panel">输入一个事故场景后，系统会自动匹配最合适的应急卡片。</div>
+                </div>
+              </div>
+              <p id="routeInfo" class="muted"></p>
+              <div id="lowConfidenceAlert" class="alert warn"></div>
+            </article>
+            </div>
+        </section>
+      </section>
+
+      <section class="view-section" data-view-panel="gate">
+        <section class="gate-shell">
+          <div class="stack">
+          <article class="card">
+            <h2>1. 当前准入判断对象</h2>
+            <p class="muted">当前准入阻断始终围绕“智能问答页”里输入的那条场景展开。这样页面切换后，用户也不会丢失上下文。</p>
+            <div id="checklistScenarioText" class="panel">当前还没有输入场景，建议先去“智能问答与风险评估”页填写问题。</div>
+            <div class="actions" style="margin-top: 12px;">
+              <button class="btn-secondary" type="button" id="gotoAssistantBtn">去智能问答页编辑问题</button>
+              <button class="btn-accent" type="button" id="generateChecklistInlineBtn">基于当前问题生成清单</button>
+            </div>
+            <div class="gate-status-grid">
+              <div class="gate-status-card">
+                <span>完成进度</span>
+                <strong id="gateProgressText">0 / 0 已完成</strong>
+                <div class="progress-track"><div class="progress-bar" id="gateProgressBar"></div></div>
+              </div>
+              <div class="gate-status-card">
+                <span>关键项剩余</span>
+                <strong id="gateCriticalRemaining">等待生成清单</strong>
+              </div>
+              <div class="gate-status-card">
+                <span>当前状态</span>
+                <strong id="gateReadinessText">尚未进入准入判断</strong>
+              </div>
+            </div>
+          </article>
           </div>
-          <div class="two-col" style="margin-top: 10px;">
-            <select id="incidentSeverity">
-              <option value="low">低</option>
-              <option value="medium" selected>中</option>
-              <option value="high">高</option>
-              <option value="critical">极高</option>
-            </select>
-            <input id="incidentLocation" placeholder="地点 / 实验室房间" />
+          <div class="stack">
+          <article class="card">
+            <h2>2. 开工前检查清单</h2>
+            <div class="row">
+              <input id="operatorName" placeholder="操作人 / 复核人" />
+              <input id="checklistNotes" placeholder="阻断说明或补充备注" />
+            </div>
+            <div id="checklistMeta" class="muted" style="margin-top: 10px;">从当前问题生成清单后，这里会显示风险等级和关键危险源。</div>
+            <div id="checklistItems" class="panel" style="margin-top:10px;">还没有生成清单。</div>
+            <label style="display:flex; align-items:center; gap:8px; margin-top:12px;" class="muted">
+              <input type="checkbox" id="criticalOnlyToggle" />
+              只看关键项
+            </label>
+            <div id="gatePrediction" class="prediction-card">
+              <strong>阻断原因预判</strong>
+              <div id="gatePredictionText">生成清单后，这里会根据未完成关键项预判当前最可能的阻断原因。</div>
+            </div>
+            <div class="checklist-quick-actions">
+              <button class="btn-soft" type="button" id="focusCriticalBtn">定位未完成关键项</button>
+              <button class="btn-soft" type="button" id="checkNonCriticalBtn">勾选全部非关键项</button>
+            </div>
+            <div class="actions" style="margin-top: 12px;">
+              <button class="btn-primary" id="submitChecklistBtn" disabled>提交清单</button>
+            </div>
+            <div id="checklistStatus" class="alert warn"></div>
+          </article>
           </div>
-          <textarea id="incidentScenario" class="mini-textarea" style="margin-top: 10px;" placeholder="描述事件经过、暴露风险、当时处置和系统阻断情况。"></textarea>
-          <textarea id="incidentCauses" class="mini-textarea" style="margin-top: 10px;" placeholder="原因分类示例：审批缺失, 单人作业, 复核不足"></textarea>
-          <textarea id="incidentImmediateActions" class="mini-textarea" style="margin-top: 10px;" placeholder="立即处置动作，每行一条"></textarea>
-          <textarea id="incidentCorrectiveActions" class="mini-textarea" style="margin-top: 10px;" placeholder="整改措施，每行一条"></textarea>
-          <div class="two-col" style="margin-top: 10px;">
-            <input id="incidentOwner" placeholder="整改责任人" />
-            <input id="incidentDueDate" placeholder="整改截止日期，例如 2026-04-15" />
+        </section>
+      </section>
+      <section class="view-section" data-view-panel="workspace">
+        <section class="workspace-grid">
+          <div class="stack">
+            <article class="card">
+              <h2>1. 本地 Dify 工作区状态</h2>
+              <p class="muted">这里不再只讲“接没接上”，而是直接展示当前本地 Dify 配置状态、基础连接情况和回退口径，让答辩或演示时一眼能说明白。</p>
+              <div id="workspaceStatusList" class="status-list">
+                <div class="status-item"><div><strong>状态加载中...</strong><span>正在读取知识库状态工作区状态。</span></div></div>
+              </div>
+              <div class="actions" style="margin-top: 12px;">
+                <button class="btn-secondary" id="refreshWorkspaceBtn">刷新工作区状态</button>
+              </div>
+            </article>
+
+            <article class="card">
+              <h2>2. 知识库结构总览</h2>
+              <p class="muted">先把知识库按分类和危险源做可视化摘要，便于你后面继续做知识库补强，而不是只盯总条数。</p>
+              <div>
+                <strong>Top 分类</strong>
+                <div id="workspaceTopCategories" class="tag-cloud"></div>
+              </div>
+              <div style="margin-top: 14px;">
+                <strong>Top 危险源</strong>
+                <div id="workspaceTopHazards" class="tag-cloud"></div>
+              </div>
+            </article>
           </div>
-          <div class="actions" style="margin-top: 12px;">
-            <button class="btn-accent" id="createIncidentBtn">创建复盘记录</button>
+
+          <div class="stack">
+            <article class="card">
+              <h2>3. 知识命中抽查</h2>
+              <p class="muted">针对当前问题快速抽查本地知识库命中结果，不只看“命中了几条”，还要解释“为什么命中这些知识、哪些最相关、哪些仍要补强”。</p>
+              <div class="actions">
+                <button class="btn-primary" id="workspaceSearchBtn">基于当前问题抽查知识命中</button>
+              </div>
+              <div id="workspaceSearchHint" class="muted" style="margin-top: 10px;">还没有执行知识命中抽查。</div>
+              <div id="workspaceSearchSummary" class="knowledge-summary" style="display:none;">
+                <div class="knowledge-summary-card">
+                  <strong>本轮命中解释</strong>
+                  <span id="workspaceSearchSummaryText">这里会总结当前问题为什么会命中这些知识。</span>
+                </div>
+                <div class="knowledge-summary-card">
+                  <strong>补强建议</strong>
+                  <span id="workspaceSearchRecommendation">这里会提示当前问题更适合继续补哪些知识。</span>
+                </div>
+              </div>
+              <div id="workspaceSearchResults" class="knowledge-list">
+                <div class="panel">建议先在“智能问答”里输入一个具体场景，再来这里抽查知识命中。</div>
+              </div>
+            </article>
+
+            <article class="card">
+              <h2>4. 当前下一步建议</h2>
+              <div class="panel">
+                <ul>
+                  <li>如果 Dify 未配置：先明确是否恢复本机 `127.0.0.1:8080` 的本地 Dify。</li>
+                  <li>如果知识命中偏少：优先补“高频演示问题”对应条目，不要先大面积重写全部知识库。</li>
+                  <li>如果页面继续要像产品：下一轮可把培训与事故复盘做成更明显的列表 + 表单双栏工作台。</li>
+                </ul>
+              </div>
+            </article>
           </div>
-          <div id="incidentCreateStatus" class="alert warn"></div>
-          <div class="two-col" style="margin-top: 12px;">
-            <select id="incidentFilterStatus">
-              <option value="">全部状态</option>
-              <option value="open">待处理</option>
-              <option value="in_review">复盘中</option>
-              <option value="action_in_progress">整改中</option>
-              <option value="verified">已复核</option>
-              <option value="closed">已闭环</option>
-            </select>
-            <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="incidentOnlyOverdue" /> 仅看逾期整改</label>
+        </section>
+      </section>
+
+
+      <section class="view-section" data-view-panel="training">
+        <section class="stack">
+          <article class="card">
+            <div class="section-heading">
+              <span class="section-caption">培训与管理工作台</span>
+              <h2>先看培训准备，再看管理结果</h2>
+              <p>这一页不再把培训和看板简单堆在一起，而是明确分成“培训动作”和“管理结果”两层：左侧更偏操作，右侧更偏管理洞察。</p>
+            </div>
+            <div class="inline-tip">答辩展示时，建议只讲三件事：培训能抽题评分、看板能看到风险趋势、这些数据会反过来驱动知识库补强。</div>
+          </article>
+        </section>
+        <section class="training-shell">
+          <div class="stack">
+            <article class="card">
+              <div class="section-heading">
+                <h2>1. 培训考核 MVP</h2>
+                <p>用于展示“系统不仅能答，还能训练和准入”。建议只抽一组题，不在现场展开完整考试流程。</p>
+              </div>
+            <div class="row">
+              <input id="participantName" placeholder="参训人姓名" />
+              <input id="quizLimit" type="number" min="3" max="10" value="5" />
+            </div>
+            <div class="actions" style="margin-top: 12px;">
+              <button class="btn-secondary" id="startQuizBtn">开始抽题</button>
+              <button class="btn-primary" id="submitQuizBtn" disabled>提交评分</button>
+            </div>
+            <div id="quizBox" class="panel" style="margin-top: 10px;">点击“开始抽题”后，这里会生成一组演示题目。</div>
+            <div id="quizResult" class="panel" style="margin-top: 10px;">提交后会显示成绩、薄弱项和错题复盘。</div>
+            </article>
+
+            <article class="card">
+              <div class="section-heading">
+                <h2>2. 培训统计</h2>
+                <p>这里看的是“培训结果有没有沉淀成可管理的数据”，而不是单次题目本身。</p>
+              </div>
+              <div id="trainingStats" class="stats-grid">
+                <div class="stats-card"><div>总作答次数</div><strong>加载中...</strong></div>
+                <div class="stats-card"><div>通过率</div><strong>加载中...</strong></div>
+                <div class="stats-card"><div>平均分</div><strong>加载中...</strong></div>
+                <div class="stats-card"><div>最近一次</div><strong style="font-size:14px;">加载中...</strong></div>
+              </div>
+            </article>
           </div>
-          <div class="actions" style="margin-top: 12px;">
-            <button class="btn-secondary" id="refreshIncidentsBtn">刷新复盘列表</button>
+
+          <div class="stack">
+            <article class="card">
+              <div class="section-heading">
+                <span class="section-caption">管理端视角</span>
+                <h2>3. 管理端看板</h2>
+                <p>这部分更适合答辩时讲“老师和管理员能看到什么”。展示时优先指出阻断率、培训通过率、低置信问题和最近高风险场景。</p>
+              </div>
+              <div id="dashboardSummary" class="summary-grid">
+                <div class="summary-card">
+                  <strong>当前总体结论</strong>
+                  <span id="dashboardSummaryMain">正在汇总管理端一句话结论...</span>
+                </div>
+                <div class="summary-card">
+                  <strong>当前最需要关注</strong>
+                  <span id="dashboardSummaryFocus">正在汇总最需要优先关注的事项...</span>
+                </div>
+                <div class="summary-card">
+                  <strong>答辩时怎么说</strong>
+                  <span id="dashboardSummaryPitch">正在生成适合展示的一句话口径...</span>
+                </div>
+              </div>
+              <div class="filter-grid">
+                <div class="filter-item">
+                  <label for="dashboardDays">时间范围</label>
+                  <select id="dashboardDays">
+                    <option value="7">近 7 天</option>
+                    <option value="30" selected>近 30 天</option>
+                    <option value="90">近 90 天</option>
+                    <option value="0">全部时间</option>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label for="dashboardRiskLevel">风险等级</label>
+                  <select id="dashboardRiskLevel">
+                    <option value="">全部风险等级</option>
+                    <option value="low">低</option>
+                    <option value="medium-low">较低</option>
+                    <option value="medium">中</option>
+                    <option value="high">高</option>
+                    <option value="critical">极高</option>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label for="dashboardIncidentStatus">复盘状态</label>
+                  <select id="dashboardIncidentStatus">
+                    <option value="">全部复盘状态</option>
+                    <option value="open">待处理</option>
+                    <option value="in_review">复盘中</option>
+                    <option value="action_in_progress">整改中</option>
+                    <option value="verified">已复核</option>
+                    <option value="closed">已闭环</option>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label for="dashboardExportScope">导出范围</label>
+                  <select id="dashboardExportScope">
+                    <option value="checklists">导出清单记录</option>
+                    <option value="training">导出培训记录</option>
+                    <option value="low_confidence">导出低置信问题</option>
+                    <option value="incidents">导出事故复盘</option>
+                  </select>
+                </div>
+              </div>
+              <div class="actions" style="margin-top: 12px;">
+                <button class="btn-secondary" id="refreshDashboardBtn">刷新看板</button>
+                <button class="btn-primary" id="exportCsvBtn">导出 CSV</button>
+                <button class="btn-accent" id="exportWeeklyBtn">导出周报</button>
+              </div>
+              <div id="adminMetrics" class="stats-grid" style="margin-top: 12px;">
+                <div class="stats-card"><div>看板加载中</div><strong>...</strong></div>
+              </div>
+              <div class="insight-grid">
+                <div class="insight-card">
+                  <h3>低置信问题 TOP</h3>
+                  <div id="adminLowConfidence" class="panel empty-state">
+                    <strong>等待加载</strong>
+                    <span>这里会显示当前最值得补强的知识问题。</span>
+                  </div>
+                </div>
+                <div class="insight-card">
+                  <h3>最近高风险场景</h3>
+                  <div id="adminHighRisk" class="panel empty-state">
+                    <strong>等待加载</strong>
+                    <span>这里会显示最近被阻断或被重点关注的场景。</span>
+                  </div>
+                </div>
+              </div>
+              <div class="insight-card" style="margin-top: 12px;">
+                <h3>事故复盘摘要</h3>
+                <div id="adminIncidentSummary" class="panel empty-state">
+                  <strong>等待加载</strong>
+                  <span>这里会汇总事故状态、逾期整改和闭环情况。</span>
+                </div>
+              </div>
+            </article>
           </div>
-          <div id="incidentList" style="margin-top: 12px;"></div>
-        </article>
+        </section>
+      </section>
+
+      <section class="view-section" data-view-panel="incident">
+        <section class="incident-shell">
+          <div class="stack">
+            <article class="card incident-form-card">
+              <div class="incident-lead">
+                <div class="section-heading">
+                  <span class="section-caption">追问扩展页</span>
+                  <h2>1. 事故复盘录入</h2>
+                  <p>这里不再把所有字段直接堆成一张长表单，而是借鉴事故与安全产品的录入方式：先抓住事件摘要，再补时间线、原因和整改动作。</p>
+                </div>
+                <div class="inline-tip">演示时默认不用展开本页；如果老师追问“有没有闭环和追溯”，再打开这里，按“发生了什么 → 怎么处置 → 后续怎么改”来讲就够了。</div>
+                <div class="incident-highlight">
+                  <div class="incident-highlight-card">
+                    <strong>先录核心摘要</strong>
+                    <span>先把报告人、标题、等级、地点和事件经过讲清楚，不必一开始填满所有项。</span>
+                  </div>
+                  <div class="incident-highlight-card">
+                    <strong>再补关键处置</strong>
+                    <span>把立即处置动作与整改动作分开，老师会更容易理解“当时怎么止损、后续怎么改进”。</span>
+                  </div>
+                  <div class="incident-highlight-card">
+                    <strong>最后看闭环状态</strong>
+                    <span>复盘记录列表负责展示状态、逾期和闭环，不把这些信息压回创建表单首屏。</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="incident-form-grid">
+                <section class="incident-block incident-block--accent">
+                  <h3>核心信息</h3>
+                  <p>先把“谁报的、什么事、严重程度和地点”录清楚，这是整条复盘的最小闭环入口。</p>
+                  <div class="two-col">
+                    <input id="incidentReporter" placeholder="报告人" />
+                    <input id="incidentTitle" placeholder="事件标题" />
+                  </div>
+                  <div class="two-col" style="margin-top: 10px;">
+                    <select id="incidentSeverity">
+                      <option value="low">低</option>
+                      <option value="medium" selected>中</option>
+                      <option value="high">高</option>
+                      <option value="critical">极高</option>
+                    </select>
+                    <input id="incidentLocation" placeholder="地点 / 实验室房间" />
+                  </div>
+                </section>
+
+                <section class="incident-block">
+                  <h3>事件时间线</h3>
+                  <p>把“发生经过”和“立即处置”拆成两个时间节点，避免一大段文字把重点冲掉。</p>
+                  <div class="incident-timeline">
+                    <div class="incident-timeline-item">
+                      <div class="incident-step">01</div>
+                      <div class="incident-step-body">
+                        <strong>发生了什么</strong>
+                        <textarea id="incidentScenario" class="mini-textarea" placeholder="描述事件经过、暴露风险、当时处置前的状态。"></textarea>
+                      </div>
+                    </div>
+                    <div class="incident-timeline-item">
+                      <div class="incident-step">02</div>
+                      <div class="incident-step-body">
+                        <strong>当时立即怎么处理</strong>
+                        <textarea id="incidentImmediateActions" class="mini-textarea" placeholder="立即处置动作，每行一条"></textarea>
+                        <span class="muted">示例：暂停实验、断电隔离、冲洗暴露部位、通知老师和管理员。</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="incident-block incident-block--soft">
+                  <h3>原因与改进</h3>
+                  <p>这里更适合讲“为什么会发生”以及“后续怎么防止再发生”，不需要在首段就展开。</p>
+                  <textarea id="incidentCauses" class="mini-textarea" placeholder="原因分类示例：审批缺失, 单人作业, 复核不足"></textarea>
+                  <textarea id="incidentCorrectiveActions" class="mini-textarea" style="margin-top: 10px;" placeholder="整改措施，每行一条"></textarea>
+                  <div class="two-col" style="margin-top: 10px;">
+                    <input id="incidentOwner" placeholder="整改责任人" />
+                    <input id="incidentDueDate" placeholder="整改截止日期，例如 2026-04-15" />
+                  </div>
+                </section>
+              </div>
+
+              <div class="actions" style="margin-top: 14px;">
+                <button class="btn-accent" id="createIncidentBtn">创建复盘记录</button>
+              </div>
+              <div id="incidentCreateStatus" class="alert warn"></div>
+            </article>
+          </div>
+
+          <div class="stack">
+            <article class="card incident-sidecard">
+              <h3>复盘填写建议</h3>
+              <p class="muted">借鉴同类事故产品的轻量录入思路，当前建议只强调三件事，不在现场展开完整事故系统。</p>
+              <ul class="incident-checklist">
+                <li>先讲清事件摘要，不要先讲所有字段。</li>
+                <li>把“立即处置”和“整改措施”明确分开。</li>
+                <li>把闭环状态交给下方列表展示，而不是堆在首屏录入区。</li>
+              </ul>
+            </article>
+
+            <article class="card">
+              <div class="section-heading">
+                <span class="section-caption">状态与闭环</span>
+                <h2>2. 复盘记录列表</h2>
+                <p>这部分更适合展示“有没有形成记录、状态有没有推进、逾期整改能不能被看见”。</p>
+              </div>
+              <div class="incident-filter-card">
+                <div class="two-col">
+                  <select id="incidentFilterStatus">
+                    <option value="">全部状态</option>
+                    <option value="open">待处理</option>
+                    <option value="in_review">复盘中</option>
+                    <option value="action_in_progress">整改中</option>
+                    <option value="verified">已复核</option>
+                    <option value="closed">已闭环</option>
+                  </select>
+                  <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="incidentOnlyOverdue" /> 仅看逾期整改</label>
+                </div>
+                <div class="actions" style="margin-top: 12px;">
+                  <button class="btn-secondary" id="refreshIncidentsBtn">刷新复盘列表</button>
+                </div>
+              </div>
+              <div id="incidentList" style="margin-top: 12px;"></div>
+            </article>
+          </div>
+        </section>
+      </section>
+      <div class="quick-dock" aria-label="快捷操作">
+        <button type="button" data-view-jump="assistant">
+          <strong>快速去问答</strong>
+          <span>直接输入实验室场景并开始交互。</span>
+        </button>
+        <button type="button" data-view-jump="training">
+          <strong>快速去看板</strong>
+          <span>需要收口时，快速切到培训与管理视图。</span>
+        </button>
+        <button type="button" id="backToTopBtn">
+          <strong>回到顶部</strong>
+          <span>减少长页面滚动带来的切换负担。</span>
+        </button>
       </div>
     </section>
   </main>
@@ -477,18 +2221,54 @@
     const quizBox = document.getElementById('quizBox');
     const quizResult = document.getElementById('quizResult');
     const trainingStats = document.getElementById('trainingStats');
+    const workspaceStatusList = document.getElementById('workspaceStatusList');
+    const workspaceTopCategories = document.getElementById('workspaceTopCategories');
+    const workspaceTopHazards = document.getElementById('workspaceTopHazards');
+    const workspaceSearchBtn = document.getElementById('workspaceSearchBtn');
+    const workspaceSearchHint = document.getElementById('workspaceSearchHint');
+    const workspaceSearchSummary = document.getElementById('workspaceSearchSummary');
+    const workspaceSearchSummaryText = document.getElementById('workspaceSearchSummaryText');
+    const workspaceSearchRecommendation = document.getElementById('workspaceSearchRecommendation');
+    const workspaceSearchResults = document.getElementById('workspaceSearchResults');
+    const refreshWorkspaceBtn = document.getElementById('refreshWorkspaceBtn');
     const adminMetrics = document.getElementById('adminMetrics');
     const adminLowConfidence = document.getElementById('adminLowConfidence');
     const adminHighRisk = document.getElementById('adminHighRisk');
     const adminIncidentSummary = document.getElementById('adminIncidentSummary');
+    const dashboardSummaryMain = document.getElementById('dashboardSummaryMain');
+    const dashboardSummaryFocus = document.getElementById('dashboardSummaryFocus');
+    const dashboardSummaryPitch = document.getElementById('dashboardSummaryPitch');
     const createIncidentBtn = document.getElementById('createIncidentBtn');
     const incidentCreateStatus = document.getElementById('incidentCreateStatus');
     const incidentList = document.getElementById('incidentList');
+    const resultTabs = document.querySelectorAll('.result-tab[data-result-target]');
+    const resultPanels = document.querySelectorAll('.result-panel[data-result-panel]');
+    const focusCriticalBtn = document.getElementById('focusCriticalBtn');
+    const checkNonCriticalBtn = document.getElementById('checkNonCriticalBtn');
+    const criticalOnlyToggle = document.getElementById('criticalOnlyToggle');
+    const gatePredictionText = document.getElementById('gatePredictionText');
     const refreshDashboardBtn = document.getElementById('refreshDashboardBtn');
     const exportCsvBtn = document.getElementById('exportCsvBtn');
     const exportWeeklyBtn = document.getElementById('exportWeeklyBtn');
     const refreshIncidentsBtn = document.getElementById('refreshIncidentsBtn');
     const presetButtons = document.querySelectorAll('[data-preset]');
+    const navButtons = document.querySelectorAll('[data-view-target]');
+    const viewSections = document.querySelectorAll('[data-view-panel]');
+    const viewJumpButtons = document.querySelectorAll('[data-view-jump]');
+    const pageTitle = document.getElementById('pageTitle');
+    const pageDesc = document.getElementById('pageDesc');
+    const currentScenarioText = document.getElementById('currentScenarioText');
+    const checklistScenarioText = document.getElementById('checklistScenarioText');
+    const gateProgressText = document.getElementById('gateProgressText');
+    const gateProgressBar = document.getElementById('gateProgressBar');
+    const gateCriticalRemaining = document.getElementById('gateCriticalRemaining');
+    const gateReadinessText = document.getElementById('gateReadinessText');
+    const gotoAssistantBtn = document.getElementById('gotoAssistantBtn');
+    const generateChecklistInlineBtn = document.getElementById('generateChecklistInlineBtn');
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const backToTopBtn = document.getElementById('backToTopBtn');
+    const liveRegion = document.getElementById('liveRegion');
 
     let checklistCache = [];
     let quizSession = null;
@@ -523,6 +2303,116 @@
       Training: '培训考核'
     };
 
+    const viewMeta = {
+      overview: { title: '平台总览', desc: '查看系统当前状态。' },
+      assistant: { title: '智能问答', desc: '输入场景，查看回答、风险和来源。' },
+      gate: { title: '准入阻断', desc: '生成开工检查清单。' },
+      workspace: { title: '知识库状态', desc: '查看 Dify 和知识库情况。' },
+      training: { title: '培训与看板', desc: '查看培训和统计结果。' },
+      incident: { title: '事故复盘', desc: '记录事故和整改状态。' }
+    };
+
+    function announce(message) {
+      if (!liveRegion || !message) return;
+      liveRegion.textContent = '';
+      window.setTimeout(() => {
+        liveRegion.textContent = message;
+      }, 30);
+    }
+
+    function setButtonBusy(button, busy, idleText, busyText = '处理中...') {
+      if (!button) return;
+      if (!button.dataset.idleText) {
+        button.dataset.idleText = idleText || button.textContent.trim();
+      }
+      button.disabled = busy;
+      button.setAttribute('aria-busy', busy ? 'true' : 'false');
+      button.textContent = busy ? busyText : (idleText || button.dataset.idleText);
+    }
+
+    function setSidebarCollapsed(collapsed) {
+      if (!sidebar || !sidebarToggle) return;
+      sidebar.classList.toggle('is-collapsed', collapsed);
+      sidebarToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      sidebarToggle.textContent = collapsed ? '展开导航' : '收起导航';
+    }
+
+    function syncSidebarForViewport() {
+      if (!sidebar || !sidebarToggle) return;
+      const isMobile = window.matchMedia('(max-width: 720px)').matches;
+      if (!isMobile) {
+        setSidebarCollapsed(false);
+        return;
+      }
+      if (!sidebar.dataset.mobileInit) {
+        setSidebarCollapsed(true);
+        sidebar.dataset.mobileInit = 'true';
+      }
+    }function setActiveView(viewName) {
+      viewSections.forEach((section) => {
+        section.classList.toggle('is-active', section.dataset.viewPanel === viewName);
+      });
+      navButtons.forEach((button) => {
+        const isActive = button.dataset.viewTarget === viewName;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-current', isActive ? 'page' : 'false');
+      });
+      const meta = viewMeta[viewName] || viewMeta.overview;
+      if (pageTitle) pageTitle.textContent = meta.title;
+      if (pageDesc) pageDesc.textContent = meta.desc;
+
+      if (window.matchMedia('(max-width: 720px)').matches) {
+        setSidebarCollapsed(true);
+      }
+    }
+
+    function syncScenarioPreview() {
+      const text = questionInput.value.trim() || '还没有输入场景。';
+      if (currentScenarioText) currentScenarioText.textContent = text;
+      if (checklistScenarioText) checklistScenarioText.textContent = text;
+    }
+
+    function updateGateProgress() {
+      const total = checklistCache.length;
+      const checkboxes = Array.from(document.querySelectorAll('[data-checklist-id]'));
+      const checked = checkboxes.filter(item => item.checked).length;
+      const criticalRemaining = checklistCache.filter(item => item.critical && !document.querySelector(`[data-checklist-id="${item.id}"]`)?.checked).length;
+      const percent = total ? Math.round((checked / total) * 100) : 0;
+      if (gateProgressText) gateProgressText.textContent = total ? `${checked} / ${total} 已完成` : '0 / 0 已完成';
+      if (gateProgressBar) gateProgressBar.style.width = `${percent}%`;
+      if (gateCriticalRemaining) {
+        gateCriticalRemaining.textContent = total
+          ? (criticalRemaining ? `还剩 ${criticalRemaining} 个关键项未确认` : '关键项已全部确认')
+          : '等待生成清单';
+      }
+      if (gateReadinessText) {
+        gateReadinessText.textContent = total
+          ? (criticalRemaining ? '当前仍不满足开工条件' : '已具备提交判断的基础')
+          : '尚未进入准入判断';
+      }
+      document.querySelectorAll('.checklist-item').forEach((row) => {
+        const checkbox = row.querySelector('[data-checklist-id]');
+        row.classList.toggle('is-checked', Boolean(checkbox?.checked));
+        if (criticalOnlyToggle?.checked) {
+          const itemId = checkbox?.dataset.checklistId;
+          const item = checklistCache.find(entry => entry.id === itemId);
+          row.style.display = item?.critical ? '' : 'none';
+        } else {
+          row.style.display = '';
+        }
+      });
+      if (gatePredictionText) {
+        if (!total) {
+          gatePredictionText.textContent = '生成清单后，这里会根据未完成关键项预判当前最可能的阻断原因。';
+        } else {
+          const unfinishedCritical = checklistCache.filter(item => item.critical && !document.querySelector(`[data-checklist-id="${item.id}"]`)?.checked);
+          gatePredictionText.innerHTML = unfinishedCritical.length
+            ? `当前最可能触发阻断的是 ${unfinishedCritical.length} 个关键项未满足：<ul>${unfinishedCritical.map(item => `<li>${escapeHtml(item.label)}</li>`).join('')}</ul>`
+            : '当前关键项已全部满足，如仍被阻断，更可能来自备注说明、操作人信息或后端判定逻辑。';
+        }
+      }
+    }
+
     function displayRisk(value) {
       return riskLevelMap[value] || value || '-';
     }
@@ -533,6 +2423,15 @@
 
     function displayCategory(value) {
       return categoryLabelMap[value] || value || '-';
+    }
+
+    function setActiveResultPanel(panelName) {
+      resultPanels.forEach((panel) => {
+        panel.classList.toggle('is-active', panel.dataset.resultPanel === panelName);
+      });
+      resultTabs.forEach((tab) => {
+        tab.classList.toggle('is-active', tab.dataset.resultTarget === panelName);
+      });
     }
 
     function escapeHtml(value) {
@@ -557,6 +2456,116 @@
         .split(',')
         .map(item => item.trim())
         .filter(Boolean);
+    }
+
+    function scoreTone(score) {
+      const numeric = Number(score || 0);
+      if (numeric >= 4.5) return { label: '高相关', reason: '标题或正文与当前问题高度贴合，可优先作为主要支撑。' };
+      if (numeric >= 3) return { label: '中相关', reason: '和当前问题存在较明显交集，但可能只覆盖部分情境。' };
+      return { label: '弱相关', reason: '命中较弱，更适合作为补充线索，说明知识库仍需继续补强。' };
+    }
+
+    function formatLowConfidenceReason(reason) {
+      const raw = String(reason || '').trim();
+      if (!raw) {
+        return {
+          title: '当前检索支撑还不够充分',
+          detail: '建议后续补更贴近实验场景、操作步骤和风险边界的知识条目。'
+        };
+      }
+      if (raw === 'no_kb_match') {
+        return {
+          title: '当前没有找到可直接支撑的知识条目',
+          detail: '建议优先补这个实验场景的标准流程、禁止事项和应急处置知识。'
+        };
+      }
+      if (raw.startsWith('top_score_below_threshold')) {
+        const match = raw.match(/:([0-9.]+)<([0-9.]+)/);
+        const scoreText = match ? `当前最高匹配分仅 ${match[1]}，还没有达到展示阈值 ${match[2]}。` : '当前命中的前几条知识支撑仍偏弱。';
+        return {
+          title: '当前问题与知识库场景匹配度偏弱',
+          detail: `${scoreText} 建议优先补同类实验场景、操作步骤和风险边界。`
+        };
+      }
+      if (raw === 'upstream unavailable') {
+        return {
+          title: '当前主问答链路暂未提供足够支撑',
+          detail: '页面已回退到本地安全口径，但后续仍建议补齐正式知识支撑。'
+        };
+      }
+      return {
+        title: '当前回答支撑不足',
+        detail: '建议继续补知识库，并优先覆盖高频演示问题。'
+      };
+    }
+
+    function explainKnowledgeHit(item, scenario) {
+      const scoreInfo = scoreTone(item.score);
+      const title = String(item.title || '').trim();
+      const snippet = String(item.snippet || '').trim();
+      const scenarioText = String(scenario || '').trim();
+      const reasons = [];
+      if (title) reasons.push('标题与当前问题存在直接主题重合');
+      if (snippet) reasons.push('摘要里包含可执行动作或风险信息');
+      if (item.risk_level) reasons.push(`风险等级为“${displayRisk(item.risk_level)}”，适合用于风险说明`);
+      return {
+        scoreLabel: scoreInfo.label,
+        scoreReason: scoreInfo.reason,
+        whyHit: reasons.join('；') || '该条目与当前问题存在一定文本或主题交集。',
+        nextStep: Number(item.score || 0) >= 3.5
+          ? `适合继续作为“${scenarioText || '当前问题'}”的主要支撑条目。`
+          : `当前支撑力度一般，建议后续围绕“${scenarioText || '当前问题'}”补更贴近场景的知识。`
+      };
+    }
+
+    function summarizeKnowledgeHits(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        return {
+          summary: '当前没有命中候选条目，说明这个问题更适合优先补知识库。',
+          recommendation: '建议先补高频演示问题对应条目，再看是否需要补分类标签和危险源标签。'
+        };
+      }
+      const top = items[0] || {};
+      const strongCount = items.filter(item => Number(item.score || 0) >= 4.5).length;
+      const weakCount = items.filter(item => Number(item.score || 0) < 3).length;
+      const summary = strongCount > 0
+        ? `当前命中里有 ${strongCount} 条高相关知识，可优先用来解释当前问题；第一条更像主支撑条目。`
+        : '当前命中主要是中低相关条目，说明虽然能找到相近知识，但场景支撑还不够强。';
+      const recommendation = weakCount > 0
+        ? `有 ${weakCount} 条命中偏弱，建议后续优先补更贴近当前场景的知识条目和操作步骤。`
+        : `当前命中整体较稳，后续可继续补来源说明和更细的场景边界。`;
+      return { summary, recommendation, top };
+    }
+
+    function metricValue(metrics, label) {
+      return (metrics || []).find(item => item.label === label)?.value || '';
+    }
+
+    function buildDashboardSummary(data) {
+      const metrics = data.metrics || [];
+      const blockRate = metricValue(metrics, '清单阻断率');
+      const trainingPass = metricValue(metrics, '培训通过率');
+      const openIncidents = metricValue(metrics, '未闭环复盘数');
+      const overdueCount = metricValue(metrics, '逾期整改数');
+      const lowConfidenceCount = (data.low_confidence_top || []).reduce((sum, item) => sum + Number(item.count || 0), 0);
+      const latestRisk = (data.recent_high_risk_scenarios || [])[0];
+
+      const main = blockRate
+        ? `当前管理端最明显的结论是：高风险场景阻断占比为 ${blockRate}，系统更偏“先拦住风险，再允许开工”。`
+        : '当前管理端更适合用来看阻断、培训和复盘是否形成闭环。';
+
+      let focus = '当前没有明显的高优先级告警，可继续补演示数据让看板更饱满。';
+      if (lowConfidenceCount > 0) {
+        focus = `当前最需要优先关注的是低置信问题积压，共 ${lowConfidenceCount} 条，说明知识库仍需继续补强。`;
+      } else if (Number(openIncidents || 0) > 0) {
+        focus = `当前仍有 ${openIncidents} 条未闭环复盘，说明系统不仅能发现问题，也能持续追踪整改状态。`;
+      } else if (latestRisk) {
+        focus = `最近高风险场景以“${latestRisk.scenario}”为代表，当前口径更适合强调高风险实验默认先阻断。`;
+      }
+
+      const pitch = `答辩时可以直接说：系统不仅能答和拦，还能把培训、低置信补强和复盘状态沉淀成管理看板；当前培训通过率 ${trainingPass || '0%'}，未闭环复盘 ${openIncidents || '0'} 条，逾期整改 ${overdueCount || '0'} 条。`;
+
+      return { main, focus, pitch };
     }
 
     function dashboardFilters() {
@@ -599,17 +2608,35 @@
     function renderCitations(citations) {
       citationBox.innerHTML = '';
       if (!Array.isArray(citations) || citations.length === 0) {
-        citationBox.innerHTML = '<p class="muted">当前问题没有匹配到可展示的来源条目。</p>';
+        citationBox.innerHTML = '<div class="panel">当前问题没有匹配到可展示的来源条目。</div>';
         return;
       }
-      citationBox.innerHTML = citations.map((item, index) => `
-        <div class="citation-item">
-          <div><strong>${index + 1}. [${item.kb_id || '-'}] ${item.title || '未命名条目'}</strong></div>
-          <div class="muted">来源：${item.source_title || '-'} | 机构：${item.source_org || '-'} | 风险：${displayRisk(item.risk_level)}</div>
+      citationBox.innerHTML = `<div class="citation-list">${citations.map((item, index) => `
+        <article class="citation-card">
+          <div class="citation-card-header">
+            <div>
+              <strong>${index + 1}. [${item.kb_id || '-'}] ${item.title || '未命名条目'}</strong>
+            </div>
+            <span class="citation-badge">${displayRisk(item.risk_level)}风险</span>
+          </div>
+          <div class="citation-meta-grid">
+            <div class="citation-meta-item">
+              <span>来源标题</span>
+              <strong>${escapeHtml(item.source_title || '-')}</strong>
+            </div>
+            <div class="citation-meta-item">
+              <span>来源机构</span>
+              <strong>${escapeHtml(item.source_org || '-')}</strong>
+            </div>
+            <div class="citation-meta-item">
+              <span>引用编号</span>
+              <strong>${escapeHtml(item.kb_id || '-')}</strong>
+            </div>
+          </div>
           <div>${item.snippet || '暂无摘要片段。'}</div>
-          ${item.source_url ? `<a href="${item.source_url}" target="_blank" rel="noopener noreferrer">${item.source_url}</a>` : ''}
-        </div>
-      `).join('');
+          ${item.source_url ? `<div style="margin-top:10px;"><a href="${item.source_url}" target="_blank" rel="noopener noreferrer">${item.source_url}</a></div>` : ''}
+        </article>
+      `).join('')}</div>`;
     }
 
     function renderRiskPanel(data) {
@@ -634,8 +2661,9 @@
         lowConfidenceAlert.textContent = '';
         return;
       }
+      const message = formatLowConfidenceReason(reason);
       lowConfidenceAlert.style.display = 'block';
-      lowConfidenceAlert.textContent = `低置信提醒：${reason || '当前检索支撑还不够充分，建议后续补强知识条目。'}`;
+      lowConfidenceAlert.textContent = `低置信提醒：${message.title}。${message.detail}`;
     }
 
     async function postJson(url, payload) {
@@ -680,43 +2708,60 @@
     async function ask() {
       const question = questionInput.value.trim();
       if (!question) return;
-      sendBtn.disabled = true;
+      setButtonBusy(sendBtn, true, '运行问答', '问答生成中...');
+      result.classList.add('is-loading');
+      result.textContent = '正在生成正式问答结果，请稍候...';
+      routeInfo.textContent = '';
       try {
         const data = await postJson('/api/chat', { mode: getMode(), question });
+        setActiveResultPanel('answer');
         renderMarkdown(result, data.answer || '');
         routeInfo.textContent = `链路=${data.model || '-'} | 决策=${data.decision || '-'} | 规则=${data.matched_rule_id || '-'} | 风险=${displayRisk(data.risk_level)}`;
         showLowConfidence(data.low_confidence, data.low_confidence_reason);
         renderCitations(data.citations || []);
+        announce(`问答已完成，当前链路为 ${data.model || '未知链路'}。`);
       } catch (err) {
         result.textContent = err.message;
+        announce(`问答失败：${err.message}`);
       } finally {
-        sendBtn.disabled = false;
+        result.classList.remove('is-loading');
+        setButtonBusy(sendBtn, false, '运行问答');
       }
     }
 
     async function assessRisk() {
       const scenario = questionInput.value.trim();
       if (!scenario) return;
-      riskBtn.disabled = true;
+      setButtonBusy(riskBtn, true, '风险评估', '评估中...');
+      riskBox.style.display = 'block';
+      riskBox.classList.add('is-loading');
+      riskBox.innerHTML = '正在生成风险评估结果，请稍候...';
       try {
         const data = await postJson('/api/risk_assess', { scenario });
+        setActiveResultPanel('risk');
         result.textContent = '风险评估已完成。';
         routeInfo.textContent = '决策=structured_risk_assessment';
         showLowConfidence(data.low_confidence, data.low_confidence_reason);
         renderRiskPanel(data);
         renderCitations(data.citations || []);
+        announce('风险评估已完成。');
       } catch (err) {
         result.textContent = err.message;
+        riskBox.textContent = err.message;
+        announce(`风险评估失败：${err.message}`);
       } finally {
-        riskBtn.disabled = false;
+        riskBox.classList.remove('is-loading');
+        setButtonBusy(riskBtn, false, '风险评估');
       }
     }
 
     function renderChecklist(template) {
+      setActiveView('gate');
+      syncScenarioPreview();
       checklistCache = template.checklist || [];
       checklistMeta.textContent = `风险=${displayRisk(template.risk_level)} (${template.risk_score}/5) | 危险源=${(template.key_hazards || []).join(', ') || '暂无'}`;
       checklistItems.innerHTML = checklistCache.map(item => `
-        <label class="checklist-item">
+        <label class="checklist-item" data-checklist-row="${item.id}">
           <input type="checkbox" data-checklist-id="${item.id}" />
           <div>
             <strong>${item.label}</strong>${item.critical ? '<span class="critical-tag">关键项</span>' : ''}
@@ -727,20 +2772,58 @@
       checklistStatus.className = 'alert warn';
       checklistStatus.textContent = '';
       submitChecklistBtn.disabled = false;
+      document.querySelectorAll('[data-checklist-id]').forEach((checkbox) => {
+        checkbox.addEventListener('change', updateGateProgress);
+      });
+      updateGateProgress();
       renderCitations(template.citations || []);
+    }
+
+    function focusFirstUncheckedCritical() {
+      const target = checklistCache.find(item => item.critical && !document.querySelector(`[data-checklist-id="${item.id}"]`)?.checked);
+      if (!target) {
+        announce('当前没有未完成的关键项。');
+        return;
+      }
+      const row = document.querySelector(`[data-checklist-row="${target.id}"]`);
+      const input = document.querySelector(`[data-checklist-id="${target.id}"]`);
+      row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      input?.focus();
+      announce('已定位到第一个未完成关键项。');
+    }
+
+    function checkAllNonCritical() {
+      let updated = 0;
+      checklistCache.forEach((item) => {
+        if (!item.critical) {
+          const input = document.querySelector(`[data-checklist-id="${item.id}"]`);
+          if (input && !input.checked) {
+            input.checked = true;
+            updated += 1;
+          }
+        }
+      });
+      updateGateProgress();
+      announce(updated ? `已自动勾选 ${updated} 个非关键项。` : '当前没有可自动勾选的非关键项。');
     }
 
     async function generateChecklist() {
       const scenario = questionInput.value.trim();
       if (!scenario) return;
-      checklistBtn.disabled = true;
+      setButtonBusy(checklistBtn, true, '生成开工清单', '清单生成中...');
+      checklistItems.classList.add('is-loading');
+      checklistItems.textContent = '正在根据当前问题生成准入检查清单...';
+      if (gateReadinessText) gateReadinessText.textContent = '正在准备准入判断条件';
       try {
         const data = await postJson('/api/checklist/template', { scenario });
         renderChecklist(data);
+        announce('已生成开工前检查清单。');
       } catch (err) {
         checklistItems.textContent = err.message;
+        announce(`清单生成失败：${err.message}`);
       } finally {
-        checklistBtn.disabled = false;
+        checklistItems.classList.remove('is-loading');
+        setButtonBusy(checklistBtn, false, '生成开工清单');
       }
     }
 
@@ -754,6 +2837,7 @@
         note: ''
       }));
       try {
+        setButtonBusy(submitChecklistBtn, true, '提交清单', '提交中...');
         const data = await postJson('/api/checklist/submit', {
           scenario,
           operator: document.getElementById('operatorName').value || '演示用户',
@@ -763,11 +2847,16 @@
         checklistStatus.style.display = 'block';
         checklistStatus.className = `alert ${data.allow_start ? 'ok' : 'bad'}`;
         checklistStatus.innerHTML = `<strong>${data.allow_start ? '清单通过，可进入开工准备' : '清单阻断，暂不可开工'}</strong><br>${(data.next_actions || []).join('<br>')}${data.blocking_reasons.length ? `<br><br>阻断原因：${data.blocking_reasons.join(' | ')}` : ''}`;
+        if (gateReadinessText) gateReadinessText.textContent = data.allow_start ? '当前允许进入开工准备' : '当前已被阻断，暂不可开工';
         loadAdminDashboard();
+        announce(data.allow_start ? '清单已通过。' : '清单已阻断，当前不可开工。');
       } catch (err) {
         checklistStatus.style.display = 'block';
         checklistStatus.className = 'alert bad';
         checklistStatus.textContent = err.message;
+        announce(`清单提交失败：${err.message}`);
+      } finally {
+        setButtonBusy(submitChecklistBtn, false, '提交清单');
       }
     }
 
@@ -794,9 +2883,11 @@
       const resp = await fetch(`/api/emergency/match?q=${encodeURIComponent(scenario)}`);
       const data = await resp.json();
       if (!resp.ok || !data.card) {
+        setActiveResultPanel('emergency');
         emergencyMatch.textContent = data.detail || '暂时没有匹配到合适的应急卡片。';
         return;
       }
+      setActiveResultPanel('emergency');
       emergencyMatch.innerHTML = `<strong>匹配卡片：</strong>${data.card.title}<br><strong>匹配度：</strong>${data.confidence}<ul>${(data.card.immediate_actions || []).map(v => `<li>${v}</li>`).join('')}</ul>`;
     }
 
@@ -819,17 +2910,22 @@
     }
 
     async function startQuiz() {
-      startQuizBtn.disabled = true;
+      setButtonBusy(startQuizBtn, true, '开始抽题', '抽题中...');
+      quizBox.classList.add('is-loading');
+      quizBox.textContent = '正在生成演示题目，请稍候...';
       try {
         const limit = Math.max(3, Math.min(10, Number(document.getElementById('quizLimit').value || 5)));
         const resp = await fetch(`/api/training/questions?limit=${limit}`);
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.detail || '题目加载失败。');
         renderQuiz(data);
+        announce('培训题目已生成。');
       } catch (err) {
         quizBox.textContent = err.message;
+        announce(`抽题失败：${err.message}`);
       } finally {
-        startQuizBtn.disabled = false;
+        quizBox.classList.remove('is-loading');
+        setButtonBusy(startQuizBtn, false, '开始抽题');
       }
     }
 
@@ -840,6 +2936,7 @@
         return { question_id: question.id, selected_indices: Array.from(nodes).map(node => Number(node.value)) };
       });
       try {
+        setButtonBusy(submitQuizBtn, true, '提交评分', '评分中...');
         const data = await postJson('/api/training/submit', {
           session_id: quizSession.session_id,
           participant: document.getElementById('participantName').value || '演示用户',
@@ -852,8 +2949,128 @@
           ${(data.review || []).map(item => `<div class="review-item"><strong>${item.correct ? '答对' : '需复习'}：</strong>${item.prompt}<br><span class="muted">${item.explanation}</span></div>`).join('')}
         `;
         await Promise.all([loadTrainingStats(), loadAdminDashboard()]);
+        announce(data.passed ? '培训评分已完成，当前结果为通过。' : '培训评分已完成，当前结果为需要复训。');
       } catch (err) {
         quizResult.textContent = err.message;
+        announce(`提交评分失败：${err.message}`);
+      } finally {
+        setButtonBusy(submitQuizBtn, false, '提交评分');
+      }
+    }
+
+    function renderWorkspaceStatusItem(label, value, detail, tone = '') {
+      const toneClass = tone ? ` ${tone}` : '';
+      return `
+        <div class="status-item">
+          <div>
+            <strong>${escapeHtml(label)}</strong>
+            <span>${escapeHtml(detail || '')}</span>
+          </div>
+          <div class="status-badge${toneClass}">${escapeHtml(value)}</div>
+        </div>
+      `;
+    }
+
+    function renderTagCloud(target, items, emptyText) {
+      if (!target) return;
+      if (!Array.isArray(items) || items.length === 0) {
+        target.innerHTML = `<span class="muted">${emptyText}</span>`;
+        return;
+      }
+      target.innerHTML = items.map(item => `<span class="tag-chip">${escapeHtml(item.label)} <strong>${escapeHtml(item.count)}</strong></span>`).join('');
+    }
+
+    async function loadWorkspaceStatus() {
+      setButtonBusy(refreshWorkspaceBtn, true, '刷新工作区状态', '刷新中...');
+      try {
+        const resp = await fetch('/api/workspace/status');
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || '工作区状态加载失败。');
+
+        const difyTone = !data.dify_app_key_configured ? 'warn' : (String(data.dify_connection_status || '').startsWith('reachable') ? '' : 'bad');
+        const fallbackTone = data.low_confidence_queue_count > 0 ? 'warn' : '';
+
+        workspaceStatusList.innerHTML = [
+          renderWorkspaceStatusItem('本地 Dify 配置', data.dify_app_key_configured ? '已配置' : '未配置', `${data.dify_base_url || '-'} | timeout=${data.dify_timeout || '-'}s`, difyTone),
+          renderWorkspaceStatusItem('Dify 连接状态', data.dify_connection_status || '-', '用于判断当前本地问答主链路是否可直连。', difyTone),
+          renderWorkspaceStatusItem('本地知识条目', `${data.kb_rows || 0} 条`, `正式导入口径 ${data.kb_imported || 0} 条`, ''),
+          renderWorkspaceStatusItem('待补强低置信问题', `${data.low_confidence_queue_count || 0} 条`, '低置信积压越多，越说明知识库还要继续补。', fallbackTone),
+        ].join('');
+
+        renderTagCloud(workspaceTopCategories, data.top_categories || [], '当前没有可展示的分类统计。');
+        renderTagCloud(workspaceTopHazards, data.top_hazards || [], '当前没有可展示的危险源统计。');
+      } catch (err) {
+        workspaceStatusList.innerHTML = `<div class="status-item"><div><strong>状态加载失败</strong><span>${escapeHtml(err.message)}</span></div><div class="status-badge bad">失败</div></div>`;
+        renderTagCloud(workspaceTopCategories, [], '分类统计加载失败。');
+        renderTagCloud(workspaceTopHazards, [], '危险源统计加载失败。');
+      } finally {
+        setButtonBusy(refreshWorkspaceBtn, false, '刷新工作区状态');
+      }
+    }
+
+    async function inspectKnowledgeHits() {
+      const scenario = questionInput.value.trim();
+      if (!scenario) {
+        workspaceSearchHint.textContent = '请先在“智能问答”页输入一个实验室场景，再执行抽查。';
+        workspaceSearchSummary.style.display = 'none';
+        workspaceSearchResults.innerHTML = '<div class="panel">当前没有问题可用于知识命中抽查。</div>';
+        setActiveView('workspace');
+        return;
+      }
+      workspaceSearchBtn.disabled = true;
+      setButtonBusy(workspaceSearchBtn, true, '基于当前问题抽查知识命中', '抽查中...');
+      setActiveView('workspace');
+      workspaceSearchHint.textContent = '正在抽查当前问题的知识命中情况...';
+      workspaceSearchSummary.style.display = 'none';
+      try {
+        const resp = await fetch(`/api/search?q=${encodeURIComponent(scenario)}&top_k=5`);
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || '知识命中抽查失败。');
+        const citations = data.citations || [];
+        const summary = summarizeKnowledgeHits(citations);
+        workspaceSearchHint.textContent = `当前问题共命中 ${data.count || 0} 条候选知识。`;
+        workspaceSearchSummary.style.display = 'grid';
+        workspaceSearchSummaryText.textContent = summary.summary;
+        workspaceSearchRecommendation.textContent = summary.recommendation;
+        workspaceSearchResults.innerHTML = citations.length
+          ? citations.map((item, index) => {
+              const explain = explainKnowledgeHit(item, scenario);
+              return `
+                <div class="knowledge-item">
+                  <strong>${index + 1}. [${escapeHtml(item.kb_id || '-')} ] ${escapeHtml(item.title || '未命名条目')}</strong>
+                  <div class="knowledge-meta">
+                    <span class="knowledge-meta-badge">${escapeHtml(explain.scoreLabel)}</span>
+                    <span class="knowledge-meta-badge">风险 ${escapeHtml(displayRisk(item.risk_level))}</span>
+                    <span class="knowledge-meta-badge">score ${escapeHtml(item.score)}</span>
+                  </div>
+                  <div class="muted">来源=${escapeHtml(item.source_title || '-')} | 机构=${escapeHtml(item.source_org || '-')}</div>
+                  <div style="margin-top: 8px;">${escapeHtml(item.snippet || '暂无摘要')}</div>
+                  <div class="knowledge-explain">
+                    <div class="knowledge-explain-row">
+                      <strong>为什么会命中这条</strong>
+                      <span>${escapeHtml(explain.whyHit)}</span>
+                    </div>
+                    <div class="knowledge-explain-row">
+                      <strong>当前相关性判断</strong>
+                      <span>${escapeHtml(explain.scoreReason)}</span>
+                    </div>
+                    <div class="knowledge-explain-row">
+                      <strong>下一步怎么用</strong>
+                      <span>${escapeHtml(explain.nextStep)}</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')
+          : '<div class="panel">没有命中候选条目，说明该问题需要优先补知识库。</div>';
+        announce(`知识命中抽查完成，共命中 ${data.count || 0} 条候选知识。`);
+      } catch (err) {
+        workspaceSearchHint.textContent = err.message;
+        workspaceSearchSummary.style.display = 'none';
+        workspaceSearchResults.innerHTML = '<div class="panel">知识命中抽查失败。</div>';
+        announce(`知识命中抽查失败：${err.message}`);
+      } finally {
+        setButtonBusy(workspaceSearchBtn, false, '基于当前问题抽查知识命中');
       }
     }
 
@@ -883,8 +3100,15 @@
         adminLowConfidence.textContent = '低置信问题列表加载失败。';
         adminHighRisk.textContent = '高风险场景列表加载失败。';
         adminIncidentSummary.textContent = '事故汇总加载失败。';
+        dashboardSummaryMain.textContent = '当前无法生成管理端一句话结论。';
+        dashboardSummaryFocus.textContent = '请先确认看板接口是否正常返回。';
+        dashboardSummaryPitch.textContent = '待看板恢复后再更新展示口径。';
         return;
       }
+      const summary = buildDashboardSummary(data);
+      dashboardSummaryMain.textContent = summary.main;
+      dashboardSummaryFocus.textContent = summary.focus;
+      dashboardSummaryPitch.textContent = summary.pitch;
       adminMetrics.innerHTML = (data.metrics || []).map(item => `
         <div class="stats-card">
           <div>${escapeHtml(item.label)}</div>
@@ -893,7 +3117,10 @@
         </div>
       `).join('');
       adminLowConfidence.innerHTML = (data.low_confidence_top || []).length
-        ? `<ul>${data.low_confidence_top.map(item => `<li>${escapeHtml(item.label)} (${item.count})</li>`).join('')}</ul>`
+        ? `<ul>${data.low_confidence_top.map(item => {
+            const mapped = formatLowConfidenceReason(item.label);
+            return `<li><strong>${escapeHtml(mapped.title)}</strong><br><span class="muted">${escapeHtml(mapped.detail)}</span><br><span class="muted">累计 ${escapeHtml(item.count)} 条</span></li>`;
+          }).join('')}</ul>`
         : '暂时没有低置信问题。';
       adminHighRisk.innerHTML = (data.recent_high_risk_scenarios || []).length
         ? `<ul>${data.recent_high_risk_scenarios.map(item => `<li>${escapeHtml(item.submitted_at)} | ${displayRisk(item.risk_level)} | ${item.allow_start ? '通过' : '阻断'} | ${escapeHtml(item.scenario)}</li>`).join('')}</ul>`
@@ -943,7 +3170,7 @@
     }
 
     async function createIncident() {
-      createIncidentBtn.disabled = true;
+      setButtonBusy(createIncidentBtn, true, '创建复盘记录', '创建中...');
       try {
         const data = await postJson('/api/incidents', {
           reporter: document.getElementById('incidentReporter').value || '演示用户',
@@ -961,12 +3188,14 @@
         incidentCreateStatus.className = 'alert ok';
         incidentCreateStatus.textContent = `已创建复盘记录：${data.incident_id}`;
         await Promise.all([loadIncidents(), loadAdminDashboard()]);
+        announce(`已创建复盘记录 ${data.incident_id}。`);
       } catch (err) {
         incidentCreateStatus.style.display = 'block';
         incidentCreateStatus.className = 'alert bad';
         incidentCreateStatus.textContent = err.message;
+        announce(`创建复盘记录失败：${err.message}`);
       } finally {
-        createIncidentBtn.disabled = false;
+        setButtonBusy(createIncidentBtn, false, '创建复盘记录');
       }
     }
 
@@ -980,6 +3209,7 @@
           corrective_actions: splitMultiline(document.getElementById(`actions-${incidentId}`).value)
         });
         await Promise.all([loadIncidents(), loadAdminDashboard()]);
+        announce('复盘记录已更新。');
       } catch (err) {
         alert(err.message);
       }
@@ -1003,6 +3233,44 @@
       URL.revokeObjectURL(link.href);
     }
 
+    questionInput.addEventListener('input', syncScenarioPreview);
+    navButtons.forEach((button) => {
+      button.addEventListener('click', () => setActiveView(button.dataset.viewTarget || 'overview'));
+    });
+    resultTabs.forEach((button) => {
+      button.addEventListener('click', () => setActiveResultPanel(button.dataset.resultTarget || 'answer'));
+    });
+    viewJumpButtons.forEach((button) => {
+      button.addEventListener('click', () => setActiveView(button.dataset.viewJump || 'overview'));
+    });
+    if (gotoAssistantBtn) {
+      gotoAssistantBtn.addEventListener('click', () => setActiveView('assistant'));
+    }
+    if (generateChecklistInlineBtn) {
+      generateChecklistInlineBtn.addEventListener('click', generateChecklist);
+    }
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', () => {
+        setSidebarCollapsed(!sidebar.classList.contains('is-collapsed'));
+      });
+    }
+    if (backToTopBtn) {
+      backToTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        announce('已回到页面顶部。');
+      });
+    }
+    if (focusCriticalBtn) {
+      focusCriticalBtn.addEventListener('click', focusFirstUncheckedCritical);
+    }
+    if (checkNonCriticalBtn) {
+      checkNonCriticalBtn.addEventListener('click', checkAllNonCritical);
+    }
+    if (criticalOnlyToggle) {
+      criticalOnlyToggle.addEventListener('change', updateGateProgress);
+    }
+    window.addEventListener('resize', syncSidebarForViewport);
+
     sendBtn.addEventListener('click', ask);
     riskBtn.addEventListener('click', assessRisk);
     checklistBtn.addEventListener('click', generateChecklist);
@@ -1011,6 +3279,8 @@
     startQuizBtn.addEventListener('click', startQuiz);
     submitQuizBtn.addEventListener('click', submitQuiz);
     createIncidentBtn.addEventListener('click', createIncident);
+    refreshWorkspaceBtn.addEventListener('click', loadWorkspaceStatus);
+    workspaceSearchBtn.addEventListener('click', inspectKnowledgeHits);
     refreshDashboardBtn.addEventListener('click', loadAdminDashboard);
     refreshIncidentsBtn.addEventListener('click', loadIncidents);
     exportCsvBtn.addEventListener('click', async () => {
@@ -1036,11 +3306,33 @@
       });
     });
 
+    setActiveView('overview');
+    syncSidebarForViewport();
+    syncScenarioPreview();
     loadEmergencyCards();
+    loadWorkspaceStatus();
     loadTrainingStats();
     loadAdminDashboard();
     loadIncidents();
     loadDemoMeta();
+  
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -34,3 +34,11 @@ _server_diag.sh
 # Server-side runtime env files (keep only example templates in git)
 deploy/env/*.env
 !deploy/env/*.example.env
+
+# Local generated/backups
+.venv312/
+*.bak_*
+output/
+logs/
+.pytest_cache/
+local_env/

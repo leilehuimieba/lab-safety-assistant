@@ -15,7 +15,7 @@ from uuid import uuid4
 
 import requests
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, PlainTextResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 try:
@@ -526,6 +526,24 @@ class DemoMetaResponse(BaseModel):
     runtime_model: str
 
 
+class WorkspaceStatusItem(BaseModel):
+    label: str
+    count: int
+
+
+class WorkspaceStatusResponse(BaseModel):
+    dify_enabled: bool
+    dify_base_url: str
+    dify_timeout: float
+    dify_app_key_configured: bool
+    dify_connection_status: str
+    kb_rows: int
+    kb_imported: int
+    low_confidence_queue_count: int
+    top_categories: list[WorkspaceStatusItem] = Field(default_factory=list)
+    top_hazards: list[WorkspaceStatusItem] = Field(default_factory=list)
+
+
 class IncidentCreateRequest(BaseModel):
     reporter: str = Field(default="anonymous", max_length=120)
     title: str = Field(min_length=1, max_length=200)
@@ -680,6 +698,8 @@ def load_kb_entries() -> list[dict[str, str]]:
                     "source_org": (row.get("source_org") or "").strip(),
                     "source_url": (row.get("source_url") or "").strip(),
                     "risk_level": (row.get("risk_level") or "").strip(),
+                    "category": (row.get("category") or "").strip(),
+                    "subcategory": (row.get("subcategory") or "").strip(),
                     "hazard_types": hazard_types,
                     "answer": answer,
                     "steps": steps,
@@ -979,8 +999,32 @@ def append_low_confidence_followup_notice(answer: str) -> str:
     return f"{text}\n\n{note}"
 
 
+
+
+def fix_mojibake_text(value: str) -> str:
+    """Repair UTF-8 text that was accidentally decoded as GBK/Latin-1."""
+    text = value or ""
+    if not text:
+        return text
+    # Common path on Windows: UTF-8 bytes were decoded as GBK, producing Àû/½á/Çë-like text.
+    if any(marker in text for marker in ["½", "Ç", "Ê", "Ã", "µ", "»", "¼", "£"]):
+        try:
+            repaired = text.encode("gbk", errors="strict").decode("utf-8", errors="strict")
+            if repaired:
+                return repaired
+        except UnicodeError:
+            pass
+    # Common path: UTF-8 bytes were decoded as Latin-1, producing ç/è/å-like text.
+    if any(marker in text for marker in ["Ã", "Â", "ç", "è", "å"]):
+        try:
+            repaired = text.encode("latin-1", errors="strict").decode("utf-8", errors="strict")
+            if repaired:
+                return repaired
+        except UnicodeError:
+            pass
+    return text
 def sanitize_llm_output(text: str) -> str:
-    cleaned = text or ""
+    cleaned = fix_mojibake_text(text or "")
     cleaned = re.sub(r"<think\b[^>]*>.*?</think>", "", cleaned, flags=re.IGNORECASE | re.DOTALL)
     cleaned = re.sub(r"```(?:think|thought|reasoning)[^\n]*\n.*?```", "", cleaned, flags=re.IGNORECASE | re.DOTALL)
     cleaned = cleaned.strip()
@@ -1023,19 +1067,77 @@ def get_demo_meta() -> DemoMetaResponse:
     )
 
 
+def summarize_top_values(rows: list[dict[str, str]], key: str, *, limit: int = 6, splitter: str = ";") -> list[WorkspaceStatusItem]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        raw = str(row.get(key) or "").strip()
+        if not raw:
+            continue
+        if splitter:
+            parts = [item.strip() for item in raw.split(splitter) if item.strip()]
+        else:
+            parts = [raw]
+        for part in parts:
+            counts[part] = counts.get(part, 0) + 1
+    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:limit]
+    return [WorkspaceStatusItem(label=label, count=count) for label, count in ranked]
+
+
+def build_workspace_status() -> WorkspaceStatusResponse:
+    rows = get_kb_entries()
+    app_key = os.getenv("DIFY_APP_API_KEY", "").strip()
+    timeout = float(os.getenv("DIFY_TIMEOUT", str(DIFY_DEFAULT_TIMEOUT)) or str(DIFY_DEFAULT_TIMEOUT))
+    dify_status = "unconfigured"
+    if app_key:
+        endpoint = f"{resolve_dify_api_base()}/parameters"
+        try:
+            resp = requests.get(endpoint, headers={"Authorization": f"Bearer {app_key}"}, timeout=(5, 8))
+            dify_status = "reachable" if resp.status_code < 400 else f"http_{resp.status_code}"
+        except requests.RequestException as exc:
+            dify_status = f"unreachable: {exc.__class__.__name__}"
+
+    return WorkspaceStatusResponse(
+        dify_enabled=bool(app_key),
+        dify_base_url=resolve_dify_api_base(),
+        dify_timeout=timeout,
+        dify_app_key_configured=bool(app_key),
+        dify_connection_status=dify_status,
+        kb_rows=len(rows),
+        kb_imported=KB_IMPORT_SUCCESS_COUNT,
+        low_confidence_queue_count=len(read_csv_rows(LOW_CONFIDENCE_QUEUE_FILE)),
+        top_categories=summarize_top_values(rows, "category", limit=6, splitter=""),
+        top_hazards=summarize_top_values(rows, "hazard_types", limit=8, splitter=";"),
+    )
+
+
+def iter_sse_payloads(response: requests.Response) -> list[str]:
+    payloads: list[str] = []
+    encoding = (response.encoding or "").strip() or "utf-8"
+    if encoding.lower() in {"iso-8859-1", "latin-1", "latin1"}:
+        encoding = (getattr(response, "apparent_encoding", "") or "").strip() or "utf-8"
+    if str(response.headers.get("Content-Type", "") or "").lower().startswith("text/event-stream"):
+        encoding = "utf-8"
+    for raw in response.iter_lines(decode_unicode=False):
+        if not raw:
+            continue
+        if isinstance(raw, bytes):
+            line = raw.decode(encoding, errors="replace").strip()
+        else:
+            line = str(raw).strip()
+        if not line.startswith("data:"):
+            continue
+        payload = line[5:].lstrip()
+        if not payload or payload == "[DONE]":
+            continue
+        payloads.append(payload)
+    return payloads
+
+
 def parse_sse_answer(response: requests.Response) -> tuple[str, str]:
     answer_parts: list[str] = []
     workflow_status = ""
     workflow_error = ""
-    for raw in response.iter_lines(decode_unicode=True):
-        if not raw:
-            continue
-        line = raw.strip()
-        if not line.startswith("data: "):
-            continue
-        payload = line[6:].strip()
-        if not payload or payload == "[DONE]":
-            continue
+    for payload in iter_sse_payloads(response):
         try:
             obj = json.loads(payload)
         except Exception:
@@ -1111,6 +1213,24 @@ def call_dify_lab(question: str) -> tuple[str, str]:
     raise HTTPException(status_code=502, detail=f"dify_empty_answer: {status_text or 'unknown'}")
 
 
+def parse_openai_compat_sse(response: requests.Response) -> str:
+    parts: list[str] = []
+    for payload in iter_sse_payloads(response):
+        try:
+            obj = json.loads(payload)
+        except Exception:
+            continue
+        choices = obj.get("choices") or []
+        if not choices or not isinstance(choices[0], dict):
+            continue
+        delta = choices[0].get("delta") or {}
+        if isinstance(delta, dict):
+            content = delta.get("content")
+            if isinstance(content, str) and content:
+                parts.append(content)
+    return "".join(parts).strip()
+
+
 def call_upstream(mode: str, question: str, citations: list[Citation], guardrail: str = "") -> tuple[str, str]:
     env = {
         "base_url": os.getenv("OPENAI_BASE_URL", DEFAULT_BASE_URL).strip(),
@@ -1142,16 +1262,35 @@ def call_upstream(mode: str, question: str, citations: list[Citation], guardrail
                 {"role": "user", "content": build_user_message(question, citations)},
             ],
             "temperature": 0.2,
+            "stream": True,
         }
         try:
-            response = requests.post(endpoint, headers=headers, json=payload, timeout=env["timeout"])
+            response = requests.post(
+                endpoint,
+                headers=headers,
+                json=payload,
+                timeout=(20, env["timeout"]),
+                stream=True,
+            )
         except requests.RequestException as exc:
             last_error = str(exc)
             continue
         if response.status_code >= 400:
             last_error = f"HTTP {response.status_code}: {response.text[:200]}"
+            response.close()
             continue
-        data = response.json()
+        content_type = str(response.headers.get("Content-Type", "") or "").lower()
+        if "text/event-stream" in content_type:
+            content = parse_openai_compat_sse(response)
+            response.close()
+            if content:
+                return sanitize_llm_output(content), model
+            last_error = "empty_stream_response"
+            continue
+        try:
+            data = response.json()
+        finally:
+            response.close()
         choices = data.get("choices") or []
         if choices and isinstance(choices[0], dict):
             message = choices[0].get("message") or {}
@@ -1856,7 +1995,7 @@ def load_admin_dashboard(days: int = 30, risk_level: str = "", incident_status: 
     )
 
 
-app = FastAPI(title="Lab Safety Assistant Demo", version="0.5.0")
+app = FastAPI(title="Lab Safety Assistant Demo", version="0.5.0", default_response_class=JSONResponse)
 
 
 @app.get("/")
@@ -2141,6 +2280,11 @@ def admin_weekly_report(days: int = 7, risk_level: str = "", incident_status: st
     )
 
 
+@app.get("/api/workspace/status", response_model=WorkspaceStatusResponse)
+def workspace_status() -> WorkspaceStatusResponse:
+    return build_workspace_status()
+
+
 @app.get("/api/incidents", response_model=list[IncidentRecord])
 def incidents(status: str = "", only_overdue: bool = False) -> list[IncidentRecord]:
     rows = load_incident_records()
@@ -2170,3 +2314,5 @@ def search(q: str, top_k: int = 5) -> dict[str, Any]:
     top_k = max(1, min(10, int(top_k)))
     citations = retrieve_citations(query, top_k=top_k)
     return {"query": query, "count": len(citations), "citations": [item.model_dump() for item in citations]}
+
+
