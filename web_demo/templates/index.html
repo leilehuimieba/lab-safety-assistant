@@ -1663,6 +1663,210 @@
     }
     .home-hero h3 { margin: 0; font-size: 38px; letter-spacing: -0.04em; }
     .home-hero p { margin: 12px 0 0; color: rgba(255,255,255,.86); font-size: 17px; max-width: 720px; }
+
+    .role-switch {
+      margin: 14px 0 18px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 18px;
+      background: rgba(255,255,255,.08);
+    }
+    .role-switch strong { display:block; font-size: 13px; margin-bottom: 9px; }
+    .role-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .role-btn {
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      border-radius: 999px;
+      padding: 8px 0;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .role-btn.is-active { background: #fff; color: #14324a; font-weight: 800; }
+    .role-hint {
+      margin-top: 10px;
+      color: rgba(255,255,255,.76);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+
+    .teacher-workbench-head {
+      display: none;
+      grid-column: 1 / -1;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #7c2d12;
+    }
+    .teacher-workbench-head.is-visible { display: flex; }
+    .teacher-workbench-head strong { display: block; color: #7c2d12; }
+    .teacher-workbench-head span { font-size: 13px; color: #9a3412; }
+    .teacher-demo-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .teacher-workbench-head button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      background: #ea580c;
+      color: #fff;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .teacher-workbench-head button.secondary {
+      background: #fff;
+      color: #9a3412;
+      border: 1px solid #fed7aa;
+    }
+
+    .teacher-workbench {
+      display: none;
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .teacher-workbench.is-visible { display: grid; }
+    .teacher-task-card {
+      border-radius: 18px;
+      padding: 18px;
+      border: 1px solid rgba(30, 64, 175, .12);
+      background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+      box-shadow: 0 14px 36px rgba(20, 45, 90, .08);
+    }
+    .teacher-task-card.is-ok {
+      border-color: #bbf7d0;
+      background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+    }
+    .teacher-task-card.is-warn {
+      border-color: #fed7aa;
+      background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%);
+    }
+    .teacher-task-card.is-danger {
+      border-color: #fecaca;
+      background: linear-gradient(180deg, #ffffff 0%, #fef2f2 100%);
+    }
+    .teacher-task-card.is-ok span { background: #dcfce7; color: #166534; }
+    .teacher-task-card.is-warn span { background: #ffedd5; color: #9a3412; }
+    .teacher-task-card.is-danger span { background: #fee2e2; color: #991b1b; }
+    .teacher-task-card span {
+      display: inline-flex;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #2452a3;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .teacher-task-card strong {
+      display: block;
+      margin-top: 12px;
+      font-size: 26px;
+      color: #12243d;
+    }
+    .teacher-task-card p {
+      margin: 8px 0 14px;
+      color: #52657a;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .teacher-card-latest {
+      margin: -2px 0 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #e5edf7;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .teacher-card-latest b { color: #0f2f57; }
+    .teacher-advice {
+      display: none;
+      grid-column: 1 / -1;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: #f8fbff;
+      border: 1px solid #dbeafe;
+      color: #16304f;
+    }
+    .teacher-advice.is-visible { display: block; }
+    .teacher-advice strong { display: block; margin-bottom: 8px; }
+    .teacher-advice ol { margin: 0; padding-left: 20px; line-height: 1.8; }
+    .teacher-demo-entry {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 20px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #123c69 0%, #2452a3 100%);
+      color: #fff;
+      box-shadow: 0 18px 42px rgba(18, 60, 105, .22);
+    }
+    .teacher-demo-entry strong { display: block; font-size: 20px; color: #fff; }
+    .teacher-demo-entry p { margin: 6px 0 0; color: rgba(255,255,255,.82); }
+    .teacher-demo-entry-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .teacher-demo-entry button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 18px;
+      background: #fff;
+      color: #123c69;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .teacher-demo-entry button.secondary {
+      background: rgba(255,255,255,.16);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.35);
+    }
+    .defense-demo-status {
+      margin-top: 8px;
+      color: rgba(255,255,255,.82);
+      font-size: 13px;
+    }
+    .teacher-task-card button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #123c69;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .role-flow {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .role-flow span {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #f5f8ff;
+      color: #234;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
     .one-click-demo {
       min-width: 260px;
       background: #fff !important;
@@ -1734,7 +1938,9 @@
     @media (max-width: 980px) {
       .home-hero { display:block; }
       .one-click-demo { margin-top: 18px; width: 100%; }
-      .entry-grid, .compact-overview, .gate-step-strip { grid-template-columns: 1fr; }
+      .entry-grid, .compact-overview, .gate-step-strip, .role-flow, .teacher-workbench { grid-template-columns: 1fr; }
+      .teacher-workbench-head, .teacher-demo-entry { display: none; align-items: flex-start; }
+      .teacher-workbench-head.is-visible, .teacher-demo-entry { display: grid; }
     }
     .record-actions {
       display: flex;
@@ -1766,6 +1972,17 @@
         </div>
         <h1>实验室安全小助手</h1>
         <p>问答、风险、准入、培训，一页清楚展示。</p>
+      </section>
+
+
+      <section class="role-switch" aria-label="角色模式">
+        <strong>我是谁</strong>
+        <div class="role-options">
+          <button class="role-btn is-active" type="button" data-role="student">学生</button>
+          <button class="role-btn" type="button" data-role="teacher">老师</button>
+          <button class="role-btn" type="button" data-role="admin">管理员</button>
+        </div>
+        <p class="role-hint" id="roleHint">按学生视角：先问清楚，再判断能不能开工。</p>
       </section>
 
       <nav class="sidebar-nav" aria-label="功能导航">
@@ -1818,10 +2035,21 @@
             <strong id="currentScenarioText">还没有输入场景。</strong>
             <p>输入场景后，后续功能会自动沿用。</p>
           </article>
+          <section class="teacher-demo-entry" aria-label="老师演示模式入口">
+            <div>
+              <strong>老师演示模式</strong>
+              <p>答辩时直接进入老师工作台，看审核、风险、培训和处理建议。</p>
+              <div class="defense-demo-status" id="defenseDemoStatus">演示顺序：生成数据 → 看老师工作台 → 导出清单</div>
+            </div>
+            <div class="teacher-demo-entry-actions">
+              <button type="button" id="teacherDemoModeBtn">进入老师演示</button>
+              <button class="secondary" type="button" id="defenseDemoNextBtn">答辩演示下一步</button>
+            </div>
+          </section>
           <article class="overview-card">
             <h3>常用入口</h3>
-            <p>选择一个入口开始。</p>
-            <div class="overview-actions">
+            <p id="roleEntryIntro">选择一个入口开始。</p>
+            <div class="overview-actions" id="roleEntryActions">
               <button class="jump-btn" type="button" data-view-jump="assistant">智能问答</button>
               <button class="jump-btn" type="button" data-view-jump="gate">准入阻断</button>
               <button class="jump-btn" type="button" data-view-jump="workspace">知识库状态</button>
@@ -1830,8 +2058,49 @@
           </article>
           <article class="overview-card">
             <h3>使用建议</h3>
-            <p>推荐：问答 → 风险评估 → 开工检查。</p>
+            <p id="roleFlowText">推荐：问答 → 风险评估 → 开工检查。</p>
+            <div class="role-flow" id="roleFlowSteps">
+              <span>问答</span><span>风险评估</span><span>开工检查</span>
+            </div>
           </article>
+          <section class="teacher-workbench-head" id="teacherWorkbenchHead" aria-label="老师演示数据">
+            <div>
+              <strong>老师工作台演示数据</strong>
+              <span id="teacherSeedStatus">没有真实记录时，可一键生成几条演示记录。</span>
+            </div>
+            <div class="teacher-demo-actions">
+              <button type="button" id="seedTeacherDemoBtn">一键生成演示数据</button>
+              <button class="secondary" type="button" id="clearTeacherDemoBtn">清空演示数据</button>
+              <button class="secondary" type="button" id="exportTeacherReportBtn">导出老师处理清单</button>
+            </div>
+          </section>
+          <section class="teacher-workbench" id="teacherWorkbench" aria-label="老师工作台">
+            <article class="teacher-task-card" id="teacherPendingCard">
+              <span>待审核开工</span>
+              <strong id="teacherPendingCount">加载中</strong>
+              <p id="teacherPendingDesc">正在读取最近的开工记录。</p>
+              <div class="teacher-card-latest" id="teacherPendingLatest"><b>最近：</b>暂无</div>
+              <button type="button" data-view-jump="gate">去审核</button>
+            </article>
+            <article class="teacher-task-card" id="teacherHighRiskCard">
+              <span>高风险提醒</span>
+              <strong id="teacherHighRiskCount">加载中</strong>
+              <p id="teacherHighRiskDesc">正在读取高风险提醒。</p>
+              <div class="teacher-card-latest" id="teacherHighRiskLatest"><b>最近：</b>暂无</div>
+              <button type="button" data-view-jump="training">看提醒</button>
+            </article>
+            <article class="teacher-task-card" id="teacherTrainingCard">
+              <span>未完成培训</span>
+              <strong id="teacherTrainingCount">加载中</strong>
+              <p id="teacherTrainingDesc">正在读取培训记录。</p>
+              <div class="teacher-card-latest" id="teacherTrainingLatest"><b>最近：</b>暂无</div>
+              <button type="button" data-view-jump="training">看名单</button>
+            </article>
+          </section>
+          <section class="teacher-advice" id="teacherAdvice" aria-label="老师处理建议">
+            <strong>处理建议</strong>
+            <ol id="teacherAdviceList"><li>暂无待处理事项。</li></ol>
+          </section>
         </section>
       </section>
 
@@ -2400,9 +2669,40 @@
     const backToTopBtn = document.getElementById('backToTopBtn');
     const oneClickDemoBtn = document.getElementById('oneClickDemoBtn');
     const liveRegion = document.getElementById('liveRegion');
+    const teacherDemoModeBtn = document.getElementById('teacherDemoModeBtn');
+    const defenseDemoNextBtn = document.getElementById('defenseDemoNextBtn');
+    const defenseDemoStatus = document.getElementById('defenseDemoStatus');
+    const roleButtons = document.querySelectorAll('[data-role]');
+    const roleHint = document.getElementById('roleHint');
+    const roleEntryIntro = document.getElementById('roleEntryIntro');
+    const roleEntryActions = document.getElementById('roleEntryActions');
+    const roleFlowText = document.getElementById('roleFlowText');
+    const roleFlowSteps = document.getElementById('roleFlowSteps');
+    const teacherWorkbench = document.getElementById('teacherWorkbench');
+    const teacherWorkbenchHead = document.getElementById('teacherWorkbenchHead');
+    const seedTeacherDemoBtn = document.getElementById('seedTeacherDemoBtn');
+    const clearTeacherDemoBtn = document.getElementById('clearTeacherDemoBtn');
+    const exportTeacherReportBtn = document.getElementById('exportTeacherReportBtn');
+    const teacherSeedStatus = document.getElementById('teacherSeedStatus');
+    const teacherPendingCard = document.getElementById('teacherPendingCard');
+    const teacherPendingCount = document.getElementById('teacherPendingCount');
+    const teacherPendingDesc = document.getElementById('teacherPendingDesc');
+    const teacherPendingLatest = document.getElementById('teacherPendingLatest');
+    const teacherHighRiskCard = document.getElementById('teacherHighRiskCard');
+    const teacherHighRiskCount = document.getElementById('teacherHighRiskCount');
+    const teacherHighRiskDesc = document.getElementById('teacherHighRiskDesc');
+    const teacherHighRiskLatest = document.getElementById('teacherHighRiskLatest');
+    const teacherTrainingCard = document.getElementById('teacherTrainingCard');
+    const teacherTrainingCount = document.getElementById('teacherTrainingCount');
+    const teacherTrainingDesc = document.getElementById('teacherTrainingDesc');
+    const teacherTrainingLatest = document.getElementById('teacherTrainingLatest');
+    const teacherAdvice = document.getElementById('teacherAdvice');
+    const teacherAdviceList = document.getElementById('teacherAdviceList');
 
     let checklistCache = [];
     let quizSession = null;
+    let latestTrainingStats = null;
+    let defenseDemoStep = 0;
     const riskLevelMap = {
       low: '低',
       'medium-low': '较低',
@@ -2442,6 +2742,62 @@
       training: { title: '培训与看板', desc: '查看培训和统计结果。' },
       incident: { title: '事故复盘', desc: '记录事故和整改状态。' }
     };
+
+    const roleConfigs = {
+      student: {
+        hint: '按学生视角：先问清楚，再判断能不能开工。',
+        intro: '学生常用：提问、检查、培训。',
+        flow: '推荐：问答 → 风险评估 → 开工检查。',
+        steps: ['问答', '风险评估', '开工检查'],
+        entries: [
+          ['assistant', '我有安全问题'],
+          ['gate', '我要开始实验'],
+          ['training', '我要学习/考试']
+        ]
+      },
+      teacher: {
+        hint: '按老师视角：先看高风险，再处理未通过和整改。',
+        intro: '老师常用：审核、培训、复盘。',
+        flow: '推荐：看高风险 → 看培训 → 看整改。',
+        steps: ['高风险', '培训情况', '整改跟进'],
+        entries: [
+          ['training', '查看高风险'],
+          ['gate', '审核开工'],
+          ['incident', '跟进整改']
+        ]
+      },
+      admin: {
+        hint: '按管理员视角：先看系统状态，再补知识库和导出结果。',
+        intro: '管理员常用：看板、知识库、复盘。',
+        flow: '推荐：看统计 → 补知识库 → 导出记录。',
+        steps: ['统计看板', '知识库状态', '记录导出'],
+        entries: [
+          ['training', '管理看板'],
+          ['workspace', '知识库状态'],
+          ['incident', '事故复盘']
+        ]
+      }
+    };
+
+    function applyRole(roleName) {
+      const role = roleConfigs[roleName] ? roleName : 'student';
+      const config = roleConfigs[role];
+      localStorage.setItem('labSafetyRole', role);
+      roleButtons.forEach((button) => button.classList.toggle('is-active', button.dataset.role === role));
+      if (roleHint) roleHint.textContent = config.hint;
+      if (roleEntryIntro) roleEntryIntro.textContent = config.intro;
+      if (roleFlowText) roleFlowText.textContent = config.flow;
+      if (teacherWorkbench) teacherWorkbench.classList.toggle('is-visible', role === 'teacher');
+      if (teacherWorkbenchHead) teacherWorkbenchHead.classList.toggle('is-visible', role === 'teacher');
+      if (teacherAdvice) teacherAdvice.classList.toggle('is-visible', role === 'teacher');
+      if (roleFlowSteps) roleFlowSteps.innerHTML = config.steps.map(step => `<span>${escapeHtml(step)}</span>`).join('');
+      if (roleEntryActions) {
+        roleEntryActions.innerHTML = config.entries.map(([target, label]) => `<button class="jump-btn" type="button" data-view-jump="${target}">${escapeHtml(label)}</button>`).join('');
+        roleEntryActions.querySelectorAll('[data-view-jump]').forEach((button) => {
+          button.addEventListener('click', () => setActiveView(button.dataset.viewJump || 'overview'));
+        });
+      }
+    }
 
     function announce(message) {
       if (!liveRegion || !message) return;
@@ -3323,11 +3679,165 @@
       }
     }
 
+    async function seedTeacherDemoData() {
+      if (!seedTeacherDemoBtn) return;
+      setButtonBusy(seedTeacherDemoBtn, true, '一键生成演示数据', '生成中...');
+      if (teacherSeedStatus) teacherSeedStatus.textContent = '正在写入演示记录...';
+      try {
+        const data = await postJson('/api/demo/teacher-seed', {});
+        updateTeacherDashboard(data.dashboard || {});
+        await Promise.all([loadTrainingStats(), loadAdminDashboard(), loadIncidents()]);
+        if (teacherSeedStatus) teacherSeedStatus.textContent = data.message || '演示数据已生成。';
+        announce('老师工作台演示数据已生成。');
+      } catch (err) {
+        if (teacherSeedStatus) teacherSeedStatus.textContent = `生成失败：${err.message}`;
+        announce(`演示数据生成失败：${err.message}`);
+      } finally {
+        setButtonBusy(seedTeacherDemoBtn, false, '一键生成演示数据');
+      }
+    }
+
+    async function clearTeacherDemoData() {
+      if (!clearTeacherDemoBtn) return;
+      setButtonBusy(clearTeacherDemoBtn, true, '清空演示数据', '清空中...');
+      if (teacherSeedStatus) teacherSeedStatus.textContent = '正在清空演示记录...';
+      try {
+        const data = await postJson('/api/demo/teacher-clear', {});
+        updateTeacherDashboard(data.dashboard || {});
+        await Promise.all([loadTrainingStats(), loadAdminDashboard(), loadIncidents()]);
+        if (teacherSeedStatus) teacherSeedStatus.textContent = data.message || '演示数据已清空。';
+        announce('老师工作台演示数据已清空。');
+      } catch (err) {
+        if (teacherSeedStatus) teacherSeedStatus.textContent = `清空失败：${err.message}`;
+        announce(`演示数据清空失败：${err.message}`);
+      } finally {
+        setButtonBusy(clearTeacherDemoBtn, false, '清空演示数据');
+      }
+    }
+
+    function enterTeacherDemoMode() {
+      applyRole('teacher');
+      setActiveView('overview');
+      if (teacherWorkbenchHead) {
+        teacherWorkbenchHead.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      announce('已进入老师演示模式。');
+    }
+
+    async function runDefenseDemoNextStep() {
+      if (!defenseDemoNextBtn) return;
+      setButtonBusy(defenseDemoNextBtn, true, '答辩演示下一步', '处理中...');
+      try {
+        if (defenseDemoStep === 0) {
+          if (defenseDemoStatus) defenseDemoStatus.textContent = '第 1 步：正在生成演示数据...';
+          await seedTeacherDemoData();
+          defenseDemoStep = 1;
+          if (defenseDemoStatus) defenseDemoStatus.textContent = '第 1 步完成：演示数据已准备。下一步看老师工作台。';
+        } else if (defenseDemoStep === 1) {
+          enterTeacherDemoMode();
+          defenseDemoStep = 2;
+          if (defenseDemoStatus) defenseDemoStatus.textContent = '第 2 步完成：现在讲老师工作台。下一步导出处理清单。';
+        } else {
+          if (defenseDemoStatus) defenseDemoStatus.textContent = '第 3 步：正在导出老师处理清单...';
+          await downloadFile('/api/teacher/action_report.md?days=30', 'teacher_action_report.md');
+          defenseDemoStep = 0;
+          if (defenseDemoStatus) defenseDemoStatus.textContent = '第 3 步完成：清单已导出。可重新开始演示。';
+        }
+      } catch (err) {
+        if (defenseDemoStatus) defenseDemoStatus.textContent = `演示步骤失败：${err.message}`;
+      } finally {
+        setButtonBusy(defenseDemoNextBtn, false, '答辩演示下一步');
+      }
+    }
+
+    function metricNumber(data, label) {
+      const item = (data.metrics || []).find(metric => metric.label === label);
+      if (!item) return 0;
+      const match = String(item.value || item.detail || '').match(/\d+/);
+      return match ? Number(match[0]) : 0;
+    }
+
+    function shortText(value, maxLength = 34) {
+      const text = String(value || '').trim();
+      return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+    }
+
+    function setLatestBox(el, label, text) {
+      if (!el) return;
+      el.innerHTML = `<b>${escapeHtml(label)}：</b>${escapeHtml(text || '暂无')}`;
+    }
+
+    function setTeacherCardState(card, count, dangerAt = 3) {
+      if (!card) return;
+      card.classList.remove('is-ok', 'is-warn', 'is-danger');
+      if (count <= 0) {
+        card.classList.add('is-ok');
+      } else if (count >= dangerAt) {
+        card.classList.add('is-danger');
+      } else {
+        card.classList.add('is-warn');
+      }
+    }
+
+    function updateTeacherAdvice({ pendingCount, highRiskCount, unfinishedTraining, openIncidents }) {
+      if (!teacherAdviceList) return;
+      const advice = [];
+      if (pendingCount > 0) advice.push('先审核被阻断的开工申请，未确认审批、值守和消防条件前不要放行。');
+      if (unfinishedTraining > 0) advice.push('通知未通过培训的学生补考，暂时不要让其独立开展高风险实验。');
+      if (highRiskCount > 0 || openIncidents > 0) advice.push('复盘最近高风险原因，把常见问题补进开工检查和培训题。');
+      if (!advice.length) advice.push('当前没有明显待处理事项，建议保持每周查看一次。');
+      teacherAdviceList.innerHTML = advice.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+    }
+
+    function updateTeacherDashboard(data) {
+      const highRiskItems = data.recent_high_risk_scenarios || [];
+      const pendingItems = highRiskItems.filter(item => !item.allow_start);
+      const latestPending = pendingItems[0];
+      const latestHighRisk = highRiskItems[0];
+      const incidentSummary = data.incident_summary || {};
+      const openIncidents = (incidentSummary.open || 0) + (incidentSummary.in_review || 0) + (incidentSummary.action_in_progress || 0);
+      const trainingAttempts = metricNumber(data, '培训通过率');
+      const passMetric = (data.metrics || []).find(item => item.label === '培训通过率');
+      const passRateMatch = String(passMetric?.value || '').match(/\d+/);
+      const passRate = passRateMatch ? Number(passRateMatch[0]) : 100;
+      const unfinishedTraining = trainingAttempts ? Math.max(0, Math.round(trainingAttempts * (100 - passRate) / 100)) : 0;
+      const latestTrainingText = latestTrainingStats?.latest_submitted_at
+        ? `${latestTrainingStats.latest_submitted_at}，平均分 ${latestTrainingStats.average_score}，通过率 ${Math.round((latestTrainingStats.pass_rate || 0) * 100)}%`
+        : '';
+
+      setTeacherCardState(teacherPendingCard, pendingItems.length, 2);
+      setTeacherCardState(teacherHighRiskCard, highRiskItems.length, 3);
+      setTeacherCardState(teacherTrainingCard, unfinishedTraining, 3);
+      updateTeacherAdvice({
+        pendingCount: pendingItems.length,
+        highRiskCount: highRiskItems.length,
+        unfinishedTraining,
+        openIncidents,
+      });
+
+      if (teacherPendingCount) teacherPendingCount.textContent = `${pendingItems.length} 项`;
+      if (teacherPendingDesc) teacherPendingDesc.textContent = pendingItems.length
+        ? `最近有 ${pendingItems.length} 项开工被阻断，需要老师复核。`
+        : '最近没有待复核的阻断开工记录。';
+      setLatestBox(teacherPendingLatest, '最近', latestPending ? `${displayRisk(latestPending.risk_level)}风险｜${shortText(latestPending.scenario)}` : '暂无待审核记录');
+      if (teacherHighRiskCount) teacherHighRiskCount.textContent = `${highRiskItems.length} 条`;
+      if (teacherHighRiskDesc) teacherHighRiskDesc.textContent = highRiskItems.length
+        ? `最近 ${highRiskItems.length} 条高风险场景，含 ${openIncidents} 条未闭环复盘。`
+        : '最近没有高风险提醒记录。';
+      setLatestBox(teacherHighRiskLatest, '最近', latestHighRisk ? `${latestHighRisk.allow_start ? '已通过' : '已阻断'}｜${shortText(latestHighRisk.scenario)}` : '暂无高风险记录');
+      if (teacherTrainingCount) teacherTrainingCount.textContent = `${unfinishedTraining} 人`;
+      if (teacherTrainingDesc) teacherTrainingDesc.textContent = trainingAttempts
+        ? `按现有 ${trainingAttempts} 次培训记录估算，仍有 ${unfinishedTraining} 人未通过。`
+        : '暂无培训作答记录，建议先组织一次培训。';
+      setLatestBox(teacherTrainingLatest, '最近', latestTrainingText || '暂无培训记录');
+    }
+
     async function loadTrainingStats() {
       const resp = await fetch('/api/training/stats');
       const data = await resp.json();
       if (!resp.ok) {
-        trainingStats.innerHTML = `<div class="stats-card">培训统计加载失败。</div>`;
+        latestTrainingStats = data;
+      trainingStats.innerHTML = `<div class="stats-card">培训统计加载失败。</div>`;
         return;
       }
       trainingStats.innerHTML = `
@@ -3352,8 +3862,10 @@
         dashboardSummaryMain.textContent = '当前无法生成管理端一句话结论。';
         dashboardSummaryFocus.textContent = '请先确认看板接口是否正常返回。';
         dashboardSummaryPitch.textContent = '待看板恢复后再更新展示口径。';
+        updateTeacherDashboard({ metrics: [], recent_high_risk_scenarios: [], incident_summary: {} });
         return;
       }
+      updateTeacherDashboard(data);
       const summary = buildDashboardSummary(data);
       dashboardSummaryMain.textContent = summary.main;
       dashboardSummaryFocus.textContent = summary.focus;
@@ -3483,6 +3995,19 @@
     }
 
     questionInput.addEventListener('input', syncScenarioPreview);
+    if (teacherDemoModeBtn) {
+      teacherDemoModeBtn.addEventListener('click', enterTeacherDemoMode);
+    }
+
+    if (defenseDemoNextBtn) {
+      defenseDemoNextBtn.addEventListener('click', runDefenseDemoNextStep);
+    }
+
+    roleButtons.forEach((button) => {
+      button.addEventListener('click', () => applyRole(button.dataset.role || 'student'));
+    });
+    applyRole(localStorage.getItem('labSafetyRole') || 'student');
+
     navButtons.forEach((button) => {
       button.addEventListener('click', () => setActiveView(button.dataset.viewTarget || 'overview'));
     });
@@ -3530,6 +4055,22 @@
     createIncidentBtn.addEventListener('click', createIncident);
     refreshWorkspaceBtn.addEventListener('click', loadWorkspaceStatus);
     workspaceSearchBtn.addEventListener('click', inspectKnowledgeHits);
+    if (seedTeacherDemoBtn) {
+      seedTeacherDemoBtn.addEventListener('click', seedTeacherDemoData);
+    }
+    if (clearTeacherDemoBtn) {
+      clearTeacherDemoBtn.addEventListener('click', clearTeacherDemoData);
+    }
+    if (exportTeacherReportBtn) {
+      exportTeacherReportBtn.addEventListener('click', async () => {
+        try {
+          await downloadFile('/api/teacher/action_report.md?days=30', 'teacher_action_report.md');
+          announce('老师处理清单已导出。');
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    }
     refreshDashboardBtn.addEventListener('click', loadAdminDashboard);
     refreshIncidentsBtn.addEventListener('click', loadIncidents);
     exportCsvBtn.addEventListener('click', async () => {

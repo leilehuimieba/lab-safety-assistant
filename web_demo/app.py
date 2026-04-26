@@ -513,6 +513,12 @@ class AdminDashboardResponse(BaseModel):
     overdue_incidents: list[str] = Field(default_factory=list)
 
 
+class DemoSeedResponse(BaseModel):
+    created: bool
+    message: str
+    dashboard: AdminDashboardResponse
+
+
 class DemoMetaResponse(BaseModel):
     app_version: str
     chat_lane_lab: str
@@ -616,6 +622,15 @@ def write_csv_row(path: Path, headers: list[str], row: dict[str, Any]) -> None:
         if write_header:
             writer.writeheader()
         writer.writerow(row)
+
+
+def write_csv_rows(path: Path, headers: list[str], rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({key: row.get(key, "") for key in headers})
 
 
 def load_json_list(path: Path) -> list[dict[str, Any]]:
@@ -1854,6 +1869,171 @@ def export_rows_to_csv(headers: list[str], rows: list[dict[str, Any]]) -> str:
     return buffer.getvalue()
 
 
+def seed_teacher_demo_data() -> DemoSeedResponse:
+    now = datetime.now()
+    marker = "teacher-demo-seed"
+    existing_checklists = read_csv_rows(CHECKLIST_RUNS_FILE)
+    existing_training = read_csv_rows(TRAINING_ATTEMPTS_FILE)
+    created = False
+
+    if not any(marker in (row.get("notes") or "") for row in existing_checklists):
+        demo_rows = [
+            ("夜间乙醇回流实验，审批未闭环且现场只有一人", "critical", "false", "缺少双人值守 | 审批未闭环"),
+            ("通风橱内进行易燃溶剂加热，灭火器检查未完成", "high", "false", "消防与通风条件未确认"),
+            ("普通试剂称量，PPE 和台账均已确认", "medium", "true", ""),
+        ]
+        for idx, (scenario, risk_level, allow_start, reasons) in enumerate(demo_rows, start=1):
+            write_csv_row(
+                CHECKLIST_RUNS_FILE,
+                CHECKLIST_HEADERS,
+                {
+                    "record_id": f"DEMO-CHECK-{now.strftime('%Y%m%d')}-{idx}",
+                    "submitted_at": (now - timedelta(hours=idx)).isoformat(timespec="seconds"),
+                    "operator": "演示学生",
+                    "scenario": scenario,
+                    "risk_score": "5" if risk_level == "critical" else ("4" if risk_level == "high" else "3"),
+                    "risk_level": risk_level,
+                    "key_hazards": "Chemical|Fire|Training",
+                    "allow_start": allow_start,
+                    "blocking_reasons": reasons,
+                    "items_json": "[]",
+                    "notes": marker,
+                },
+            )
+        created = True
+
+    if not any(marker in (row.get("session_id") or "") for row in existing_training):
+        training_rows = [
+            ("学生A", 60, "false", "Chemical | Fire"),
+            ("学生B", 72, "false", "Training"),
+            ("学生C", 92, "true", ""),
+            ("学生D", 88, "true", ""),
+            ("学生E", 55, "false", "PPE | Emergency"),
+        ]
+        for idx, (participant, score, passed, weak) in enumerate(training_rows, start=1):
+            write_csv_row(
+                TRAINING_ATTEMPTS_FILE,
+                TRAINING_ATTEMPT_HEADERS,
+                {
+                    "attempt_id": f"DEMO-TRAIN-{now.strftime('%Y%m%d')}-{idx}",
+                    "submitted_at": (now - timedelta(minutes=idx * 12)).isoformat(timespec="seconds"),
+                    "participant": participant,
+                    "session_id": f"{marker}-{now.strftime('%Y%m%d')}",
+                    "score": score,
+                    "total_questions": 5,
+                    "pass_threshold": DEFAULT_TRAINING_PASS_THRESHOLD,
+                    "passed": passed,
+                    "weak_categories": weak,
+                },
+            )
+        created = True
+
+    if not any(item.reporter == "teacher-demo" for item in load_incident_records()):
+        create_incident_record(
+            IncidentCreateRequest(
+                reporter="teacher-demo",
+                title="演示：高风险实验审批未闭环",
+                scenario="夜间乙醇回流实验审批未闭环，系统已阻断开工。",
+                severity="high",
+                location="化学实验室 A203",
+                cause_categories=["审批", "易燃溶剂", "夜间实验"],
+                immediate_actions=["暂停实验", "通知指导老师复核"],
+                corrective_actions=["补齐审批记录", "安排双人值守"],
+                owner="安全管理员",
+                due_date=(now + timedelta(days=3)).strftime("%Y-%m-%d"),
+            )
+        )
+        created = True
+
+    dashboard = load_admin_dashboard(days=30)
+    return DemoSeedResponse(
+        created=created,
+        message="演示数据已生成。" if created else "演示数据已存在，已刷新看板。",
+        dashboard=dashboard,
+    )
+
+
+def clear_teacher_demo_data() -> DemoSeedResponse:
+    marker = "teacher-demo-seed"
+    created = False
+
+    checklist_rows = read_csv_rows(CHECKLIST_RUNS_FILE)
+    kept_checklists = [row for row in checklist_rows if marker not in (row.get("notes") or "")]
+    if len(kept_checklists) != len(checklist_rows):
+        write_csv_rows(CHECKLIST_RUNS_FILE, CHECKLIST_HEADERS, kept_checklists)
+        created = True
+
+    training_rows = read_csv_rows(TRAINING_ATTEMPTS_FILE)
+    kept_training = [row for row in training_rows if marker not in (row.get("session_id") or "")]
+    if len(kept_training) != len(training_rows):
+        write_csv_rows(TRAINING_ATTEMPTS_FILE, TRAINING_ATTEMPT_HEADERS, kept_training)
+        created = True
+
+    mistake_rows = read_csv_rows(TRAINING_MISTAKES_FILE)
+    kept_mistakes = [row for row in mistake_rows if marker not in (row.get("session_id") or "")]
+    if len(kept_mistakes) != len(mistake_rows):
+        write_csv_rows(TRAINING_MISTAKES_FILE, TRAINING_MISTAKE_HEADERS, kept_mistakes)
+        created = True
+
+    incidents = load_incident_records()
+    kept_incidents = [item for item in incidents if item.reporter != "teacher-demo"]
+    if len(kept_incidents) != len(incidents):
+        write_incident_records(kept_incidents)
+        created = True
+
+    dashboard = load_admin_dashboard(days=30)
+    return DemoSeedResponse(
+        created=created,
+        message="演示数据已清空。" if created else "没有可清空的演示数据。",
+        dashboard=dashboard,
+    )
+
+
+def build_teacher_action_report_markdown(days: int = 30) -> str:
+    dashboard = load_admin_dashboard(days=days)
+    high_risk = dashboard.recent_high_risk_scenarios or []
+    pending = [item for item in high_risk if not item.allow_start]
+    incidents = dashboard.incident_summary or {}
+    open_incidents = incidents.get("open", 0) + incidents.get("in_review", 0) + incidents.get("action_in_progress", 0)
+    training_metric = next((item for item in dashboard.metrics if item.label == "培训通过率"), None)
+
+    lines = [
+        f"# 老师处理清单（{datetime.now().strftime('%Y-%m-%d %H:%M')}）",
+        "",
+        "## 优先处理",
+    ]
+    if pending:
+        lines.append(f"1. 先审核被阻断的开工申请：{len(pending)} 项")
+    if training_metric:
+        lines.append(f"2. 查看培训情况：{training_metric.value}（{training_metric.detail}）")
+    if high_risk or open_incidents:
+        lines.append(f"3. 复盘高风险原因：高风险记录 {len(high_risk)} 条，未闭环复盘 {open_incidents} 条")
+    if len(lines) == 4:
+        lines.append("- 当前没有明显待处理事项，保持定期查看。")
+
+    lines.extend(["", "## 最近高风险 / 待审核记录"])
+    if high_risk:
+        for item in high_risk:
+            lines.append(
+                f"- {item.submitted_at} | {item.risk_level} | {'已通过' if item.allow_start else '待审核/已阻断'} | {item.operator or '-'} | {item.scenario}"
+            )
+    else:
+        lines.append("- 暂无高风险记录。")
+
+    lines.extend(["", "## 看板指标"])
+    for item in dashboard.metrics:
+        lines.append(f"- {item.label}: {item.value}（{item.detail}）")
+
+    lines.extend(["", "## 复盘状态"])
+    for key, value in incidents.items():
+        lines.append(f"- {key}: {value}")
+    if dashboard.overdue_incidents:
+        lines.extend(["", "## 逾期提醒"])
+        for item in dashboard.overdue_incidents:
+            lines.append(f"- {item}")
+    return "\n".join(lines) + "\n"
+
+
 def build_weekly_report_markdown(days: int, risk_level: str, incident_status: str) -> str:
     dashboard = load_admin_dashboard(days=days, risk_level=risk_level, incident_status=incident_status)
     lines = [
@@ -2212,6 +2392,16 @@ def training_stats() -> TrainingStatsResponse:
     return load_training_stats()
 
 
+@app.post("/api/demo/teacher-seed", response_model=DemoSeedResponse)
+def demo_teacher_seed() -> DemoSeedResponse:
+    return seed_teacher_demo_data()
+
+
+@app.post("/api/demo/teacher-clear", response_model=DemoSeedResponse)
+def demo_teacher_clear() -> DemoSeedResponse:
+    return clear_teacher_demo_data()
+
+
 @app.get("/api/admin/dashboard", response_model=AdminDashboardResponse)
 def admin_dashboard(days: int = 30, risk_level: str = "", incident_status: str = "") -> AdminDashboardResponse:
     return load_admin_dashboard(days=days, risk_level=risk_level, incident_status=incident_status)
@@ -2277,6 +2467,15 @@ def admin_weekly_report(days: int = 7, risk_level: str = "", incident_status: st
     return PlainTextResponse(
         content=markdown,
         headers={"Content-Disposition": f'attachment; filename="weekly_report_{datetime.now().strftime("%Y%m%d")}.md"'},
+    )
+
+
+@app.get("/api/teacher/action_report.md")
+def teacher_action_report(days: int = 30) -> PlainTextResponse:
+    markdown = build_teacher_action_report_markdown(days=days)
+    return PlainTextResponse(
+        content=markdown,
+        headers={"Content-Disposition": f'attachment; filename="teacher_action_report_{datetime.now().strftime("%Y%m%d")}.md"'},
     )
 
 
