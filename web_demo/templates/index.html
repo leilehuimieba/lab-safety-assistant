@@ -1736,6 +1736,24 @@
       .one-click-demo { margin-top: 18px; width: 100%; }
       .entry-grid, .compact-overview, .gate-step-strip { grid-template-columns: 1fr; }
     }
+    .record-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .decision-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: #991b1b;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .decision-badge.ok { background:#dcfce7; color:#166534; }
+    .decision-badge.warn { background:#fef3c7; color:#92400e; }
   </style>
 </head>
 <body>
@@ -1875,6 +1893,12 @@
                 <div class="result-panel" data-result-panel="emergency">
                   <div id="emergencyMatch" class="panel">输入一个事故场景后，系统会自动匹配最合适的应急卡片。</div>
                 </div>
+              </div>
+              <div class="record-actions">
+                <button class="btn-soft" type="button" id="saveRecordBtn">保存本次记录</button>
+                <button class="btn-soft" type="button" id="copyRecordBtn">复制记录</button>
+                <button class="btn-ghost" type="button" data-feedback="useful">有用</button>
+                <button class="btn-ghost" type="button" data-feedback="wrong_source">来源错误</button>
               </div>
               <p id="routeInfo" class="muted"></p>
               <div id="lowConfidenceAlert" class="alert warn"></div>
@@ -2309,11 +2333,14 @@
     const questionInput = document.getElementById('question');
     const result = document.getElementById('result');
     const routeInfo = document.getElementById('routeInfo');
+    let latestRecord = null;
     const metaVersion = document.getElementById('metaVersion');
     const metaAcceptance = document.getElementById('metaAcceptance');
     const metaKbSize = document.getElementById('metaKbSize');
     const metaLane = document.getElementById('metaLane');
     const lowConfidenceAlert = document.getElementById('lowConfidenceAlert');
+    const saveRecordBtn = document.getElementById('saveRecordBtn');
+    const copyRecordBtn = document.getElementById('copyRecordBtn');
     const riskBox = document.getElementById('riskBox');
     const citationBox = document.getElementById('citationBox');
     const checklistItems = document.getElementById('checklistItems');
@@ -2711,7 +2738,7 @@
       return out;
     }
 
-    function renderShortAnswer(target, rawText, citations = []) {
+    function renderShortAnswer(target, rawText, citations = [], meta = {}) {
       const text = String(rawText || '').trim();
       if (!text) {
         target.textContent = '没有返回内容。';
@@ -2720,22 +2747,38 @@
       const lines = text.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
       let conclusion = lines.find(v => !/^(结论|步骤|禁止事项|应急升级|参考依据|备注)[:：]?$/.test(v)) || '已生成安全建议。';
       conclusion = conclusion.replace(/^结论[:：]?\s*/, '').trim();
+      const riskLabel = displayRisk(meta.risk_level) || '待确认';
+      const decision = /禁止|不能|不可|阻断|暂停|高风险|High/i.test(conclusion + ' ' + riskLabel)
+        ? '暂不建议开工'
+        : (/低|Low/i.test(riskLabel) ? '可进入开工准备' : '需要老师确认');
+      const decisionClass = decision.includes('可进入') ? 'ok' : (decision.includes('老师') ? 'warn' : '');
       const reasons = takeLinesAfter('禁止事项', text, 3);
       const nextSteps = takeLinesAfter('步骤', text, 3);
       const evidence = (citations || []).slice(0, 3);
+      latestRecord = {
+        time: new Date().toLocaleString(),
+        scenario: questionInput.value.trim(),
+        decision,
+        risk: riskLabel,
+        conclusion,
+        reasons: reasons.length ? reasons : ['存在实验室安全风险，需要先确认防护、审批和现场条件。'],
+        nextSteps: nextSteps.length ? nextSteps : ['暂停操作。', '确认 SOP、PPE 和现场条件。', '必要时联系老师或管理员。'],
+        evidence: evidence.map(item => item.source_title || item.title || item.kb_id || '来源')
+      };
       target.innerHTML = DOMPurify.sanitize(`
         <div class="short-answer">
           <section class="answer-block">
+            <span class="decision-badge ${decisionClass}">${escapeHtml(decision)} · 风险：${escapeHtml(riskLabel)}</span>
             <h4>结论</h4>
             <strong class="answer-conclusion">${escapeHtml(conclusion)}</strong>
           </section>
           <section class="answer-block">
             <h4>原因</h4>
-            <ul>${(reasons.length ? reasons : ['存在实验室安全风险，需要先确认防护、审批和现场条件。']).map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>
+            <ul>${latestRecord.reasons.map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>
           </section>
           <section class="answer-block">
             <h4>下一步</h4>
-            <ul>${(nextSteps.length ? nextSteps : ['暂停操作。', '确认 SOP、PPE 和现场条件。', '必要时联系老师或管理员。']).map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>
+            <ul>${latestRecord.nextSteps.map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>
           </section>
           <section class="answer-block">
             <h4>依据</h4>
@@ -2863,6 +2906,53 @@
       }
     }
 
+
+    function formatLatestRecord() {
+      if (!latestRecord) return '';
+      return [
+        `时间：${latestRecord.time}`,
+        `场景：${latestRecord.scenario}`,
+        `结论：${latestRecord.decision}`,
+        `风险：${latestRecord.risk}`,
+        `说明：${latestRecord.conclusion}`,
+        `原因：${latestRecord.reasons.join('；')}`,
+        `下一步：${latestRecord.nextSteps.join('；')}`,
+        `依据：${latestRecord.evidence.join('；') || '暂无'}`
+      ].join('\n');
+    }
+
+    function saveLatestRecord() {
+      const text = formatLatestRecord();
+      if (!text) {
+        announce('当前还没有可保存的记录。');
+        return;
+      }
+      const records = JSON.parse(localStorage.getItem('labSafetyRecords') || '[]');
+      records.unshift(latestRecord);
+      localStorage.setItem('labSafetyRecords', JSON.stringify(records.slice(0, 50)));
+      announce('本次记录已保存到本机浏览器。');
+    }
+
+    async function copyLatestRecord() {
+      const text = formatLatestRecord();
+      if (!text) {
+        announce('当前还没有可复制的记录。');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        announce('记录已复制。');
+      } catch (_) {
+        announce('复制失败，请手动选择结果文本。');
+      }
+    }
+
+    function submitFeedback(type) {
+      const feedback = JSON.parse(localStorage.getItem('labSafetyFeedback') || '[]');
+      feedback.unshift({ time: new Date().toLocaleString(), type, scenario: questionInput.value.trim(), record: latestRecord });
+      localStorage.setItem('labSafetyFeedback', JSON.stringify(feedback.slice(0, 100)));
+      announce(type === 'useful' ? '已记录：这个回答有用。' : '已记录：来源可能需要人工复核。');
+    }
     async function ask() {
       const question = questionInput.value.trim();
       if (!question) return;
@@ -2873,7 +2963,7 @@
       try {
         const data = await postJson('/api/chat', { mode: getMode(), question });
         setActiveResultPanel('answer');
-        renderShortAnswer(result, data.answer || '', data.citations || []);
+        renderShortAnswer(result, data.answer || '', data.citations || [], data);
         routeInfo.textContent = `链路=${data.model || '-'} | 决策=${data.decision || '-'} | 规则=${data.matched_rule_id || '-'} | 风险=${displayRisk(data.risk_level)}`;
         showLowConfidence(data.low_confidence, data.low_confidence_reason);
         renderCitations(data.citations || []);
@@ -3004,7 +3094,8 @@
         });
         checklistStatus.style.display = 'block';
         checklistStatus.className = `alert ${data.allow_start ? 'ok' : 'bad'}`;
-        checklistStatus.innerHTML = `<strong>${data.allow_start ? '清单通过，可进入开工准备' : '清单阻断，暂不可开工'}</strong><br>${(data.next_actions || []).join('<br>')}${data.blocking_reasons.length ? `<br><br>阻断原因：${data.blocking_reasons.join(' | ')}` : ''}`;
+        checklistStatus.innerHTML = `<strong>${data.allow_start ? '绿色：可以开工' : '红色：禁止开工'}</strong><br><br><strong>未满足条件：</strong>${data.blocking_reasons.length ? `<ul>${data.blocking_reasons.map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>` : '暂无'}<strong>下一步：</strong><ul>${(data.next_actions || []).map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>`;
+        latestRecord = { time: new Date().toLocaleString(), scenario, decision: data.allow_start ? '可以开工' : '禁止开工', risk: displayRisk(data.risk_level), conclusion: data.allow_start ? '清单通过，可进入开工准备' : '清单阻断，暂不可开工', reasons: data.blocking_reasons || [], nextSteps: data.next_actions || [], evidence: ['开工检查记录'] };
         if (gateReadinessText) gateReadinessText.textContent = data.allow_start ? '当前允许进入开工准备' : '当前已被阻断，暂不可开工';
         loadAdminDashboard();
         announce(data.allow_start ? '清单已通过。' : '清单已阻断，当前不可开工。');
@@ -3477,6 +3568,10 @@
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
