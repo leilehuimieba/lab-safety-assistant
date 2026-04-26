@@ -1638,6 +1638,104 @@
       .assistant-workbench { grid-template-columns: 1fr; }
       .assistant-input-card { position: static; }
     }
+    /* Product conversion pass: homepage entries and cleaner result cards */
+    .home-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 34px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #2563eb, #0f766e);
+      color: #fff;
+      box-shadow: 0 24px 60px rgba(37,99,235,.22);
+      margin-bottom: 22px;
+    }
+    .home-kicker {
+      display: inline-flex;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.16);
+      color: rgba(255,255,255,.92);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    .home-hero h3 { margin: 0; font-size: 38px; letter-spacing: -0.04em; }
+    .home-hero p { margin: 12px 0 0; color: rgba(255,255,255,.86); font-size: 17px; max-width: 720px; }
+    .one-click-demo {
+      min-width: 260px;
+      background: #fff !important;
+      color: #1d4ed8 !important;
+      border-color: #fff !important;
+      box-shadow: 0 14px 30px rgba(15,23,42,.18) !important;
+    }
+    .entry-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    .entry-card {
+      text-align: left;
+      padding: 24px;
+      min-height: 180px;
+      border-radius: 24px;
+      border: 1px solid #e4e7ec;
+      background: #fff;
+      box-shadow: 0 16px 40px rgba(16,24,40,.07);
+      cursor: pointer;
+    }
+    .entry-card:hover { border-color: #93c5fd; transform: translateY(-2px); }
+    .entry-card span { color: #2563eb; font-weight: 800; font-size: 14px; }
+    .entry-card strong { display:block; margin-top: 16px; font-size: 24px; color: #172033; }
+    .entry-card small { display:block; margin-top: 10px; color: #667085; font-size: 15px; line-height: 1.6; }
+    .compact-overview { grid-template-columns: 1.1fr .9fr; }
+    .short-answer {
+      display: grid;
+      gap: 14px;
+    }
+    .answer-block {
+      border-radius: 18px;
+      border: 1px solid #e4e7ec;
+      background: #fff;
+      padding: 16px 18px;
+    }
+    .answer-block h4 { margin: 0 0 8px; font-size: 15px; color: #667085; }
+    .answer-block strong.answer-conclusion { font-size: 22px; color: #172033; }
+    .answer-block ul { margin-top: 8px; }
+    .answer-block li { margin: 6px 0; }
+    .evidence-card-link {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+    .gate-step-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .gate-step-card {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid #e4e7ec;
+      background: #fff;
+    }
+    .gate-step-card strong { display:block; color:#172033; font-size:16px; }
+    .gate-step-card span { display:block; color:#667085; font-size:13px; margin-top:5px; }
+    @media (max-width: 980px) {
+      .home-hero { display:block; }
+      .one-click-demo { margin-top: 18px; width: 100%; }
+      .entry-grid, .compact-overview, .gate-step-strip { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -1786,10 +1884,15 @@
       </section>
 
       <section class="view-section" data-view-panel="gate">
+                <section class="gate-step-strip">
+          <article class="gate-step-card"><strong>第 1 步：确认场景</strong><span>沿用智能问答里的实验内容。</span></article>
+          <article class="gate-step-card"><strong>第 2 步：生成检查项</strong><span>系统列出必须满足的安全条件。</span></article>
+          <article class="gate-step-card"><strong>第 3 步：判断能否开工</strong><span>未满足关键项时直接阻断。</span></article>
+        </section>
         <section class="gate-shell">
           <div class="stack">
           <article class="card">
-            <h2>1. 当前准入判断对象</h2>
+            <h2>当前实验场景</h2>
             <p class="muted">当前准入阻断始终围绕“智能问答页”里输入的那条场景展开。这样页面切换后，用户也不会丢失上下文。</p>
             <div id="checklistScenarioText" class="panel">当前还没有输入场景，建议先去“智能问答与风险评估”页填写问题。</div>
             <div class="actions" style="margin-top: 12px;">
@@ -1815,7 +1918,7 @@
           </div>
           <div class="stack">
           <article class="card">
-            <h2>2. 开工前检查清单</h2>
+            <h2>开工检查清单</h2>
             <div class="row">
               <input id="operatorName" placeholder="操作人 / 复核人" />
               <input id="checklistNotes" placeholder="阻断说明或补充备注" />
@@ -2268,6 +2371,7 @@
     const sidebar = document.querySelector('.sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const backToTopBtn = document.getElementById('backToTopBtn');
+    const oneClickDemoBtn = document.getElementById('oneClickDemoBtn');
     const liveRegion = document.getElementById('liveRegion');
 
     let checklistCache = [];
@@ -2591,6 +2695,60 @@
       return checked ? checked.value : 'lab';
     }
 
+
+    function takeLinesAfter(label, text, maxItems = 3) {
+      const lines = String(text || '').split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+      const start = lines.findIndex(v => v.replace(/[:：]$/, '') === label);
+      if (start < 0) return [];
+      const out = [];
+      for (let i = start + 1; i < lines.length; i += 1) {
+        const line = lines[i];
+        if (/^[\u4e00-\u9fa5A-Za-z ]+[:：]$/.test(line) && out.length) break;
+        const cleaned = line.replace(/^[-*]\s*/, '').replace(/^\d+[.、]\s*/, '').trim();
+        if (cleaned) out.push(cleaned);
+        if (out.length >= maxItems) break;
+      }
+      return out;
+    }
+
+    function renderShortAnswer(target, rawText, citations = []) {
+      const text = String(rawText || '').trim();
+      if (!text) {
+        target.textContent = '没有返回内容。';
+        return;
+      }
+      const lines = text.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+      let conclusion = lines.find(v => !/^(结论|步骤|禁止事项|应急升级|参考依据|备注)[:：]?$/.test(v)) || '已生成安全建议。';
+      conclusion = conclusion.replace(/^结论[:：]?\s*/, '').trim();
+      const reasons = takeLinesAfter('禁止事项', text, 3);
+      const nextSteps = takeLinesAfter('步骤', text, 3);
+      const evidence = (citations || []).slice(0, 3);
+      target.innerHTML = DOMPurify.sanitize(`
+        <div class="short-answer">
+          <section class="answer-block">
+            <h4>结论</h4>
+            <strong class="answer-conclusion">${escapeHtml(conclusion)}</strong>
+          </section>
+          <section class="answer-block">
+            <h4>原因</h4>
+            <ul>${(reasons.length ? reasons : ['存在实验室安全风险，需要先确认防护、审批和现场条件。']).map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>
+          </section>
+          <section class="answer-block">
+            <h4>下一步</h4>
+            <ul>${(nextSteps.length ? nextSteps : ['暂停操作。', '确认 SOP、PPE 和现场条件。', '必要时联系老师或管理员。']).map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>
+          </section>
+          <section class="answer-block">
+            <h4>依据</h4>
+            ${evidence.length ? evidence.map((item, index) => `
+              <a class="evidence-card-link" href="${escapeHtml(item.source_url || '#')}" target="_blank" rel="noopener noreferrer">
+                <span>${index + 1}. ${escapeHtml(item.source_title || item.title || item.kb_id || '来源')}</span>
+                <small>打开</small>
+              </a>
+            `).join('') : '<p class="muted">暂无可展示来源。</p>'}
+          </section>
+        </div>
+      `);
+    }
     function renderMarkdown(target, rawText) {
       const text = String(rawText || '').trim();
       if (!text) {
@@ -2715,7 +2873,7 @@
       try {
         const data = await postJson('/api/chat', { mode: getMode(), question });
         setActiveResultPanel('answer');
-        renderMarkdown(result, data.answer || '');
+        renderShortAnswer(result, data.answer || '', data.citations || []);
         routeInfo.textContent = `链路=${data.model || '-'} | 决策=${data.decision || '-'} | 规则=${data.matched_rule_id || '-'} | 风险=${displayRisk(data.risk_level)}`;
         showLowConfidence(data.low_confidence, data.low_confidence_reason);
         renderCitations(data.citations || []);
@@ -3319,6 +3477,11 @@
   </script>
 </body>
 </html>
+
+
+
+
+
 
 
 
