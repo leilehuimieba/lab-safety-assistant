@@ -2535,6 +2535,7 @@
               <div id="lowConfidenceAlert" class="alert warn"></div>
             </article>
             </div>
+          </section>
         </section>
       </section>
 
@@ -2601,7 +2602,7 @@
         </section>
       </section>
       <section class="view-section" data-view-panel="productStatus">
-        <div class="section-shell">
+        <section class="section-shell">
           <div class="section-heading">
             <div>
               <span class="section-kicker">Product Status</span>
@@ -2648,6 +2649,15 @@
               </ul>
             </article>
             <article class="product-status-card is-wide">
+              <strong>导出材料</strong>
+              <ul>
+                <li>整合产品状态、老师工作台、管理员验收看板、证据链接和后续计划。</li>
+              </ul>
+              <div class="acceptance-actions" style="margin-top:12px;">
+                <button type="button" id="productStatusExportBtn">导出项目验收材料包</button>
+              </div>
+            </article>
+            <article class="product-status-card is-wide">
               <strong>当前版本信息</strong>
               <ul>
                 <li>版本：<span id="productStatusVersion">加载中</span></li>
@@ -2657,7 +2667,7 @@
               </ul>
             </article>
           </div>
-        </div>
+        </section>
       </section>
 
       <section class="view-section" data-view-panel="workspace">
@@ -3033,6 +3043,7 @@
     const productStatusAcceptance = document.getElementById('productStatusAcceptance');
     const productStatusKb = document.getElementById('productStatusKb');
     const productStatusLane = document.getElementById('productStatusLane');
+    const productStatusExportBtn = document.getElementById('productStatusExportBtn');
     const welcomeVersion = document.getElementById('welcomeVersion');
     const welcomeAcceptance = document.getElementById('welcomeAcceptance');
     const welcomeKbStatus = document.getElementById('welcomeKbStatus');
@@ -4663,8 +4674,8 @@
     if (adminAcceptanceExportBtn) {
       adminAcceptanceExportBtn.addEventListener('click', async () => {
         try {
-          await downloadFile('/api/admin/acceptance_package.md?days=30', 'admin_acceptance_package.md');
-          announce('验收包已导出。');
+          await downloadFile('/api/admin/acceptance_package.md?days=30', 'lab_safety_acceptance_package.md');
+          announce('项目验收材料包已导出。');
         } catch (err) {
           if (adminAcceptanceStatus) adminAcceptanceStatus.textContent = `导出失败：${err.message}`;
           alert(err.message);
@@ -4764,15 +4775,19 @@
     if (acceptanceGoWorkspaceBtn) acceptanceGoWorkspaceBtn.addEventListener('click', () => setActiveView('workspace'));
     if (acceptanceGoTrainingBtn) acceptanceGoTrainingBtn.addEventListener('click', () => setActiveView('training'));
     if (acceptanceCheckLinksBtn) acceptanceCheckLinksBtn.addEventListener('click', checkAcceptanceEvidenceLinks);
+    async function exportAcceptancePackage() {
+      try {
+        await downloadFile('/api/admin/acceptance_package.md?days=30', 'lab_safety_acceptance_package.md');
+        announce('项目验收材料包已导出。');
+      } catch (err) {
+        alert(err.message);
+      }
+    }
     if (acceptanceExportBtn) {
-      acceptanceExportBtn.addEventListener('click', async () => {
-        try {
-          await downloadFile('/api/admin/acceptance_package.md?days=30', 'admin_acceptance_package.md');
-          announce('验收包已导出。');
-        } catch (err) {
-          alert(err.message);
-        }
-      });
+      acceptanceExportBtn.addEventListener('click', exportAcceptancePackage);
+    }
+    if (productStatusExportBtn) {
+      productStatusExportBtn.addEventListener('click', exportAcceptancePackage);
     }
     refreshWorkspaceBtn.addEventListener('click', loadWorkspaceStatus);
     workspaceSearchBtn.addEventListener('click', inspectKnowledgeHits);

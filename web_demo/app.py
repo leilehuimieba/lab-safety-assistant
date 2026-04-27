@@ -2220,49 +2220,105 @@ def build_acceptance_package_markdown(days: int = 30) -> str:
     meta = get_product_meta()
     workspace = build_workspace_status()
     dashboard = load_admin_dashboard(days=days)
+    roster = load_training_roster_status()
+    high_risk = dashboard.recent_high_risk_scenarios or []
+    pending = [item for item in high_risk if not item.allow_start]
+    incidents = dashboard.incident_summary or {}
+    open_incidents = incidents.get("open", 0) + incidents.get("in_review", 0) + incidents.get("action_in_progress", 0)
+    evidence = check_evidence_links(limit=10)
+
     lines = [
-        f"# 课题验收材料包（{datetime.now().strftime('%Y-%m-%d')}）",
+        f"# 实验室安全助手项目验收材料包（{datetime.now().strftime('%Y-%m-%d')}）",
         "",
-        "## 1. 项目状态",
-        f"- 版本：{meta.app_version}",
-        f"- 验收状态：{meta.acceptance_status}",
-        f"- 测试结果：{meta.formal_eval_score}",
-        f"- 稳定性：{meta.stability_status}",
+        "## 1. 产品定位",
+        "实验室安全助手是面向高校实验室的轻量安全工作台，覆盖安全问答、风险评估、开工检查、培训留痕、老师工作台和管理员验收看板。",
         "",
-        "## 2. 知识库与证据",
+        "当前定位：适合课题验收、小范围试点、老师日常辅助管理；暂不替代学校正式学生平台。",
+        "",
+        "## 2. 当前版本与状态",
+        f"- 当前版本：{meta.app_version}",
+        f"- 交付状态：{meta.acceptance_status}",
+        f"- 自动测试结果：{meta.formal_eval_score}",
+        f"- 稳定性证据：{meta.stability_status}",
+        f"- 运行通道：{meta.chat_lane_lab}",
+        "",
+        "## 3. 当前可用功能",
+        "- 学生端：安全问答、风险评估、开工检查、培训抽题与评分。",
+        "- 老师端：待审核开工、高风险提醒、未完成培训名单、处理建议、老师处理清单导出。",
+        "- 管理端：知识库数量、证据链接检查、测试结果、验收包导出。",
+        "- 名单能力：下载培训名单模板、上传 CSV、查看未完成名单、一键复制未完成名单。",
+        "- 复盘能力：事故记录、原因分类、整改动作、闭环状态。",
+        "",
+        "## 4. 当前未接入功能（避免误解）",
+        "- 未接学校统一身份认证。",
+        "- 未接教务系统/学生平台。",
+        "- 未自动同步真实班级名单。",
+        "- 未自动同步校级培训完成状态。",
+        "- 当前以本系统记录和老师上传的 CSV 名单为准。",
+        "",
+        "## 5. 适合使用场景",
+        "- 课题验收、答辩展示、小范围试点。",
+        "- 老师手动维护班级名单，跟踪学生培训完成情况。",
+        "- 学生在本系统完成培训和开工检查。",
+        "- 管理员导出阶段性验收材料。",
+        "",
+        "## 6. 知识库与证据",
         f"- 本地知识条目：{workspace.kb_rows}",
         f"- 正式导入条目：{workspace.kb_imported}",
         f"- 低置信待补强问题：{workspace.low_confidence_queue_count}",
         f"- Dify 状态：{workspace.dify_connection_status}",
-        "",
-        "## 3. 管理看板指标",
+        f"- 证据链接抽查：{evidence.reachable}/{evidence.checked} 可访问，失败 {evidence.failed} 条。",
     ]
+    if evidence.sample_failed:
+        lines.append("- 失败样例：" + "；".join(evidence.sample_failed[:3]))
+
+    lines.extend(["", "## 7. 管理员验收看板指标"])
     for item in dashboard.metrics:
         lines.append(f"- {item.label}: {item.value}（{item.detail}）")
-    lines.extend(["", "## 4. 最近高风险场景"])
-    if dashboard.recent_high_risk_scenarios:
-        for item in dashboard.recent_high_risk_scenarios:
+
+    lines.extend(["", "## 8. 老师工作台摘要"])
+    lines.extend([
+        f"- 待审核/已阻断开工：{len(pending)} 项",
+        f"- 最近高风险提醒：{len(high_risk)} 条",
+        f"- 未闭环复盘：{open_incidents} 条",
+        f"- 培训名单人数：{roster.total_required} 人",
+        f"- 已通过培训：{roster.passed_count} 人",
+        f"- 未完成/未通过培训：{roster.incomplete_count} 人",
+    ])
+    if roster.incomplete_students:
+        lines.append("- 最近未完成名单：")
+        for item in roster.incomplete_students[:5]:
+            status = "未通过" if item.completed else "未作答"
+            lines.append(f"  - {item.name} | {item.class_name or '-'} | {item.lab_group or '-'} | {status}")
+
+    lines.extend(["", "## 9. 最近高风险场景"])
+    if high_risk:
+        for item in high_risk[:5]:
             lines.append(f"- {item.submitted_at} | {item.risk_level} | {'通过' if item.allow_start else '阻断'} | {item.scenario}")
     else:
         lines.append("- 暂无高风险记录。")
-    lines.extend(["", "## 5. 验收材料入口"])
+
+    lines.extend(["", "## 10. 可追溯材料入口"])
     lines.extend([
+        "- README.md",
         "- docs/README.md",
+        "- docs/product/product_delivery_note_20260427.md",
         "- docs/demo/teacher_workbench_defense_demo.md",
         "- docs/demo/admin_acceptance_dashboard_demo.md",
         "- docs/pilot/realistic_scenario_trial_20260427.md",
         "- docs/eval/release_readiness_dashboard.md",
         "- docs/ops/go_live_readiness.md",
+        "- data_sources/training_roster_template.csv",
     ])
-    lines.extend(["", "## 6. 后续建议"])
+
+    lines.extend(["", "## 11. 后续优化计划"])
     lines.extend([
-        "1. 接入真实学生名单和培训完成记录。",
-        "2. 增加真实登录和角色权限隔离。",
-        "3. 继续收集真实试点反馈。",
-        "4. 对证据链接增加可访问状态统计。",
+        "1. 增加真实登录和基础权限隔离。",
+        "2. 将 CSV/本地文件存储升级为数据库。",
+        "3. 收集 3-5 名学生/老师真实试点反馈。",
+        "4. 稳定后再评估是否对接学校学生平台。",
     ])
     return "\n".join(lines) + "\n"
-
 
 def build_weekly_report_markdown(days: int, risk_level: str, incident_status: str) -> str:
     dashboard = load_admin_dashboard(days=days, risk_level=risk_level, incident_status=incident_status)
@@ -2726,7 +2782,7 @@ def admin_acceptance_package(days: int = 30) -> PlainTextResponse:
     markdown = build_acceptance_package_markdown(days=days)
     return PlainTextResponse(
         content=markdown,
-        headers={"Content-Disposition": f'attachment; filename="admin_acceptance_package_{datetime.now().strftime("%Y%m%d")}.md"'},
+        headers={"Content-Disposition": f'attachment; filename="lab_safety_acceptance_package_{datetime.now().strftime("%Y%m%d")}.md"'},
     )
 
 
