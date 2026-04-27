@@ -1940,6 +1940,72 @@
       font-weight: 800;
       cursor: pointer;
     }
+    .teacher-task-card.is-clickable { cursor: pointer; }
+    .teacher-task-card.is-clickable:hover { transform: translateY(-1px); }
+
+    .simple-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, .42);
+    }
+    .simple-modal.is-visible { display: flex; }
+    .simple-modal-card {
+      width: min(720px, 100%);
+      max-height: min(78vh, 680px);
+      overflow: auto;
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, .28);
+    }
+    .simple-modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 18px 20px;
+      border-bottom: 1px solid #e5edf7;
+    }
+    .simple-modal-head strong { display: block; font-size: 18px; color: #12243d; }
+    .simple-modal-head p { margin: 5px 0 0; color: #64748b; font-size: 13px; }
+    .simple-modal-close {
+      border: 0;
+      border-radius: 999px;
+      width: 34px;
+      height: 34px;
+      background: #f1f5f9;
+      color: #334155;
+      cursor: pointer;
+      font-size: 20px;
+    }
+    .simple-modal-body { padding: 16px 20px 20px; }
+    .roster-list { display: grid; gap: 10px; }
+    .roster-list-row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr .8fr .8fr;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid #e5edf7;
+      border-radius: 14px;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 14px;
+    }
+    .roster-list-row b { color: #12243d; }
+    .roster-list-row .tag {
+      justify-self: start;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: #991b1b;
+      font-size: 12px;
+      font-weight: 800;
+    }
 
     .role-flow {
       margin-top: 14px;
@@ -2207,13 +2273,27 @@
               <strong id="teacherTrainingCount">加载中</strong>
               <p id="teacherTrainingDesc">正在读取培训记录。</p>
               <div class="teacher-card-latest" id="teacherTrainingLatest"><b>最近：</b>暂无</div>
-              <button type="button" data-view-jump="training">看名单</button>
+              <button type="button" id="openTrainingRosterModalBtn">看名单</button>
             </article>
           </section>
           <section class="teacher-advice" id="teacherAdvice" aria-label="老师处理建议">
             <strong>处理建议</strong>
             <ol id="teacherAdviceList"><li>暂无待处理事项。</li></ol>
           </section>
+          <div class="simple-modal" id="trainingRosterModal" role="dialog" aria-modal="true" aria-labelledby="trainingRosterModalTitle">
+            <div class="simple-modal-card">
+              <div class="simple-modal-head">
+                <div>
+                  <strong id="trainingRosterModalTitle">未完成培训名单</strong>
+                  <p id="trainingRosterModalSummary">正在读取名单...</p>
+                </div>
+                <button class="simple-modal-close" type="button" id="closeTrainingRosterModalBtn" aria-label="关闭">×</button>
+              </div>
+              <div class="simple-modal-body">
+                <div class="roster-list" id="trainingRosterModalList"></div>
+              </div>
+            </div>
+          </div>
           <section class="admin-acceptance-board" id="adminAcceptanceBoard" aria-label="课题验收看板">
             <div class="admin-acceptance-head">
               <strong>课题验收看板</strong>
@@ -2837,6 +2917,11 @@
     const teacherTrainingCount = document.getElementById('teacherTrainingCount');
     const teacherTrainingDesc = document.getElementById('teacherTrainingDesc');
     const teacherTrainingLatest = document.getElementById('teacherTrainingLatest');
+    const openTrainingRosterModalBtn = document.getElementById('openTrainingRosterModalBtn');
+    const trainingRosterModal = document.getElementById('trainingRosterModal');
+    const closeTrainingRosterModalBtn = document.getElementById('closeTrainingRosterModalBtn');
+    const trainingRosterModalSummary = document.getElementById('trainingRosterModalSummary');
+    const trainingRosterModalList = document.getElementById('trainingRosterModalList');
     const teacherAdvice = document.getElementById('teacherAdvice');
     const teacherAdviceList = document.getElementById('teacherAdviceList');
     const adminAcceptanceBoard = document.getElementById('adminAcceptanceBoard');
@@ -4085,11 +4170,45 @@
       setLatestBox(teacherTrainingLatest, latestIncompleteStudent ? '最近未完成' : '最近', latestTrainingText || '暂无培训记录');
     }
 
+    function renderTrainingRosterModal() {
+      if (!trainingRosterModalSummary || !trainingRosterModalList) return;
+      const roster = latestTrainingRosterStatus;
+      const students = roster?.incomplete_students || [];
+      if (!roster || !roster.total_required) {
+        trainingRosterModalSummary.textContent = '还没有导入班级名单，请先下载模板并上传 CSV。';
+        trainingRosterModalList.innerHTML = '<div class="muted">暂无名单。</div>';
+        return;
+      }
+      trainingRosterModalSummary.textContent = `共 ${roster.total_required} 人，未完成/未通过 ${roster.incomplete_count} 人。`;
+      if (!students.length) {
+        trainingRosterModalList.innerHTML = '<div class="muted">全部学生已完成培训。</div>';
+        return;
+      }
+      trainingRosterModalList.innerHTML = students.map(item => `
+        <div class="roster-list-row">
+          <b>${escapeHtml(item.name || '未命名学生')}</b>
+          <span>${escapeHtml(item.class_name || '未填班级')}</span>
+          <span>${escapeHtml(item.lab_group || '未填分组')}</span>
+          <span class="tag">${item.completed ? '未通过' : '未作答'}</span>
+        </div>
+      `).join('');
+    }
+
+    function openTrainingRosterModal() {
+      renderTrainingRosterModal();
+      if (trainingRosterModal) trainingRosterModal.classList.add('is-visible');
+    }
+
+    function closeTrainingRosterModal() {
+      if (trainingRosterModal) trainingRosterModal.classList.remove('is-visible');
+    }
+
     async function loadTrainingRosterStatus() {
       try {
         const resp = await fetch('/api/training/roster_status');
         const data = await resp.json();
         latestTrainingRosterStatus = resp.ok ? data : null;
+        renderTrainingRosterModal();
       } catch (err) {
         latestTrainingRosterStatus = null;
       }
@@ -4363,6 +4482,24 @@
     }
     if (uploadTrainingRosterInput) {
       uploadTrainingRosterInput.addEventListener('change', () => uploadTrainingRoster(uploadTrainingRosterInput.files?.[0]));
+    }
+    if (teacherTrainingCard) {
+      teacherTrainingCard.classList.add('is-clickable');
+      teacherTrainingCard.addEventListener('click', (event) => {
+        if (event.target.closest('button')) return;
+        openTrainingRosterModal();
+      });
+    }
+    if (openTrainingRosterModalBtn) {
+      openTrainingRosterModalBtn.addEventListener('click', openTrainingRosterModal);
+    }
+    if (closeTrainingRosterModalBtn) {
+      closeTrainingRosterModalBtn.addEventListener('click', closeTrainingRosterModal);
+    }
+    if (trainingRosterModal) {
+      trainingRosterModal.addEventListener('click', (event) => {
+        if (event.target === trainingRosterModal) closeTrainingRosterModal();
+      });
     }
     if (exportTeacherReportBtn) {
       exportTeacherReportBtn.addEventListener('click', async () => {
