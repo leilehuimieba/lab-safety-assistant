@@ -1836,6 +1836,84 @@
       color: #fff;
       border: 1px solid rgba(255,255,255,.35);
     }
+    .admin-demo-entry {
+      display: none;
+      grid-column: 1 / -1;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 20px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+      color: #fff;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, .25);
+    }
+    .admin-demo-entry.is-visible { display: flex; }
+    .admin-demo-entry strong { display: block; font-size: 20px; color: #fff; }
+    .admin-demo-entry p { margin: 6px 0 0; color: rgba(255,255,255,.84); }
+    .admin-demo-entry-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .admin-demo-entry button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 18px;
+      background: #fff;
+      color: #123c69;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .admin-demo-entry button.secondary {
+      background: rgba(255,255,255,.16);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.35);
+    }
+    .admin-acceptance-board {
+      display: none;
+      grid-column: 1 / -1;
+      gap: 14px;
+    }
+    .admin-acceptance-board.is-visible { display: grid; }
+    .admin-acceptance-head {
+      padding: 18px 20px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+      color: #fff;
+    }
+    .admin-acceptance-head strong { display: block; font-size: 20px; color: #fff; }
+    .admin-acceptance-head p { margin: 6px 0 0; color: rgba(255,255,255,.82); }
+    .acceptance-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .acceptance-card {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid #dbeafe;
+      background: #f8fbff;
+    }
+    .acceptance-card span { color: #4f6782; font-size: 12px; }
+    .acceptance-card strong { display: block; margin-top: 8px; font-size: 24px; color: #102a4c; }
+    .acceptance-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .acceptance-actions button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      background: #123c69;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .acceptance-actions button.secondary { background: #e8f0fb; color: #123c69; }
     .defense-demo-status {
       margin-top: 8px;
       color: rgba(255,255,255,.82);
@@ -1938,9 +2016,9 @@
     @media (max-width: 980px) {
       .home-hero { display:block; }
       .one-click-demo { margin-top: 18px; width: 100%; }
-      .entry-grid, .compact-overview, .gate-step-strip, .role-flow, .teacher-workbench { grid-template-columns: 1fr; }
-      .teacher-workbench-head, .teacher-demo-entry { display: none; align-items: flex-start; }
-      .teacher-workbench-head.is-visible, .teacher-demo-entry { display: grid; }
+      .entry-grid, .compact-overview, .gate-step-strip, .role-flow, .teacher-workbench, .acceptance-grid { grid-template-columns: 1fr; }
+      .teacher-workbench-head, .teacher-demo-entry, .admin-demo-entry { display: none; align-items: flex-start; }
+      .teacher-workbench-head.is-visible, .teacher-demo-entry, .admin-demo-entry.is-visible { display: grid; }
     }
     .record-actions {
       display: flex;
@@ -2046,6 +2124,17 @@
               <button class="secondary" type="button" id="defenseDemoNextBtn">答辩演示下一步</button>
             </div>
           </section>
+          <section class="admin-demo-entry" id="adminDemoEntry" aria-label="管理员验收演示入口">
+            <div>
+              <strong>管理员验收演示入口</strong>
+              <p>首页一键切到管理员验收看板，现场直接讲知识库、证据链接和测试结果。</p>
+              <div class="defense-demo-status" id="adminDemoStatus">演示顺序：切管理员模式 → 查看验收看板 → 导出管理周报</div>
+            </div>
+            <div class="admin-demo-entry-actions">
+              <button type="button" id="adminDemoModeBtn">进入管理员验收看板</button>
+              <button class="secondary" type="button" id="adminDemoExportBtn">导出管理周报</button>
+            </div>
+          </section>
           <article class="overview-card">
             <h3>常用入口</h3>
             <p id="roleEntryIntro">选择一个入口开始。</p>
@@ -2100,6 +2189,27 @@
           <section class="teacher-advice" id="teacherAdvice" aria-label="老师处理建议">
             <strong>处理建议</strong>
             <ol id="teacherAdviceList"><li>暂无待处理事项。</li></ol>
+          </section>
+          <section class="admin-acceptance-board" id="adminAcceptanceBoard" aria-label="课题验收看板">
+            <div class="admin-acceptance-head">
+              <strong>课题验收看板</strong>
+              <p>管理员视角重点看：知识库数量、证据链接、测试结果、可导出材料。</p>
+            </div>
+            <div class="acceptance-grid">
+              <article class="acceptance-card"><span>知识库条目</span><strong id="acceptanceKbCount">加载中</strong></article>
+              <article class="acceptance-card"><span>证据链接</span><strong id="acceptanceEvidenceCount">加载中</strong></article>
+              <article class="acceptance-card"><span>测试结果</span><strong id="acceptanceTestResult">加载中</strong></article>
+              <article class="acceptance-card"><span>导出材料</span><strong id="acceptanceExportStatus">可导出</strong></article>
+            </div>
+            <div class="summary-card">
+              <strong>验收口径</strong>
+              <span id="acceptanceSummary">正在读取验收状态...</span>
+            </div>
+            <div class="acceptance-actions">
+              <button type="button" id="acceptanceGoWorkspaceBtn">看知识库状态</button>
+              <button type="button" id="acceptanceGoTrainingBtn">看测试/看板</button>
+              <button class="secondary" type="button" id="acceptanceExportBtn">导出管理周报</button>
+            </div>
           </section>
         </section>
       </section>
@@ -2672,6 +2782,10 @@
     const teacherDemoModeBtn = document.getElementById('teacherDemoModeBtn');
     const defenseDemoNextBtn = document.getElementById('defenseDemoNextBtn');
     const defenseDemoStatus = document.getElementById('defenseDemoStatus');
+    const adminDemoEntry = document.getElementById('adminDemoEntry');
+    const adminDemoStatus = document.getElementById('adminDemoStatus');
+    const adminDemoModeBtn = document.getElementById('adminDemoModeBtn');
+    const adminDemoExportBtn = document.getElementById('adminDemoExportBtn');
     const roleButtons = document.querySelectorAll('[data-role]');
     const roleHint = document.getElementById('roleHint');
     const roleEntryIntro = document.getElementById('roleEntryIntro');
@@ -2698,6 +2812,15 @@
     const teacherTrainingLatest = document.getElementById('teacherTrainingLatest');
     const teacherAdvice = document.getElementById('teacherAdvice');
     const teacherAdviceList = document.getElementById('teacherAdviceList');
+    const adminAcceptanceBoard = document.getElementById('adminAcceptanceBoard');
+    const acceptanceKbCount = document.getElementById('acceptanceKbCount');
+    const acceptanceEvidenceCount = document.getElementById('acceptanceEvidenceCount');
+    const acceptanceTestResult = document.getElementById('acceptanceTestResult');
+    const acceptanceExportStatus = document.getElementById('acceptanceExportStatus');
+    const acceptanceSummary = document.getElementById('acceptanceSummary');
+    const acceptanceGoWorkspaceBtn = document.getElementById('acceptanceGoWorkspaceBtn');
+    const acceptanceGoTrainingBtn = document.getElementById('acceptanceGoTrainingBtn');
+    const acceptanceExportBtn = document.getElementById('acceptanceExportBtn');
 
     let checklistCache = [];
     let quizSession = null;
@@ -2767,14 +2890,14 @@
         ]
       },
       admin: {
-        hint: '按管理员视角：先看系统状态，再补知识库和导出结果。',
-        intro: '管理员常用：看板、知识库、复盘。',
-        flow: '推荐：看统计 → 补知识库 → 导出记录。',
-        steps: ['统计看板', '知识库状态', '记录导出'],
+        hint: '按管理员视角：重点看验收材料是否够完整。',
+        intro: '管理员常用：验收看板、证据链接、导出材料。',
+        flow: '推荐：看知识库 → 查证据链接 → 导出材料。',
+        steps: ['知识库数量', '证据链接', '测试结果'],
         entries: [
-          ['training', '管理看板'],
-          ['workspace', '知识库状态'],
-          ['incident', '事故复盘']
+          ['workspace', '看知识库'],
+          ['training', '看测试结果'],
+          ['incident', '看复盘材料']
         ]
       }
     };
@@ -2790,6 +2913,8 @@
       if (teacherWorkbench) teacherWorkbench.classList.toggle('is-visible', role === 'teacher');
       if (teacherWorkbenchHead) teacherWorkbenchHead.classList.toggle('is-visible', role === 'teacher');
       if (teacherAdvice) teacherAdvice.classList.toggle('is-visible', role === 'teacher');
+      if (adminDemoEntry) adminDemoEntry.classList.toggle('is-visible', role === 'admin');
+      if (adminAcceptanceBoard) adminAcceptanceBoard.classList.toggle('is-visible', role === 'admin');
       if (roleFlowSteps) roleFlowSteps.innerHTML = config.steps.map(step => `<span>${escapeHtml(step)}</span>`).join('');
       if (roleEntryActions) {
         roleEntryActions.innerHTML = config.entries.map(([target, label]) => `<button class="jump-btn" type="button" data-view-jump="${target}">${escapeHtml(label)}</button>`).join('');
@@ -3245,20 +3370,35 @@
       return data;
     }
 
+    function updateAcceptanceSummary() {
+      if (!acceptanceSummary) return;
+      const kb = acceptanceKbCount?.textContent || '-';
+      const evidence = acceptanceEvidenceCount?.textContent || '-';
+      const test = acceptanceTestResult?.textContent || '-';
+      acceptanceSummary.textContent = `当前可展示知识库 ${kb}，证据链接 ${evidence}，测试结果 ${test}。适合用于课题验收和答辩说明。`;
+    }
+
     async function loadDemoMeta() {
       try {
         const resp = await fetch('/api/meta');
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.detail || '加载封版信息失败。');
-        metaVersion.textContent = data.app_version || '-';
-        metaAcceptance.textContent = `${data.acceptance_status || '-'} / ${data.formal_eval_score || '-'}`;
-        metaKbSize.textContent = `${data.knowledge_base_imported || 0} 导入 / ${data.knowledge_base_rows || 0} 本地`;
-        metaLane.textContent = data.chat_lane_lab || '-';
+        if (metaVersion) metaVersion.textContent = data.app_version || '-';
+        if (metaAcceptance) metaAcceptance.textContent = `${data.acceptance_status || '-'} / ${data.formal_eval_score || '-'}`;
+        if (metaKbSize) metaKbSize.textContent = `${data.knowledge_base_imported || 0} 导入 / ${data.knowledge_base_rows || 0} 本地`;
+        if (metaLane) metaLane.textContent = data.chat_lane_lab || '-';
+        if (acceptanceKbCount) acceptanceKbCount.textContent = `${data.knowledge_base_imported || 0} / ${data.knowledge_base_rows || 0}`;
+        if (acceptanceTestResult) acceptanceTestResult.textContent = data.formal_eval_score || '-';
+        if (acceptanceExportStatus) acceptanceExportStatus.textContent = data.acceptance_status || '可导出';
+        updateAcceptanceSummary();
       } catch (err) {
-        metaVersion.textContent = '加载失败';
-        metaAcceptance.textContent = '加载失败';
-        metaKbSize.textContent = '加载失败';
-        metaLane.textContent = '加载失败';
+        if (metaVersion) metaVersion.textContent = '加载失败';
+        if (metaAcceptance) metaAcceptance.textContent = '加载失败';
+        if (metaKbSize) metaKbSize.textContent = '加载失败';
+        if (metaLane) metaLane.textContent = '加载失败';
+        if (acceptanceKbCount) acceptanceKbCount.textContent = '加载失败';
+        if (acceptanceTestResult) acceptanceTestResult.textContent = '加载失败';
+        updateAcceptanceSummary();
       }
     }
 
@@ -3604,10 +3744,14 @@
 
         renderTagCloud(workspaceTopCategories, data.top_categories || [], '当前没有可展示的分类统计。');
         renderTagCloud(workspaceTopHazards, data.top_hazards || [], '当前没有可展示的危险源统计。');
+        if (acceptanceEvidenceCount) acceptanceEvidenceCount.textContent = `${data.kb_rows || 0} 条`;
+        updateAcceptanceSummary();
       } catch (err) {
         workspaceStatusList.innerHTML = `<div class="status-item"><div><strong>状态加载失败</strong><span>${escapeHtml(err.message)}</span></div><div class="status-badge bad">失败</div></div>`;
         renderTagCloud(workspaceTopCategories, [], '分类统计加载失败。');
         renderTagCloud(workspaceTopHazards, [], '危险源统计加载失败。');
+        if (acceptanceEvidenceCount) acceptanceEvidenceCount.textContent = '加载失败';
+        updateAcceptanceSummary();
       } finally {
         setButtonBusy(refreshWorkspaceBtn, false, '刷新工作区状态');
       }
@@ -3722,6 +3866,22 @@
         teacherWorkbenchHead.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
       announce('已进入老师演示模式。');
+    }
+
+    async function enterAdminAcceptanceDemoMode() {
+      applyRole('admin');
+      setActiveView('overview');
+      if (adminDemoStatus) adminDemoStatus.textContent = '正在刷新验收看板数据...';
+      try {
+        await Promise.all([loadDemoMeta(), loadWorkspaceStatus(), loadAdminDashboard()]);
+        if (adminDemoStatus) adminDemoStatus.textContent = '演示顺序：切管理员模式 → 查看验收看板 → 导出管理周报';
+      } catch (err) {
+        if (adminDemoStatus) adminDemoStatus.textContent = `看板刷新失败：${err.message}`;
+      }
+      if (adminAcceptanceBoard) {
+        adminAcceptanceBoard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      announce('已进入管理员验收演示入口。');
     }
 
     async function runDefenseDemoNextStep() {
@@ -3998,6 +4158,20 @@
     if (teacherDemoModeBtn) {
       teacherDemoModeBtn.addEventListener('click', enterTeacherDemoMode);
     }
+    if (adminDemoModeBtn) {
+      adminDemoModeBtn.addEventListener('click', enterAdminAcceptanceDemoMode);
+    }
+    if (adminDemoExportBtn) {
+      adminDemoExportBtn.addEventListener('click', async () => {
+        try {
+          await downloadFile('/api/admin/weekly_report.md?days=30', 'admin_acceptance_report.md');
+          announce('管理周报已导出。');
+        } catch (err) {
+          if (adminDemoStatus) adminDemoStatus.textContent = `导出失败：${err.message}`;
+          alert(err.message);
+        }
+      });
+    }
 
     if (defenseDemoNextBtn) {
       defenseDemoNextBtn.addEventListener('click', runDefenseDemoNextStep);
@@ -4053,6 +4227,18 @@
     startQuizBtn.addEventListener('click', startQuiz);
     submitQuizBtn.addEventListener('click', submitQuiz);
     createIncidentBtn.addEventListener('click', createIncident);
+    if (acceptanceGoWorkspaceBtn) acceptanceGoWorkspaceBtn.addEventListener('click', () => setActiveView('workspace'));
+    if (acceptanceGoTrainingBtn) acceptanceGoTrainingBtn.addEventListener('click', () => setActiveView('training'));
+    if (acceptanceExportBtn) {
+      acceptanceExportBtn.addEventListener('click', async () => {
+        try {
+          await downloadFile('/api/admin/weekly_report.md?days=30', 'admin_acceptance_report.md');
+          announce('管理周报已导出。');
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    }
     refreshWorkspaceBtn.addEventListener('click', loadWorkspaceStatus);
     workspaceSearchBtn.addEventListener('click', inspectKnowledgeHits);
     if (seedTeacherDemoBtn) {
