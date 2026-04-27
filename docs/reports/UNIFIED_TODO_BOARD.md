@@ -1,6 +1,6 @@
 # 唯一待办总表（Unified Todo Board）
 
-- 更新时间：`2026-04-27 10:45`
+- 更新时间：`2026-04-27 15:19`
 - 适用范围：`lab-safety-assistant-remote` 当前仓库
 - 维护规则：从现在开始，推进状态只在本表更新；其他文档作为证据来源，不再各自维护待办状态。
 
@@ -35,6 +35,20 @@
 | TEACHER-REAL-LIST-01 | P0 | done | 后续真实试点 | 老师端接真实班级名单和培训完成记录 | 已完成：新增名单模板和 `/api/training/roster_status`，老师工作台“未完成培训”优先显示真实名单人数和最近未完成人员 | `python -m pytest -q` |
 | EVIDENCE-LINK-STATUS-01 | P1 | done | 后续验收增强 | 证据链接显示可访问数量 | 已完成：新增 `/api/evidence/link_status`，管理员验收看板可抽查并显示可访问数量 | realistic_scenario_trial_20260427 |
 | DOC-ARCH-01 | P2 | done | 发布与验收负责人 | 补 `docs/README.md` 作为文档执行入口（避免状态分散） | 已完成：`docs/README.md` 已存在，并指向答辩、验收、测试、待办材料入口 | CMD-DOC-01 |
+| PRODUCT-HOME-01 | P1 | done | 产品优化 | 增加项目验收首页/欢迎页 | 已完成：首页展示产品定位、当前状态、三类用户入口和未接入说明 | 浏览器走查：首页、三类入口 |
+| PRODUCT-ONBOARD-01 | P1 | done | 产品优化 | 增加首次访问引导和手动引导入口 | 已完成：首次访问自动弹出使用引导，右上角可手动打开 | 浏览器走查：首次引导弹窗 |
+| PRODUCT-STATUS-01 | P1 | done | 产品优化 / 验收材料 | 增加产品状态页 | 已完成：集中展示当前版本、可用功能、未接入功能、适合场景和不适合场景 | 浏览器走查：产品状态页 |
+| TEACHER-ROSTER-UPLOAD-01 | P1 | done | 老师端优化 | 增加培训名单模板下载和 CSV 上传 | 已完成：老师工作台支持下载名单模板、上传名单 CSV，并由真实名单统计未完成培训 | `/api/training/roster_template.csv`, `/api/training/roster_upload`, `/api/training/roster_status` |
+| TEACHER-ROSTER-MODAL-01 | P1 | done | 老师端优化 | 增加未完成培训名单弹窗 | 已完成：点击未完成培训卡片可查看姓名、班级、分组和完成状态 | 浏览器走查：未完成名单弹窗 |
+| TEACHER-ROSTER-COPY-01 | P2 | done | 老师端优化 | 增加复制未完成名单 | 已完成：弹窗内支持一键复制未完成培训名单，方便发班群 | 浏览器走查：复制按钮 |
+| ADMIN-ACCEPTANCE-PACK-02 | P1 | done | 验收材料 | 增强管理员验收材料包 | 已完成：验收包包含产品定位、可用功能、未接入功能、老师工作台摘要、证据链接抽查、后续优化计划 | `/api/admin/acceptance_package.md?days=30` |
+| RELEASE-TAG-01 | P1 | done | 发布与验收负责人 | 归档产品预览版标签 | 已完成：当前仓库已打标签 `v1.0-product-preview`，对应产品预览版完整功能 | `git describe --tags --always` |
+| PILOT-REAL-FEEDBACK-01 | P0 | todo | 试点负责人 | 收集真实试点反馈 | 至少收集 3-5 名学生、1-2 名老师的真实使用反馈，并汇总到 `docs/pilot/` | 待执行 |
+| AUTH-BASIC-01 | P0 | todo | 后端 / 产品化 | 增加登录和基础权限 | 学生、老师、管理员不再只靠前端角色切换，后端接口具备基础权限校验 | 待设计 |
+| DB-MIGRATION-01 | P0 | todo | 后端 / 数据 | 将关键记录从本地文件迁移到数据库 | 问答、培训、开工审核、风险记录、名单记录可持久化查询 | 待设计 |
+| AUDIT-LOG-01 | P1 | todo | 后端 / 管理员端 | 增加操作审计日志 | 关键操作可记录操作者、时间、动作和结果，管理员可导出 | 待设计 |
+| BACKUP-RESTORE-01 | P1 | todo | 运维 / 数据 | 增加数据备份与恢复方案 | 试点数据可备份、可恢复，避免误删或演示数据污染真实数据 | 待设计 |
+| SCHOOL-INTEGRATION-01 | P2 | todo | 产品化 / 对接 | 学校平台对接预研 | 明确统一认证、教务名单、学生培训平台对接方式和边界 | 待调研 |
 
 ## 本轮成功 Run 证据（2026-04-26）
 
