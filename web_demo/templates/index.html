@@ -2021,6 +2021,29 @@
       font-size: 12px;
       font-weight: 800;
     }
+    .onboarding-steps { display: grid; gap: 12px; }
+    .onboarding-step {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid #e5edf7;
+      border-radius: 16px;
+      background: #f8fafc;
+    }
+    .onboarding-step b {
+      display: inline-flex;
+      width: 32px;
+      height: 32px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    .onboarding-step strong { display: block; color: #12243d; margin-bottom: 4px; }
+    .onboarding-step span { color: #52657a; font-size: 13px; line-height: 1.55; }
+    .simple-modal-actions button.secondary { background: #e8f0fb; color: #123c69; }
 
     .role-flow {
       margin-top: 14px;
@@ -2205,8 +2228,32 @@
           <h2 id="pageTitle">平台总览</h2>
           <p id="pageDesc">选择左侧功能，按步骤完成日常安全管理。</p>
         </div>
+        <button class="jump-btn" type="button" id="openOnboardingBtn">查看使用引导</button>
       </header>
       <div id="liveRegion" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+      <div class="simple-modal" id="onboardingModal" role="dialog" aria-modal="true" aria-labelledby="onboardingModalTitle">
+        <div class="simple-modal-card">
+          <div class="simple-modal-head">
+            <div>
+              <strong id="onboardingModalTitle">首次使用引导</strong>
+              <p>先选角色，再按推荐流程使用；不需要学习复杂菜单。</p>
+            </div>
+            <button class="simple-modal-close" type="button" id="closeOnboardingBtn" aria-label="关闭">×</button>
+          </div>
+          <div class="simple-modal-body">
+            <div class="onboarding-steps">
+              <div class="onboarding-step"><b>1</b><div><strong>学生怎么用</strong><span>先问安全问题，再做风险评估，最后生成开工检查；需要时完成培训题。</span></div></div>
+              <div class="onboarding-step"><b>2</b><div><strong>老师怎么用</strong><span>切到“老师”，看待审核开工、高风险提醒、未完成培训名单；名单可下载模板后上传。</span></div></div>
+              <div class="onboarding-step"><b>3</b><div><strong>管理员怎么用</strong><span>切到“管理员”，查看知识库、证据链接、测试结果，并导出验收包。</span></div></div>
+            </div>
+            <div class="simple-modal-actions" style="margin-top:16px;">
+              <button class="secondary" type="button" id="onboardingStudentBtn">学生开始</button>
+              <button class="secondary" type="button" id="onboardingTeacherBtn">老师工作台</button>
+              <button type="button" id="onboardingDoneBtn">知道了</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <section class="view-section is-active" data-view-panel="overview">
         <section class="overview-grid">
@@ -2909,6 +2956,12 @@
     const adminAcceptanceStatus = document.getElementById('adminAcceptanceStatus');
     const adminAcceptanceModeBtn = document.getElementById('adminAcceptanceModeBtn');
     const adminAcceptanceExportBtn = document.getElementById('adminAcceptanceExportBtn');
+    const openOnboardingBtn = document.getElementById('openOnboardingBtn');
+    const onboardingModal = document.getElementById('onboardingModal');
+    const closeOnboardingBtn = document.getElementById('closeOnboardingBtn');
+    const onboardingDoneBtn = document.getElementById('onboardingDoneBtn');
+    const onboardingStudentBtn = document.getElementById('onboardingStudentBtn');
+    const onboardingTeacherBtn = document.getElementById('onboardingTeacherBtn');
     const roleButtons = document.querySelectorAll('[data-role]');
     const roleHint = document.getElementById('roleHint');
     const roleEntryIntro = document.getElementById('roleEntryIntro');
@@ -3063,6 +3116,21 @@
       window.setTimeout(() => {
         liveRegion.textContent = message;
       }, 30);
+    }
+
+    function openOnboarding(markSeen = false) {
+      if (onboardingModal) onboardingModal.classList.add('is-visible');
+      if (markSeen) localStorage.setItem('labSafetyOnboardingSeen', 'true');
+    }
+
+    function closeOnboarding() {
+      if (onboardingModal) onboardingModal.classList.remove('is-visible');
+      localStorage.setItem('labSafetyOnboardingSeen', 'true');
+    }
+
+    function runFirstVisitOnboarding() {
+      if (localStorage.getItem('labSafetyOnboardingSeen') === 'true') return;
+      window.setTimeout(() => openOnboarding(true), 450);
     }
 
     function setButtonBusy(button, busy, idleText, busyText = '处理中...') {
@@ -4442,6 +4510,29 @@
     if (guideStepNextBtn) {
       guideStepNextBtn.addEventListener('click', runGuideNextStep);
     }
+    if (openOnboardingBtn) openOnboardingBtn.addEventListener('click', () => openOnboarding(true));
+    if (closeOnboardingBtn) closeOnboardingBtn.addEventListener('click', closeOnboarding);
+    if (onboardingDoneBtn) onboardingDoneBtn.addEventListener('click', closeOnboarding);
+    if (onboardingStudentBtn) {
+      onboardingStudentBtn.addEventListener('click', () => {
+        applyRole('student');
+        setActiveView('assistant');
+        closeOnboarding();
+      });
+    }
+    if (onboardingTeacherBtn) {
+      onboardingTeacherBtn.addEventListener('click', () => {
+        applyRole('teacher');
+        setActiveView('overview');
+        closeOnboarding();
+        if (teacherWorkbenchHead) teacherWorkbenchHead.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+    if (onboardingModal) {
+      onboardingModal.addEventListener('click', (event) => {
+        if (event.target === onboardingModal) closeOnboarding();
+      });
+    }
 
     roleButtons.forEach((button) => {
       button.addEventListener('click', () => applyRole(button.dataset.role || 'student'));
@@ -4592,6 +4683,7 @@
     loadTrainingRosterStatus().then(() => loadAdminDashboard());
     loadIncidents();
     loadProductMeta();
+    runFirstVisitOnboarding();
   
   </script>
 </body>
