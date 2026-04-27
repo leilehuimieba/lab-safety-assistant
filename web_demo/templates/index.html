@@ -401,6 +401,23 @@
       grid-template-columns: 1.05fr 0.95fr;
       gap: 18px;
     }
+    .product-status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .product-status-card {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid #dbe7f5;
+      background: #fff;
+      box-shadow: 0 14px 34px rgba(15, 23, 42, .06);
+    }
+    .product-status-card strong { display: block; color: #102a4c; font-size: 18px; margin-bottom: 10px; }
+    .product-status-card ul { margin: 0; padding-left: 20px; color: #52657a; line-height: 1.9; }
+    .product-status-card.is-gap { border-color: #fed7aa; background: #fffaf3; }
+    .product-status-card.is-ok { border-color: #bbf7d0; background: #f7fff9; }
+    .product-status-card.is-wide { grid-column: 1 / -1; }
     .training-shell {
       display: grid;
       grid-template-columns: 0.95fr 1.05fr;
@@ -2205,6 +2222,10 @@
           <strong>知识库状态</strong>
           <span>查看配置和知识库</span>
         </button>
+        <button class="nav-btn" type="button" data-view-target="productStatus" aria-current="false">
+          <strong>产品状态</strong>
+          <span>能用什么/未接什么</span>
+        </button>
         <button class="nav-btn" type="button" data-view-target="training" aria-current="false">
           <strong>培训与看板</strong>
           <span>培训、统计、看板</span>
@@ -2518,6 +2539,66 @@
           </div>
         </section>
       </section>
+      <section class="view-section" data-view-panel="productStatus">
+        <div class="section-shell">
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">Product Status</span>
+              <h2>产品状态页</h2>
+              <p>明确当前版本能做什么、还没接什么，避免误认为已经对接学校学生平台。</p>
+            </div>
+          </div>
+          <div class="product-status-grid">
+            <article class="product-status-card is-ok">
+              <strong>当前可用功能</strong>
+              <ul>
+                <li>安全问答、风险评估、开工检查</li>
+                <li>培训抽题、评分、培训记录统计</li>
+                <li>老师工作台：待审核、高风险、未完成培训</li>
+                <li>培训名单 CSV 下载、上传、查看、复制</li>
+                <li>管理员验收看板、证据链接检查、验收包导出</li>
+              </ul>
+            </article>
+            <article class="product-status-card is-gap">
+              <strong>当前未接入功能</strong>
+              <ul>
+                <li>未接学校统一身份认证</li>
+                <li>未接教务系统/学生平台</li>
+                <li>未自动同步真实班级名单</li>
+                <li>未自动同步校级培训完成状态</li>
+                <li>当前仍以本系统记录和 CSV 名单为准</li>
+              </ul>
+            </article>
+            <article class="product-status-card">
+              <strong>适合使用场景</strong>
+              <ul>
+                <li>课题验收、答辩展示、小范围试点</li>
+                <li>老师手动维护班级名单</li>
+                <li>学生在本系统完成培训和开工检查</li>
+                <li>管理员导出阶段性验收材料</li>
+              </ul>
+            </article>
+            <article class="product-status-card">
+              <strong>暂不建议使用场景</strong>
+              <ul>
+                <li>直接替代学校正式学生平台</li>
+                <li>作为唯一强制准入系统</li>
+                <li>依赖自动账号权限和统一登录的正式生产环境</li>
+              </ul>
+            </article>
+            <article class="product-status-card is-wide">
+              <strong>当前版本信息</strong>
+              <ul>
+                <li>版本：<span id="productStatusVersion">加载中</span></li>
+                <li>交付状态：<span id="productStatusAcceptance">加载中</span></li>
+                <li>知识库：<span id="productStatusKb">加载中</span></li>
+                <li>运行通道：<span id="productStatusLane">加载中</span></li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section class="view-section" data-view-panel="workspace">
         <section class="workspace-grid">
           <div class="stack">
@@ -2887,6 +2968,10 @@
     const metaAcceptance = document.getElementById('metaAcceptance');
     const metaKbSize = document.getElementById('metaKbSize');
     const metaLane = document.getElementById('metaLane');
+    const productStatusVersion = document.getElementById('productStatusVersion');
+    const productStatusAcceptance = document.getElementById('productStatusAcceptance');
+    const productStatusKb = document.getElementById('productStatusKb');
+    const productStatusLane = document.getElementById('productStatusLane');
     const lowConfidenceAlert = document.getElementById('lowConfidenceAlert');
     const saveRecordBtn = document.getElementById('saveRecordBtn');
     const copyRecordBtn = document.getElementById('copyRecordBtn');
@@ -3048,6 +3133,7 @@
       assistant: { title: '智能问答', desc: '输入场景，查看回答、风险和来源。' },
       gate: { title: '准入阻断', desc: '生成开工检查清单。' },
       workspace: { title: '知识库状态', desc: '查看 Dify 和知识库情况。' },
+      productStatus: { title: '产品状态', desc: '查看当前可用功能、未接入功能和适合使用场景。' },
       training: { title: '培训与看板', desc: '查看培训和统计结果。' },
       incident: { title: '事故复盘', desc: '记录事故和整改状态。' }
     };
@@ -3625,6 +3711,10 @@
         if (metaAcceptance) metaAcceptance.textContent = `${data.acceptance_status || '-'} / ${data.formal_eval_score || '-'}`;
         if (metaKbSize) metaKbSize.textContent = `${data.knowledge_base_imported || 0} 导入 / ${data.knowledge_base_rows || 0} 本地`;
         if (metaLane) metaLane.textContent = data.chat_lane_lab || '-';
+        if (productStatusVersion) productStatusVersion.textContent = data.app_version || '-';
+        if (productStatusAcceptance) productStatusAcceptance.textContent = `${data.acceptance_status || '-'} / ${data.formal_eval_score || '-'}`;
+        if (productStatusKb) productStatusKb.textContent = `${data.knowledge_base_imported || 0} 导入 / ${data.knowledge_base_rows || 0} 本地`;
+        if (productStatusLane) productStatusLane.textContent = data.chat_lane_lab || '-';
         if (acceptanceKbCount) acceptanceKbCount.textContent = `${data.knowledge_base_imported || 0} / ${data.knowledge_base_rows || 0}`;
         if (acceptanceTestResult) acceptanceTestResult.textContent = data.formal_eval_score || '-';
         if (acceptanceExportStatus) acceptanceExportStatus.textContent = data.acceptance_status || '可导出';
@@ -3634,6 +3724,10 @@
         if (metaAcceptance) metaAcceptance.textContent = '加载失败';
         if (metaKbSize) metaKbSize.textContent = '加载失败';
         if (metaLane) metaLane.textContent = '加载失败';
+        if (productStatusVersion) productStatusVersion.textContent = '加载失败';
+        if (productStatusAcceptance) productStatusAcceptance.textContent = '加载失败';
+        if (productStatusKb) productStatusKb.textContent = '加载失败';
+        if (productStatusLane) productStatusLane.textContent = '加载失败';
         if (acceptanceKbCount) acceptanceKbCount.textContent = '加载失败';
         if (acceptanceTestResult) acceptanceTestResult.textContent = '加载失败';
         updateAcceptanceSummary();
