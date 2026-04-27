@@ -2104,6 +2104,35 @@
     .entry-card span { color: #2563eb; font-weight: 800; font-size: 14px; }
     .entry-card strong { display:block; margin-top: 16px; font-size: 24px; color: #172033; }
     .entry-card small { display:block; margin-top: 10px; color: #667085; font-size: 15px; line-height: 1.6; }
+    .welcome-hero {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      align-items: stretch;
+      padding: 24px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #123c69 0%, #2452a3 100%);
+      color: #fff;
+      box-shadow: 0 22px 54px rgba(18, 60, 105, .24);
+    }
+    .welcome-hero h3 { margin: 6px 0 10px; font-size: clamp(26px, 3vw, 38px); letter-spacing: -0.04em; }
+    .welcome-hero p { color: rgba(255,255,255,.84); max-width: 760px; }
+    .welcome-badges { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+    .welcome-badges span { padding: 7px 10px; border-radius: 999px; background: rgba(255,255,255,.14); color:#fff; font-weight:800; }
+    .welcome-status {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.18);
+    }
+    .welcome-status div { display:flex; justify-content:space-between; gap:12px; color: rgba(255,255,255,.82); }
+    .welcome-status b { color:#fff; }
+    .welcome-entry-card { min-height: 160px; }
+    .welcome-entry-card button { margin-top: 16px; width: 100%; }
+    @media (max-width: 900px) { .welcome-hero { grid-template-columns: 1fr; } }
     .compact-overview { grid-template-columns: 1.1fr .9fr; }
     .short-answer {
       display: grid;
@@ -2278,6 +2307,38 @@
 
       <section class="view-section is-active" data-view-panel="overview">
         <section class="overview-grid">
+          <section class="welcome-hero" aria-label="项目验收欢迎页">
+            <div>
+              <span class="section-kicker">Lab Safety Assistant</span>
+              <h3>实验室安全助手平台</h3>
+              <p>面向高校实验室的安全问答、开工准入、培训留痕和验收材料工作台。当前适合课题验收、小范围试点和老师日常辅助管理。</p>
+              <div class="welcome-badges"><span>问答</span><span>准入</span><span>培训</span><span>老师工作台</span><span>验收看板</span></div>
+            </div>
+            <div class="welcome-status">
+              <div><span>当前版本</span><b id="welcomeVersion">加载中</b></div>
+              <div><span>交付状态</span><b id="welcomeAcceptance">加载中</b></div>
+              <div><span>知识库</span><b id="welcomeKbStatus">加载中</b></div>
+              <div><span>学校平台</span><b>未接入</b></div>
+            </div>
+          </section>
+          <article class="entry-card welcome-entry-card" data-welcome-role="student">
+            <span>学生入口</span>
+            <strong>先问，再判断能不能开工</strong>
+            <small>适合提安全问题、做风险评估、生成开工检查、完成培训。</small>
+            <button class="jump-btn" type="button">进入学生使用</button>
+          </article>
+          <article class="entry-card welcome-entry-card" data-welcome-role="teacher">
+            <span>老师入口</span>
+            <strong>看审核、风险和未培训名单</strong>
+            <small>适合查看待审核开工、高风险提醒、上传名单、复制未完成培训名单。</small>
+            <button class="jump-btn" type="button">进入老师工作台</button>
+          </article>
+          <article class="entry-card welcome-entry-card" data-welcome-role="admin">
+            <span>管理员入口</span>
+            <strong>看验收状态和导出材料</strong>
+            <small>适合查看知识库、证据链接、测试结果，并导出验收包。</small>
+            <button class="jump-btn" type="button">进入验收看板</button>
+          </article>
           <article class="overview-card">
             <span>当前工作场景</span>
             <strong id="currentScenarioText">还没有输入场景。</strong>
@@ -2972,6 +3033,10 @@
     const productStatusAcceptance = document.getElementById('productStatusAcceptance');
     const productStatusKb = document.getElementById('productStatusKb');
     const productStatusLane = document.getElementById('productStatusLane');
+    const welcomeVersion = document.getElementById('welcomeVersion');
+    const welcomeAcceptance = document.getElementById('welcomeAcceptance');
+    const welcomeKbStatus = document.getElementById('welcomeKbStatus');
+    const welcomeEntryCards = document.querySelectorAll('[data-welcome-role]');
     const lowConfidenceAlert = document.getElementById('lowConfidenceAlert');
     const saveRecordBtn = document.getElementById('saveRecordBtn');
     const copyRecordBtn = document.getElementById('copyRecordBtn');
@@ -3715,6 +3780,9 @@
         if (productStatusAcceptance) productStatusAcceptance.textContent = `${data.acceptance_status || '-'} / ${data.formal_eval_score || '-'}`;
         if (productStatusKb) productStatusKb.textContent = `${data.knowledge_base_imported || 0} 导入 / ${data.knowledge_base_rows || 0} 本地`;
         if (productStatusLane) productStatusLane.textContent = data.chat_lane_lab || '-';
+        if (welcomeVersion) welcomeVersion.textContent = data.app_version || '-';
+        if (welcomeAcceptance) welcomeAcceptance.textContent = data.acceptance_status || '-';
+        if (welcomeKbStatus) welcomeKbStatus.textContent = `${data.knowledge_base_imported || 0} 条`;
         if (acceptanceKbCount) acceptanceKbCount.textContent = `${data.knowledge_base_imported || 0} / ${data.knowledge_base_rows || 0}`;
         if (acceptanceTestResult) acceptanceTestResult.textContent = data.formal_eval_score || '-';
         if (acceptanceExportStatus) acceptanceExportStatus.textContent = data.acceptance_status || '可导出';
@@ -3728,6 +3796,9 @@
         if (productStatusAcceptance) productStatusAcceptance.textContent = '加载失败';
         if (productStatusKb) productStatusKb.textContent = '加载失败';
         if (productStatusLane) productStatusLane.textContent = '加载失败';
+        if (welcomeVersion) welcomeVersion.textContent = '加载失败';
+        if (welcomeAcceptance) welcomeAcceptance.textContent = '加载失败';
+        if (welcomeKbStatus) welcomeKbStatus.textContent = '加载失败';
         if (acceptanceKbCount) acceptanceKbCount.textContent = '加载失败';
         if (acceptanceTestResult) acceptanceTestResult.textContent = '加载失败';
         updateAcceptanceSummary();
@@ -4630,6 +4701,18 @@
 
     roleButtons.forEach((button) => {
       button.addEventListener('click', () => applyRole(button.dataset.role || 'student'));
+    });
+    welcomeEntryCards.forEach((card) => {
+      card.addEventListener('click', () => {
+        const role = card.dataset.welcomeRole || 'student';
+        applyRole(role);
+        if (role === 'student') setActiveView('assistant');
+        if (role === 'teacher') {
+          setActiveView('overview');
+          if (teacherWorkbenchHead) teacherWorkbenchHead.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        if (role === 'admin') setActiveView('productStatus');
+      });
     });
     applyRole(localStorage.getItem('labSafetyRole') || 'student');
 
