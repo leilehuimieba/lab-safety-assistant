@@ -1983,6 +1983,21 @@
       font-size: 20px;
     }
     .simple-modal-body { padding: 16px 20px 20px; }
+    .simple-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .simple-modal-actions button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      background: #123c69;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
     .roster-list { display: grid; gap: 10px; }
     .roster-list-row {
       display: grid;
@@ -2290,6 +2305,9 @@
                 <button class="simple-modal-close" type="button" id="closeTrainingRosterModalBtn" aria-label="关闭">×</button>
               </div>
               <div class="simple-modal-body">
+                <div class="simple-modal-actions">
+                  <button type="button" id="copyTrainingRosterBtn">复制未完成名单</button>
+                </div>
                 <div class="roster-list" id="trainingRosterModalList"></div>
               </div>
             </div>
@@ -2920,6 +2938,7 @@
     const openTrainingRosterModalBtn = document.getElementById('openTrainingRosterModalBtn');
     const trainingRosterModal = document.getElementById('trainingRosterModal');
     const closeTrainingRosterModalBtn = document.getElementById('closeTrainingRosterModalBtn');
+    const copyTrainingRosterBtn = document.getElementById('copyTrainingRosterBtn');
     const trainingRosterModalSummary = document.getElementById('trainingRosterModalSummary');
     const trainingRosterModalList = document.getElementById('trainingRosterModalList');
     const teacherAdvice = document.getElementById('teacherAdvice');
@@ -4194,6 +4213,31 @@
       `).join('');
     }
 
+    function buildIncompleteRosterText() {
+      const roster = latestTrainingRosterStatus;
+      const students = roster?.incomplete_students || [];
+      if (!roster || !roster.total_required) return '还没有导入班级名单。';
+      if (!students.length) return '全部学生已完成培训。';
+      const lines = students.map((item, index) => {
+        const status = item.completed ? '未通过' : '未作答';
+        const className = item.class_name || '未填班级';
+        const group = item.lab_group || '未填分组';
+        return `${index + 1}. ${item.name || '未命名学生'}｜${className}｜${group}｜${status}`;
+      });
+      return [`未完成培训名单（${roster.incomplete_count}人）：`, ...lines, '请尽快完成培训/补考。'].join('\n');
+    }
+
+    async function copyIncompleteRosterText() {
+      const text = buildIncompleteRosterText();
+      try {
+        await navigator.clipboard.writeText(text);
+        announce('未完成名单已复制。');
+        if (teacherSeedStatus) teacherSeedStatus.textContent = '未完成名单已复制，可直接发到班群。';
+      } catch (err) {
+        window.prompt('复制失败，请手动复制：', text);
+      }
+    }
+
     function openTrainingRosterModal() {
       renderTrainingRosterModal();
       if (trainingRosterModal) trainingRosterModal.classList.add('is-visible');
@@ -4495,6 +4539,9 @@
     }
     if (closeTrainingRosterModalBtn) {
       closeTrainingRosterModalBtn.addEventListener('click', closeTrainingRosterModal);
+    }
+    if (copyTrainingRosterBtn) {
+      copyTrainingRosterBtn.addEventListener('click', copyIncompleteRosterText);
     }
     if (trainingRosterModal) {
       trainingRosterModal.addEventListener('click', (event) => {
