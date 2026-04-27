@@ -81,6 +81,9 @@ python -m pytest -q
 |---|---|
 | 单人试用反馈表 | `docs/pilot/pilot_feedback_form.md` |
 | 多人反馈汇总表 | `docs/pilot/pilot_feedback_summary.md` |
+| 模拟真实场景试用记录 | `docs/pilot/realistic_scenario_trial_20260427.md` |
+| 模拟真实场景试用原始结果 | `docs/pilot/realistic_scenario_trial_20260427.json` |
+| 模拟角色反馈记录 | `docs/pilot/simulated_pilot_feedback_20260427.md` |
 
 使用建议：
 
