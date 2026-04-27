@@ -1987,6 +1987,16 @@
     .answer-block strong.answer-conclusion { font-size: 22px; color: #172033; }
     .answer-block ul { margin-top: 8px; }
     .answer-block li { margin: 6px 0; }
+    .teacher-alert-box {
+      border-radius: 16px;
+      border: 1px solid #fecaca;
+      background: #fef2f2;
+      color: #991b1b;
+      padding: 14px 16px;
+      font-weight: 800;
+      line-height: 1.7;
+    }
+    .teacher-alert-box strong { display: block; margin-bottom: 6px; font-size: 16px; }
     .evidence-card-link {
       display: flex;
       justify-content: space-between;
@@ -2128,11 +2138,11 @@
             <div>
               <strong>管理员验收演示入口</strong>
               <p>首页一键切到管理员验收看板，现场直接讲知识库、证据链接和测试结果。</p>
-              <div class="defense-demo-status" id="adminDemoStatus">演示顺序：切管理员模式 → 查看验收看板 → 导出管理周报</div>
+              <div class="defense-demo-status" id="adminDemoStatus">演示顺序：切管理员模式 → 查看验收看板 → 导出验收包</div>
             </div>
             <div class="admin-demo-entry-actions">
               <button type="button" id="adminDemoModeBtn">进入管理员验收看板</button>
-              <button class="secondary" type="button" id="adminDemoExportBtn">导出管理周报</button>
+              <button class="secondary" type="button" id="adminDemoExportBtn">导出验收包</button>
             </div>
           </section>
           <article class="overview-card">
@@ -2208,7 +2218,7 @@
             <div class="acceptance-actions">
               <button type="button" id="acceptanceGoWorkspaceBtn">看知识库状态</button>
               <button type="button" id="acceptanceGoTrainingBtn">看测试/看板</button>
-              <button class="secondary" type="button" id="acceptanceExportBtn">导出管理周报</button>
+              <button class="secondary" type="button" id="acceptanceExportBtn">导出验收包</button>
             </div>
           </section>
         </section>
@@ -3248,6 +3258,12 @@
       };
       target.innerHTML = DOMPurify.sanitize(`
         <div class="short-answer">
+          ${['High', 'Critical', '高', '极高'].includes(riskLabel) || decision !== '可以继续' ? `
+            <section class="teacher-alert-box">
+              <strong>先联系老师确认</strong>
+              当前属于高风险或条件未确认场景，未完成审批、值守、防护和现场条件确认前，不建议自行开工。
+            </section>
+          ` : ''}
           <section class="answer-block">
             <span class="decision-badge ${decisionClass}">${escapeHtml(decision)} · 风险：${escapeHtml(riskLabel)}</span>
             <h4>结论</h4>
@@ -3874,7 +3890,7 @@
       if (adminDemoStatus) adminDemoStatus.textContent = '正在刷新验收看板数据...';
       try {
         await Promise.all([loadDemoMeta(), loadWorkspaceStatus(), loadAdminDashboard()]);
-        if (adminDemoStatus) adminDemoStatus.textContent = '演示顺序：切管理员模式 → 查看验收看板 → 导出管理周报';
+        if (adminDemoStatus) adminDemoStatus.textContent = '演示顺序：切管理员模式 → 查看验收看板 → 导出验收包';
       } catch (err) {
         if (adminDemoStatus) adminDemoStatus.textContent = `看板刷新失败：${err.message}`;
       }
@@ -4164,8 +4180,8 @@
     if (adminDemoExportBtn) {
       adminDemoExportBtn.addEventListener('click', async () => {
         try {
-          await downloadFile('/api/admin/weekly_report.md?days=30', 'admin_acceptance_report.md');
-          announce('管理周报已导出。');
+          await downloadFile('/api/admin/acceptance_package.md?days=30', 'admin_acceptance_package.md');
+          announce('验收包已导出。');
         } catch (err) {
           if (adminDemoStatus) adminDemoStatus.textContent = `导出失败：${err.message}`;
           alert(err.message);
@@ -4232,8 +4248,8 @@
     if (acceptanceExportBtn) {
       acceptanceExportBtn.addEventListener('click', async () => {
         try {
-          await downloadFile('/api/admin/weekly_report.md?days=30', 'admin_acceptance_report.md');
-          announce('管理周报已导出。');
+          await downloadFile('/api/admin/acceptance_package.md?days=30', 'admin_acceptance_package.md');
+          announce('验收包已导出。');
         } catch (err) {
           alert(err.message);
         }

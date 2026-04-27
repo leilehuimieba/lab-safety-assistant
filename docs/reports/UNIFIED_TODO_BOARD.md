@@ -30,6 +30,10 @@
 | REL-FIX-14 | P2 | done | 发布与验收负责人 | 修复 `prod risk violation count` 超阈值 | 已完成：prod risk violations=0，且 `release_fix_plan_auto.md` 显示 `Total Tasks: 0` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
 | REL-FIX-19 | P2 | done | 发布与验收负责人 | 修复 `prod emergency_pass_rate` 阈值不达标 | `release_fix_plan_auto` 不再出现 `REL-FIX-19` 阻断原因 | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
 | REL-FIX-20 | P2 | done | 发布与验收负责人 | 修复 `prod coverage_rate` 阈值不达标 | 已完成：prod readiness PASS，且 `release_fix_plan_auto.md` 显示 `Total Tasks: 0` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
+| UX-TRIAL-01 | P1 | done | 产品优化 | 学生端“必须联系老师”提示更醒目 | 已完成：高风险/不可开工回答顶部显示“先联系老师确认”红色提醒 | realistic_scenario_trial_20260427 |
+| ADMIN-PACK-01 | P1 | done | 验收材料 | 管理员端一键导出完整验收包 | 已完成：新增 `/api/admin/acceptance_package.md`，管理员入口按钮改为“导出验收包” | realistic_scenario_trial_20260427 |
+| TEACHER-REAL-LIST-01 | P0 | todo | 后续真实试点 | 老师端接真实班级名单和培训完成记录 | 待接入真实名单后，将“未完成培训”从估算改为具体人员清单 | realistic_scenario_trial_20260427 |
+| EVIDENCE-LINK-STATUS-01 | P1 | todo | 后续验收增强 | 证据链接显示可访问数量 | 待实现链接批量检测结果回写到管理员验收看板 | realistic_scenario_trial_20260427 |
 | DOC-ARCH-01 | P2 | done | 发布与验收负责人 | 补 `docs/README.md` 作为文档执行入口（避免状态分散） | 已完成：`docs/README.md` 已存在，并指向答辩、验收、测试、待办材料入口 | CMD-DOC-01 |
 
 ## 本轮成功 Run 证据（2026-04-26）

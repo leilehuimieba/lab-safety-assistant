@@ -2034,6 +2034,54 @@ def build_teacher_action_report_markdown(days: int = 30) -> str:
     return "\n".join(lines) + "\n"
 
 
+def build_acceptance_package_markdown(days: int = 30) -> str:
+    meta = get_demo_meta()
+    workspace = build_workspace_status()
+    dashboard = load_admin_dashboard(days=days)
+    lines = [
+        f"# 课题验收材料包（{datetime.now().strftime('%Y-%m-%d')}）",
+        "",
+        "## 1. 项目状态",
+        f"- 版本：{meta.app_version}",
+        f"- 验收状态：{meta.acceptance_status}",
+        f"- 测试结果：{meta.formal_eval_score}",
+        f"- 稳定性：{meta.stability_status}",
+        "",
+        "## 2. 知识库与证据",
+        f"- 本地知识条目：{workspace.kb_rows}",
+        f"- 正式导入条目：{workspace.kb_imported}",
+        f"- 低置信待补强问题：{workspace.low_confidence_queue_count}",
+        f"- Dify 状态：{workspace.dify_connection_status}",
+        "",
+        "## 3. 管理看板指标",
+    ]
+    for item in dashboard.metrics:
+        lines.append(f"- {item.label}: {item.value}（{item.detail}）")
+    lines.extend(["", "## 4. 最近高风险场景"])
+    if dashboard.recent_high_risk_scenarios:
+        for item in dashboard.recent_high_risk_scenarios:
+            lines.append(f"- {item.submitted_at} | {item.risk_level} | {'通过' if item.allow_start else '阻断'} | {item.scenario}")
+    else:
+        lines.append("- 暂无高风险记录。")
+    lines.extend(["", "## 5. 验收材料入口"])
+    lines.extend([
+        "- docs/README.md",
+        "- docs/demo/teacher_workbench_defense_demo.md",
+        "- docs/demo/admin_acceptance_dashboard_demo.md",
+        "- docs/pilot/realistic_scenario_trial_20260427.md",
+        "- docs/eval/release_readiness_dashboard.md",
+        "- docs/ops/go_live_readiness.md",
+    ])
+    lines.extend(["", "## 6. 后续建议"])
+    lines.extend([
+        "1. 接入真实学生名单和培训完成记录。",
+        "2. 增加真实登录和角色权限隔离。",
+        "3. 继续收集真实试点反馈。",
+        "4. 对证据链接增加可访问状态统计。",
+    ])
+    return "\n".join(lines) + "\n"
+
+
 def build_weekly_report_markdown(days: int, risk_level: str, incident_status: str) -> str:
     dashboard = load_admin_dashboard(days=days, risk_level=risk_level, incident_status=incident_status)
     lines = [
@@ -2467,6 +2515,15 @@ def admin_weekly_report(days: int = 7, risk_level: str = "", incident_status: st
     return PlainTextResponse(
         content=markdown,
         headers={"Content-Disposition": f'attachment; filename="weekly_report_{datetime.now().strftime("%Y%m%d")}.md"'},
+    )
+
+
+@app.get("/api/admin/acceptance_package.md")
+def admin_acceptance_package(days: int = 30) -> PlainTextResponse:
+    markdown = build_acceptance_package_markdown(days=days)
+    return PlainTextResponse(
+        content=markdown,
+        headers={"Content-Disposition": f'attachment; filename="admin_acceptance_package_{datetime.now().strftime("%Y%m%d")}.md"'},
     )
 
 
