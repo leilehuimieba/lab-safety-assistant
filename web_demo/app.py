@@ -550,6 +550,15 @@ class WorkspaceStatusResponse(BaseModel):
     top_hazards: list[WorkspaceStatusItem] = Field(default_factory=list)
 
 
+class EvidenceLinkStatusResponse(BaseModel):
+    total: int
+    checked: int
+    reachable: int
+    failed: int
+    skipped: int
+    sample_failed: list[str] = Field(default_factory=list)
+
+
 class IncidentCreateRequest(BaseModel):
     reporter: str = Field(default="anonymous", max_length=120)
     title: str = Field(min_length=1, max_length=200)
@@ -1096,6 +1105,51 @@ def summarize_top_values(rows: list[dict[str, str]], key: str, *, limit: int = 6
             counts[part] = counts.get(part, 0) + 1
     ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:limit]
     return [WorkspaceStatusItem(label=label, count=count) for label, count in ranked]
+
+
+def collect_evidence_urls(limit: int = 30) -> list[str]:
+    urls: list[str] = []
+    seen: set[str] = set()
+    for row in get_kb_entries():
+        raw_values = [row.get("source_url", ""), row.get("references", "")]
+        for raw in raw_values:
+            for part in re.split(r"[|;\s]+", str(raw or "")):
+                url = part.strip().strip(",，。)）]")
+                if not url.startswith(("http://", "https://")):
+                    continue
+                if url in seen:
+                    continue
+                seen.add(url)
+                urls.append(url)
+                if len(urls) >= limit:
+                    return urls
+    return urls
+
+
+def check_evidence_links(limit: int = 30) -> EvidenceLinkStatusResponse:
+    limit = max(1, min(100, int(limit or 30)))
+    urls = collect_evidence_urls(limit=limit)
+    reachable = 0
+    failed_urls: list[str] = []
+    for url in urls:
+        try:
+            resp = requests.head(url, allow_redirects=True, timeout=(3, 6))
+            if resp.status_code in {405, 403} or resp.status_code >= 500:
+                resp = requests.get(url, allow_redirects=True, timeout=(3, 8), stream=True)
+            if resp.status_code < 400:
+                reachable += 1
+            else:
+                failed_urls.append(f"{resp.status_code} {url}")
+        except requests.RequestException as exc:
+            failed_urls.append(f"{exc.__class__.__name__} {url}")
+    return EvidenceLinkStatusResponse(
+        total=len(urls),
+        checked=len(urls),
+        reachable=reachable,
+        failed=len(failed_urls),
+        skipped=0,
+        sample_failed=failed_urls[:5],
+    )
 
 
 def build_workspace_status() -> WorkspaceStatusResponse:
@@ -2539,6 +2593,11 @@ def teacher_action_report(days: int = 30) -> PlainTextResponse:
 @app.get("/api/workspace/status", response_model=WorkspaceStatusResponse)
 def workspace_status() -> WorkspaceStatusResponse:
     return build_workspace_status()
+
+
+@app.get("/api/evidence/link_status", response_model=EvidenceLinkStatusResponse)
+def evidence_link_status(limit: int = 30) -> EvidenceLinkStatusResponse:
+    return check_evidence_links(limit=limit)
 
 
 @app.get("/api/incidents", response_model=list[IncidentRecord])

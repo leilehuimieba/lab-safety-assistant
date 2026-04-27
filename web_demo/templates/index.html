@@ -2218,6 +2218,7 @@
             <div class="acceptance-actions">
               <button type="button" id="acceptanceGoWorkspaceBtn">看知识库状态</button>
               <button type="button" id="acceptanceGoTrainingBtn">看测试/看板</button>
+              <button type="button" id="acceptanceCheckLinksBtn">检查证据链接</button>
               <button class="secondary" type="button" id="acceptanceExportBtn">导出验收包</button>
             </div>
           </section>
@@ -2830,6 +2831,7 @@
     const acceptanceSummary = document.getElementById('acceptanceSummary');
     const acceptanceGoWorkspaceBtn = document.getElementById('acceptanceGoWorkspaceBtn');
     const acceptanceGoTrainingBtn = document.getElementById('acceptanceGoTrainingBtn');
+    const acceptanceCheckLinksBtn = document.getElementById('acceptanceCheckLinksBtn');
     const acceptanceExportBtn = document.getElementById('acceptanceExportBtn');
 
     let checklistCache = [];
@@ -3384,6 +3386,28 @@
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.detail || '请求失败。');
       return data;
+    }
+
+    async function checkAcceptanceEvidenceLinks() {
+      if (!acceptanceCheckLinksBtn) return;
+      setButtonBusy(acceptanceCheckLinksBtn, true, '检查证据链接', '检查中...');
+      try {
+        const resp = await fetch('/api/evidence/link_status?limit=30');
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || '证据链接检查失败。');
+        if (acceptanceEvidenceCount) {
+          acceptanceEvidenceCount.textContent = `${data.reachable}/${data.checked} 可访问`;
+        }
+        if (acceptanceSummary) {
+          acceptanceSummary.textContent = `已抽查 ${data.checked} 条证据链接，可访问 ${data.reachable} 条，失败 ${data.failed} 条。`;
+        }
+        announce('证据链接检查完成。');
+      } catch (err) {
+        if (acceptanceEvidenceCount) acceptanceEvidenceCount.textContent = '检查失败';
+        if (acceptanceSummary) acceptanceSummary.textContent = `证据链接检查失败：${err.message}`;
+      } finally {
+        setButtonBusy(acceptanceCheckLinksBtn, false, '检查证据链接');
+      }
     }
 
     function updateAcceptanceSummary() {
@@ -4245,6 +4269,7 @@
     createIncidentBtn.addEventListener('click', createIncident);
     if (acceptanceGoWorkspaceBtn) acceptanceGoWorkspaceBtn.addEventListener('click', () => setActiveView('workspace'));
     if (acceptanceGoTrainingBtn) acceptanceGoTrainingBtn.addEventListener('click', () => setActiveView('training'));
+    if (acceptanceCheckLinksBtn) acceptanceCheckLinksBtn.addEventListener('click', checkAcceptanceEvidenceLinks);
     if (acceptanceExportBtn) {
       acceptanceExportBtn.addEventListener('click', async () => {
         try {
