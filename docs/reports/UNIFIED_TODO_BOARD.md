@@ -20,16 +20,16 @@
 | REL-FIX-16 | P0 | done | 平台维护（主）/ 发布与验收负责人（验收） | 恢复主链路可用，`route_success_rate >= 0.80` | `docs/eval/release_policy_check_prod.json` 为 `PASS`，且阻断原因不再出现 `route_success_rate too low` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
 | REL-FIX-17 | P0 | done | 平台维护（主）/ 发布与验收负责人（验收） | 将超时率压到阈值内，`route_timeout_rate <= 0.20` | `release_fix_plan_auto.md/csv` 中不再出现 `route_timeout_rate too high` | CMD-REL-01, CMD-REL-02, CMD-REL-05 |
 | GO-LIVE-HEALTH-01 | P0 | done | 平台维护（主）/ 发布与验收负责人（验收） | 修复 `/health` 不可达（10061）问题 | `docs/ops/go_live_readiness.md` 不再包含 `web_health unreachable`，整体不是因健康检查而 `BLOCK` | CMD-GO-01, CMD-GO-02 |
-| REL-FIX-15 | P1 | todo | 发布与验收负责人 | 关闭 `prod` 的临时 override（`warn_only`） | `release_fix_plan_auto.md/csv` 中不再出现 `override mode not allowed` | CMD-REL-01, CMD-REL-02 |
+| REL-FIX-15 | P1 | done | 发布与验收负责人 | 关闭 `prod` 的临时 override（`warn_only`） | 已完成：`release_fix_plan_auto.md` 显示 `Total Tasks: 0`，且 override active=False | CMD-REL-01, CMD-REL-02 |
 | REL-FIX-18 | P1 | done | 平台维护（主）/ 发布与验收负责人（验收） | 压低延迟，`latency_p95_ms <= 30000` | `prod` 策略不再出现 `latency_p95_ms too high`；稳定性报告可追溯 | CMD-REL-01, CMD-STAB-01, CMD-REL-03 |
 | DATA-LOWQ-V82-01 | P1 | done | 数据清洗员（主）/ 发布与验收负责人（验收） | 清洗 `v8.2` 的 3 条低质量来源（WEB82-024/026/027） | 已完成：`docs/pipeline/web_seed_v8_2_prefetch_report.md` 中 low quality 已降为 `0` | CMD-DATA-01, CMD-DATA-02 |
 | DOC-SYNC-01 | P1 | done | 发布与验收负责人 | 统一 go-live 口径（`go_live_readiness` 与 `go_live_failure_digest` 同轮次） | 两份文档由同一轮预检生成，结论一致且可追溯 | CMD-GO-01, CMD-GO-03 |
-| REL-FIX-11 | P2 | todo | 发布与验收负责人 | 修复 `demo emergency_pass_rate` 阈值不达标 | `release_fix_plan_auto` 不再出现 `REL-FIX-11` 阻断原因 | CMD-REL-01, CMD-REL-02 |
-| REL-FIX-12 | P2 | todo | 发布与验收负责人 | 修复 `demo coverage_rate` 阈值不达标 | `release_fix_plan_auto` 不再出现 `REL-FIX-12` 阻断原因 | CMD-REL-01, CMD-REL-02 |
-| REL-FIX-13 | P2 | todo | 发布与验收负责人 | 修复 `prod gate_decision` 不在允许值（`WARN_ONLY`） | `release_fix_plan_auto` 不再出现 `gate_decision not allowed` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
-| REL-FIX-14 | P2 | todo | 发布与验收负责人 | 修复 `prod risk violation count` 超阈值 | `release_fix_plan_auto` 不再出现 `risk violation count exceeded` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
+| REL-FIX-11 | P2 | done | 发布与验收负责人 | 修复 `demo emergency_pass_rate` 阈值不达标 | 已完成：demo policy PASS，且 `release_fix_plan_auto.md` 显示 `Total Tasks: 0` | CMD-REL-01, CMD-REL-02 |
+| REL-FIX-12 | P2 | done | 发布与验收负责人 | 修复 `demo coverage_rate` 阈值不达标 | 已完成：demo readiness PASS，且 `release_fix_plan_auto.md` 显示 `Total Tasks: 0` | CMD-REL-01, CMD-REL-02 |
+| REL-FIX-13 | P2 | done | 发布与验收负责人 | 修复 `prod gate_decision` 不在允许值（`WARN_ONLY`） | 已完成：prod gate_decision=PASS，且 `release_fix_plan_auto.md` 显示 `Total Tasks: 0` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
+| REL-FIX-14 | P2 | done | 发布与验收负责人 | 修复 `prod risk violation count` 超阈值 | 已完成：prod risk violations=0，且 `release_fix_plan_auto.md` 显示 `Total Tasks: 0` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
 | REL-FIX-19 | P2 | done | 发布与验收负责人 | 修复 `prod emergency_pass_rate` 阈值不达标 | `release_fix_plan_auto` 不再出现 `REL-FIX-19` 阻断原因 | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
-| REL-FIX-20 | P2 | todo | 发布与验收负责人 | 修复 `prod coverage_rate` 阈值不达标 | `release_fix_plan_auto` 不再出现 `REL-FIX-20` 阻断原因 | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
+| REL-FIX-20 | P2 | done | 发布与验收负责人 | 修复 `prod coverage_rate` 阈值不达标 | 已完成：prod readiness PASS，且 `release_fix_plan_auto.md` 显示 `Total Tasks: 0` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
 | DOC-ARCH-01 | P2 | todo | 发布与验收负责人 | 补 `docs/README.md` 作为文档执行入口（避免状态分散） | `docs/README.md` 存在且指向本表为唯一待办入口 | CMD-DOC-01 |
 
 ## 本轮成功 Run 证据（2026-04-26）
