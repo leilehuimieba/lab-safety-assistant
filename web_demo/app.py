@@ -36,6 +36,8 @@ LOW_CONFIDENCE_QUEUE_FILE = REPO_ROOT / "artifacts" / "low_confidence_followups"
 CHECKLIST_RUNS_FILE = REPO_ROOT / "artifacts" / "checklists" / "checklist_runs.csv"
 TRAINING_ATTEMPTS_FILE = REPO_ROOT / "artifacts" / "training" / "training_attempts.csv"
 TRAINING_MISTAKES_FILE = REPO_ROOT / "artifacts" / "training" / "training_mistakes.csv"
+TRAINING_ROSTER_FILE = REPO_ROOT / "artifacts" / "training" / "training_roster.csv"
+TRAINING_ROSTER_TEMPLATE_FILE = REPO_ROOT / "data_sources" / "training_roster_template.csv"
 INCIDENT_REVIEWS_FILE = REPO_ROOT / "artifacts" / "incidents" / "incident_reviews.csv"
 
 DEFAULT_BASE_URL = "http://ai.little100.cn:3000/v1"
@@ -484,6 +486,25 @@ class TrainingStatsResponse(BaseModel):
     latest_submitted_at: str = ""
     category_mistakes: dict[str, int] = Field(default_factory=dict)
     recent_scores: list[int] = Field(default_factory=list)
+
+
+class TrainingRosterItem(BaseModel):
+    student_id: str = ""
+    name: str
+    class_name: str = ""
+    lab_group: str = ""
+    completed: bool = False
+    passed: bool = False
+    latest_score: int = 0
+    latest_submitted_at: str = ""
+
+
+class TrainingRosterStatusResponse(BaseModel):
+    total_required: int
+    completed_count: int
+    passed_count: int
+    incomplete_count: int
+    incomplete_students: list[TrainingRosterItem] = Field(default_factory=list)
 
 
 class DashboardMetric(BaseModel):
@@ -1702,6 +1723,66 @@ def load_training_stats() -> TrainingStatsResponse:
     )
 
 
+def truthy_csv_value(value: str) -> bool:
+    return (value or "").strip().lower() in {"1", "true", "yes", "y", "是", "需要"}
+
+
+def load_training_roster_rows() -> list[dict[str, str]]:
+    rows = read_csv_rows(TRAINING_ROSTER_FILE)
+    if rows:
+        return rows
+    return read_csv_rows(TRAINING_ROSTER_TEMPLATE_FILE)
+
+
+def load_training_roster_status() -> TrainingRosterStatusResponse:
+    roster_rows = [row for row in load_training_roster_rows() if truthy_csv_value(row.get("required_training", "true"))]
+    attempts = read_csv_rows(TRAINING_ATTEMPTS_FILE)
+    latest_by_key: dict[str, dict[str, str]] = {}
+
+    for row in attempts:
+        participant = (row.get("participant") or "").strip()
+        if not participant:
+            continue
+        keys = {participant.lower()}
+        submitted_at = row.get("submitted_at", "") or ""
+        for key in keys:
+            current = latest_by_key.get(key)
+            if current is None or submitted_at >= (current.get("submitted_at", "") or ""):
+                latest_by_key[key] = row
+
+    items: list[TrainingRosterItem] = []
+    for row in roster_rows:
+        student_id = (row.get("student_id") or "").strip()
+        name = (row.get("name") or row.get("student_name") or student_id or "未命名学生").strip()
+        keys = [key.lower() for key in (student_id, name) if key]
+        latest = next((latest_by_key[key] for key in keys if key in latest_by_key), None)
+        completed = latest is not None
+        passed = bool(latest and (latest.get("passed") or "").strip().lower() == "true")
+        latest_score = int(float((latest or {}).get("score", "0") or "0")) if latest else 0
+        items.append(
+            TrainingRosterItem(
+                student_id=student_id,
+                name=name,
+                class_name=(row.get("class_name") or "").strip(),
+                lab_group=(row.get("lab_group") or "").strip(),
+                completed=completed,
+                passed=passed,
+                latest_score=latest_score,
+                latest_submitted_at=(latest or {}).get("submitted_at", "") or "",
+            )
+        )
+
+    incomplete = [item for item in items if not item.passed]
+    incomplete.sort(key=lambda item: (item.latest_submitted_at or "", item.name), reverse=True)
+    return TrainingRosterStatusResponse(
+        total_required=len(items),
+        completed_count=sum(1 for item in items if item.completed),
+        passed_count=sum(1 for item in items if item.passed),
+        incomplete_count=len(incomplete),
+        incomplete_students=incomplete[:10],
+    )
+
+
 def parse_json_list_field(value: str) -> list[str]:
     text = (value or "").strip()
     if not text:
@@ -2492,6 +2573,11 @@ def training_submit(payload: TrainingSubmitRequest) -> TrainingSubmitResponse:
 @app.get("/api/training/stats", response_model=TrainingStatsResponse)
 def training_stats() -> TrainingStatsResponse:
     return load_training_stats()
+
+
+@app.get("/api/training/roster_status", response_model=TrainingRosterStatusResponse)
+def training_roster_status() -> TrainingRosterStatusResponse:
+    return load_training_roster_status()
 
 
 @app.post("/api/demo/teacher-seed", response_model=DemoSeedResponse)

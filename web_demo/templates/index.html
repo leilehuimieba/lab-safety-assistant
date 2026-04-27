@@ -2837,6 +2837,7 @@
     let checklistCache = [];
     let quizSession = null;
     let latestTrainingStats = null;
+    let latestTrainingRosterStatus = null;
     let defenseDemoStep = 0;
     const riskLevelMap = {
       low: '低',
@@ -3733,7 +3734,8 @@
           <div>${(data.recommended_actions || []).join('<br>')}</div>
           ${(data.review || []).map(item => `<div class="review-item"><strong>${item.correct ? '答对' : '需复习'}：</strong>${item.prompt}<br><span class="muted">${item.explanation}</span></div>`).join('')}
         `;
-        await Promise.all([loadTrainingStats(), loadAdminDashboard()]);
+        await Promise.all([loadTrainingStats(), loadTrainingRosterStatus()]);
+        await loadAdminDashboard();
         announce(data.passed ? '培训评分已完成，当前结果为通过。' : '培训评分已完成，当前结果为需要复训。');
       } catch (err) {
         quizResult.textContent = err.message;
@@ -3869,8 +3871,8 @@
       if (teacherSeedStatus) teacherSeedStatus.textContent = '正在写入演示记录...';
       try {
         const data = await postJson('/api/demo/teacher-seed', {});
-        updateTeacherDashboard(data.dashboard || {});
-        await Promise.all([loadTrainingStats(), loadAdminDashboard(), loadIncidents()]);
+        await Promise.all([loadTrainingStats(), loadTrainingRosterStatus()]);
+        await Promise.all([loadAdminDashboard(), loadIncidents()]);
         if (teacherSeedStatus) teacherSeedStatus.textContent = data.message || '演示数据已生成。';
         announce('老师工作台演示数据已生成。');
       } catch (err) {
@@ -3887,8 +3889,8 @@
       if (teacherSeedStatus) teacherSeedStatus.textContent = '正在清空演示记录...';
       try {
         const data = await postJson('/api/demo/teacher-clear', {});
-        updateTeacherDashboard(data.dashboard || {});
-        await Promise.all([loadTrainingStats(), loadAdminDashboard(), loadIncidents()]);
+        await Promise.all([loadTrainingStats(), loadTrainingRosterStatus()]);
+        await Promise.all([loadAdminDashboard(), loadIncidents()]);
         if (teacherSeedStatus) teacherSeedStatus.textContent = data.message || '演示数据已清空。';
         announce('老师工作台演示数据已清空。');
       } catch (err) {
@@ -4000,10 +4002,16 @@
       const passMetric = (data.metrics || []).find(item => item.label === '培训通过率');
       const passRateMatch = String(passMetric?.value || '').match(/\d+/);
       const passRate = passRateMatch ? Number(passRateMatch[0]) : 100;
-      const unfinishedTraining = trainingAttempts ? Math.max(0, Math.round(trainingAttempts * (100 - passRate) / 100)) : 0;
-      const latestTrainingText = latestTrainingStats?.latest_submitted_at
-        ? `${latestTrainingStats.latest_submitted_at}，平均分 ${latestTrainingStats.average_score}，通过率 ${Math.round((latestTrainingStats.pass_rate || 0) * 100)}%`
-        : '';
+      const estimatedUnfinishedTraining = trainingAttempts ? Math.max(0, Math.round(trainingAttempts * (100 - passRate) / 100)) : 0;
+      const roster = latestTrainingRosterStatus;
+      const hasRoster = roster && Number.isFinite(Number(roster.total_required)) && Number(roster.total_required) > 0;
+      const unfinishedTraining = hasRoster ? Number(roster.incomplete_count || 0) : estimatedUnfinishedTraining;
+      const latestIncompleteStudent = hasRoster && (roster.incomplete_students || []).length ? roster.incomplete_students[0] : null;
+      const latestTrainingText = latestIncompleteStudent
+        ? `${latestIncompleteStudent.name}${latestIncompleteStudent.class_name ? ' / ' + latestIncompleteStudent.class_name : ''}${latestIncompleteStudent.latest_score ? '，最近' + latestIncompleteStudent.latest_score + '分' : '，未作答'}`
+        : (latestTrainingStats?.latest_submitted_at
+          ? `${latestTrainingStats.latest_submitted_at}，平均分 ${latestTrainingStats.average_score}，通过率 ${Math.round((latestTrainingStats.pass_rate || 0) * 100)}%`
+          : '');
 
       setTeacherCardState(teacherPendingCard, pendingItems.length, 2);
       setTeacherCardState(teacherHighRiskCard, highRiskItems.length, 3);
@@ -4026,10 +4034,22 @@
         : '最近没有高风险提醒记录。';
       setLatestBox(teacherHighRiskLatest, '最近', latestHighRisk ? `${latestHighRisk.allow_start ? '已通过' : '已阻断'}｜${shortText(latestHighRisk.scenario)}` : '暂无高风险记录');
       if (teacherTrainingCount) teacherTrainingCount.textContent = `${unfinishedTraining} 人`;
-      if (teacherTrainingDesc) teacherTrainingDesc.textContent = trainingAttempts
-        ? `按现有 ${trainingAttempts} 次培训记录估算，仍有 ${unfinishedTraining} 人未通过。`
-        : '暂无培训作答记录，建议先组织一次培训。';
-      setLatestBox(teacherTrainingLatest, '最近', latestTrainingText || '暂无培训记录');
+      if (teacherTrainingDesc) teacherTrainingDesc.textContent = hasRoster
+        ? `班级名单 ${roster.total_required} 人，已通过 ${roster.passed_count} 人，未完成/未通过 ${unfinishedTraining} 人。`
+        : (trainingAttempts
+          ? `按现有 ${trainingAttempts} 次培训记录估算，仍有 ${unfinishedTraining} 人未通过。`
+          : '暂无培训作答记录，建议先组织一次培训。');
+      setLatestBox(teacherTrainingLatest, latestIncompleteStudent ? '最近未完成' : '最近', latestTrainingText || '暂无培训记录');
+    }
+
+    async function loadTrainingRosterStatus() {
+      try {
+        const resp = await fetch('/api/training/roster_status');
+        const data = await resp.json();
+        latestTrainingRosterStatus = resp.ok ? data : null;
+      } catch (err) {
+        latestTrainingRosterStatus = null;
+      }
     }
 
     async function loadTrainingStats() {
@@ -4329,7 +4349,7 @@
     loadEmergencyCards();
     loadWorkspaceStatus();
     loadTrainingStats();
-    loadAdminDashboard();
+    loadTrainingRosterStatus().then(() => loadAdminDashboard());
     loadIncidents();
     loadDemoMeta();
   

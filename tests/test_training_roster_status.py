@@ -1,0 +1,42 @@
+from __future__ import annotations
+
+import importlib.util
+
+
+FASTAPI_AVAILABLE = importlib.util.find_spec("fastapi") is not None
+
+
+if FASTAPI_AVAILABLE:
+    from fastapi.testclient import TestClient
+    import app as web_app
+
+    def test_training_roster_status_uses_roster_and_attempts(monkeypatch, tmp_path) -> None:
+        roster = tmp_path / "training_roster.csv"
+        attempts = tmp_path / "training_attempts.csv"
+        roster.write_text(
+            "student_id,name,class_name,lab_group,required_training\n"
+            "2026001,学生A,化学工程1班,A组,true\n"
+            "2026002,学生B,化学工程1班,A组,true\n"
+            "2026003,学生C,化学工程1班,B组,true\n",
+            encoding="utf-8-sig",
+        )
+        attempts.write_text(
+            "attempt_id,submitted_at,participant,session_id,score,total_questions,pass_threshold,passed,weak_categories\n"
+            "A1,2026-04-27T09:00:00,学生A,s1,90,5,80,true,\n"
+            "B1,2026-04-27T09:10:00,学生B,s1,60,5,80,false,Chemical\n",
+            encoding="utf-8-sig",
+        )
+        monkeypatch.setattr(web_app, "TRAINING_ROSTER_FILE", roster)
+        monkeypatch.setattr(web_app, "TRAINING_ROSTER_TEMPLATE_FILE", roster)
+        monkeypatch.setattr(web_app, "TRAINING_ATTEMPTS_FILE", attempts)
+
+        client = TestClient(web_app.app)
+        resp = client.get("/api/training/roster_status")
+
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["total_required"] == 3
+        assert payload["completed_count"] == 2
+        assert payload["passed_count"] == 1
+        assert payload["incomplete_count"] == 2
+        assert {item["name"] for item in payload["incomplete_students"]} == {"学生B", "学生C"}

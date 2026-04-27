@@ -1,0 +1,7 @@
+student_id,name,class_name,lab_group,required_training
+2026001,学生A,化学工程1班,A组,true
+2026002,学生B,化学工程1班,A组,true
+2026003,学生C,化学工程1班,B组,true
+2026004,学生D,化学工程1班,B组,true
+2026005,学生E,化学工程1班,C组,true
+2026006,学生F,化学工程1班,C组,true

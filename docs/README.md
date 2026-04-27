@@ -64,6 +64,7 @@ python -m pytest -q
 | 主知识库 | `knowledge_base_curated.csv` |
 | 发布导入包 | `release_exports/v8.2/knowledge_base_import_ready.csv` |
 | 数据源与抓取材料 | `docs/pipeline/` |
+| 培训名单模板 | `data_sources/training_roster_template.csv` |
 
 管理员演示时重点讲：
 
@@ -104,7 +105,7 @@ python -m pytest -q
 
 1. 补真实试点反馈
 2. 老师/学生/管理员真实账号权限
-3. 培训未完成人员改为真实名单
+3. 培训未完成人员已支持真实名单，后续可增加前端上传
 4. 继续清洗低质量来源
 
 ---
