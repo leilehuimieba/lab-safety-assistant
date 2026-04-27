@@ -69,3 +69,19 @@ if FASTAPI_AVAILABLE:
         assert payload["status"]["total_required"] == 1
         assert roster.exists()
         assert "学生H" in roster.read_text(encoding="utf-8-sig")
+
+
+    def test_training_roster_template_download(monkeypatch, tmp_path) -> None:
+        template = tmp_path / "training_roster_template.csv"
+        template.write_text(
+            "student_id,name,class_name,lab_group,required_training\n2026001,张三,化学工程1班,A组,true\n",
+            encoding="utf-8-sig",
+        )
+        monkeypatch.setattr(web_app, "TRAINING_ROSTER_TEMPLATE_FILE", template)
+
+        client = TestClient(web_app.app)
+        resp = client.get("/api/training/roster_template.csv")
+
+        assert resp.status_code == 200
+        assert "student_id,name,class_name" in resp.text
+        assert "training_roster_template.csv" in resp.headers.get("content-disposition", "")

@@ -2632,6 +2632,17 @@ def training_roster_upload(payload: TrainingRosterUploadRequest) -> TrainingRost
     return save_training_roster_csv(payload.csv_text)
 
 
+@app.get("/api/training/roster_template.csv")
+def training_roster_template() -> FileResponse:
+    if not TRAINING_ROSTER_TEMPLATE_FILE.exists():
+        raise HTTPException(status_code=404, detail="training roster template not found")
+    return FileResponse(
+        TRAINING_ROSTER_TEMPLATE_FILE,
+        media_type="text/csv; charset=utf-8",
+        filename="training_roster_template.csv",
+    )
+
+
 @app.post("/api/demo/teacher-seed", response_model=DemoSeedResponse)
 def demo_teacher_seed() -> DemoSeedResponse:
     return seed_teacher_demo_data()

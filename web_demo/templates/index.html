@@ -2179,6 +2179,7 @@
               <span id="teacherSeedStatus">没有真实记录时，可一键生成几条演示记录。</span>
             </div>
             <div class="teacher-demo-actions">
+              <button class="secondary" type="button" id="downloadTrainingRosterTemplateBtn">下载名单模板</button>
               <label class="secondary" for="uploadTrainingRosterInput">上传培训名单 CSV</label>
               <input type="file" id="uploadTrainingRosterInput" accept=".csv,text/csv" />
               <button type="button" id="seedTeacherDemoBtn">一键生成演示数据</button>
@@ -2821,6 +2822,7 @@
     const seedTeacherDemoBtn = document.getElementById('seedTeacherDemoBtn');
     const clearTeacherDemoBtn = document.getElementById('clearTeacherDemoBtn');
     const exportTeacherReportBtn = document.getElementById('exportTeacherReportBtn');
+    const downloadTrainingRosterTemplateBtn = document.getElementById('downloadTrainingRosterTemplateBtn');
     const uploadTrainingRosterInput = document.getElementById('uploadTrainingRosterInput');
     const teacherSeedStatus = document.getElementById('teacherSeedStatus');
     const teacherPendingCard = document.getElementById('teacherPendingCard');
@@ -4348,6 +4350,16 @@
     }
     if (clearTeacherDemoBtn) {
       clearTeacherDemoBtn.addEventListener('click', clearTeacherDemoData);
+    }
+    if (downloadTrainingRosterTemplateBtn) {
+      downloadTrainingRosterTemplateBtn.addEventListener('click', async () => {
+        try {
+          await downloadFile('/api/training/roster_template.csv', 'training_roster_template.csv');
+          announce('名单模板已下载。');
+        } catch (err) {
+          alert(err.message);
+        }
+      });
     }
     if (uploadTrainingRosterInput) {
       uploadTrainingRosterInput.addEventListener('change', () => uploadTrainingRoster(uploadTrainingRosterInput.files?.[0]));
