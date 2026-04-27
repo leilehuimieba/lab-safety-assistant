@@ -1,0 +1,887 @@
+name: Daily Eval Gate Monitor
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  schedule:
+    # Every day 01:30 UTC
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install requests
+
+      - name: Detect Live Eval Credentials
+        id: live_mode
+        env:
+          DIFY_BASE_URL: ${{ secrets.DIFY_BASE_URL }}
+          DIFY_APP_API_KEY: ${{ secrets.DIFY_APP_API_KEY }}
+        run: |
+          if [ -n "${DIFY_BASE_URL}" ] && [ -n "${DIFY_APP_API_KEY}" ]; then
+            echo "live_ready=true" >> "$GITHUB_OUTPUT"
+            echo "mode=live" >> "$GITHUB_OUTPUT"
+            echo "Live credentials detected; strict eval gate enforcement is enabled."
+          else
+            echo "live_ready=false" >> "$GITHUB_OUTPUT"
+            echo "mode=snapshot_only" >> "$GITHUB_OUTPUT"
+            echo "Live credentials missing; running in snapshot-only mode."
+          fi
+
+      - name: Run Eval Regression Pipeline
+        env:
+          DIFY_BASE_URL: ${{ secrets.DIFY_BASE_URL }}
+          DIFY_APP_API_KEY: ${{ secrets.DIFY_APP_API_KEY }}
+          DIFY_FALLBACK_BASE_URL: ${{ secrets.DIFY_FALLBACK_BASE_URL }}
+          DIFY_FALLBACK_APP_API_KEY: ${{ secrets.DIFY_FALLBACK_APP_API_KEY }}
+        run: |
+          primary_base="${DIFY_BASE_URL%/}"
+          primary_key="${DIFY_APP_API_KEY}"
+          fallback_base="${DIFY_FALLBACK_BASE_URL}"
+          fallback_key="${DIFY_FALLBACK_APP_API_KEY}"
+
+          if [ -z "${fallback_key}" ]; then
+            fallback_key="${primary_key}"
+          fi
+          if [ -z "${fallback_base}" ]; then
+            fallback_base="${primary_base}/"
+          fi
+          if [ "${fallback_base}" = "${primary_base}" ] && [ "${fallback_key}" = "${primary_key}" ]; then
+            fallback_base="${primary_base}/"
+          fi
+
+          python scripts/run_eval_regression_pipeline.py \
+            --repo-root . \
+            --allow-skip-live \
+            --dify-base-url "${primary_base}" \
+            --dify-app-key "${primary_key}" \
+            --fallback-dify-base-url "${fallback_base}" \
+            --fallback-dify-app-key "${fallback_key}" \
+            --limit 20 \
+            --dify-timeout 120 \
+            --dify-response-mode blocking \
+            --eval-concurrency 1 \
+            --retry-on-timeout 1 \
+            --preflight-retries 2 \
+            --chat-preflight-retries 2 \
+            --preflight-timeout 12 \
+            --chat-preflight-timeout 45 \
+            --update-dashboard
+
+      - name: Generate Release Risk Note
+        run: |
+          python scripts/generate_release_risk_note.py \
+            --repo-root . \
+            --failover-fail-streak-threshold 2
+
+      - name: Generate Failover Status
+        run: |
+          python scripts/generate_failover_status.py --repo-root . --days 7
+
+      - name: Validate Eval Dashboard Gate
+        id: gate
+        shell: bash
+        env:
+          LIVE_READY: ${{ steps.live_mode.outputs.live_ready }}
+        run: |
+          set +e
+          if [ "${LIVE_READY}" != "true" ]; then
+            echo "Live credentials missing; skip strict eval gate in snapshot-only mode." > gate_output.txt
+            cat gate_output.txt
+            echo "exit_code=0" >> "$GITHUB_OUTPUT"
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python scripts/validate_eval_dashboard_gate.py \
+            --repo-root . \
+            --enforce-failover-status \
+            --failover-max-age-hours 72 \
+            --failover-fail-streak-threshold 2 \
+            > gate_output.txt 2>&1
+          code=$?
+          cat gate_output.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 0 ]; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Validate Release Policy (demo)
+        id: policy
+        shell: bash
+        env:
+          LIVE_READY: ${{ steps.live_mode.outputs.live_ready }}
+        run: |
+          set +e
+          if [ "${LIVE_READY}" != "true" ]; then
+            echo "Live credentials missing; skip strict demo release policy in snapshot-only mode." > release_policy_output.txt
+            cat release_policy_output.txt
+            echo "exit_code=0" >> "$GITHUB_OUTPUT"
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python scripts/validate_release_policy.py \
+            --repo-root . \
+            --profile demo \
+            --strict \
+            --output-json docs/eval/release_policy_check_demo.json \
+            --output-md docs/eval/release_policy_check_demo.md \
+            > release_policy_output.txt 2>&1
+          code=$?
+          cat release_policy_output.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 0 ]; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Validate Release Policy (prod)
+        id: policy_prod
+        shell: bash
+        env:
+          LIVE_READY: ${{ steps.live_mode.outputs.live_ready }}
+        run: |
+          set +e
+          if [ "${LIVE_READY}" != "true" ]; then
+            echo "Live credentials missing; skip strict prod release policy in snapshot-only mode." > release_policy_prod_output.txt
+            cat release_policy_prod_output.txt
+            echo "exit_code=0" >> "$GITHUB_OUTPUT"
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python scripts/validate_release_policy.py \
+            --repo-root . \
+            --profile prod \
+            --strict \
+            --output-json docs/eval/release_policy_check_prod.json \
+            --output-md docs/eval/release_policy_check_prod.md \
+            > release_policy_prod_output.txt 2>&1
+          code=$?
+          cat release_policy_prod_output.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 0 ]; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Generate Release Readiness Dashboard
+        run: |
+          python scripts/generate_release_readiness_dashboard.py --repo-root . --profiles demo,prod --strict-profiles demo,prod
+
+      - name: Generate Low-Confidence Dashboard
+        run: |
+          python scripts/generate_low_confidence_dashboard.py --repo-root .
+
+      - name: Validate Release Fix Plan
+        id: fix_plan
+        shell: bash
+        run: |
+          set +e
+          python scripts/validate_release_fix_plan.py \
+            --repo-root . \
+            > release_fix_plan_output.txt 2>&1
+          code=$?
+          cat release_fix_plan_output.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 0 ]; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Sync P0 Release Fix Tasks to Issues
+        id: fix_sync
+        if: steps.fix_plan.outputs.status == 'pass'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set +e
+          python scripts/sync_release_fix_plan_issues.py \
+            --repo-root . \
+            --only-priority P0 \
+            --assign-from-owner \
+            > release_fix_sync_output.txt 2>&1
+          code=$?
+          cat release_fix_sync_output.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 0 ]; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Escalate Overdue P0 Release Fix Tasks
+        id: fix_overdue
+        if: steps.fix_sync.outputs.status == 'pass'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set +e
+          python scripts/escalate_release_fix_overdue.py \
+            --repo-root . \
+            --priority P0 \
+            > release_fix_overdue_output.txt 2>&1
+          code=$?
+          cat release_fix_overdue_output.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 0 ]; then
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Upload Gate Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-gate-${{ github.run_id }}
+          path: |
+            gate_output.txt
+            release_policy_output.txt
+            release_policy_prod_output.txt
+            release_fix_plan_output.txt
+            release_fix_sync_output.txt
+            release_fix_overdue_output.txt
+            docs/eval/release_risk_note_auto.md
+            docs/eval/release_risk_note_auto.json
+            docs/eval/release_policy_check_demo.md
+            docs/eval/release_policy_check_demo.json
+            docs/eval/release_policy_check_prod.md
+            docs/eval/release_policy_check_prod.json
+            docs/eval/release_readiness_dashboard.md
+            docs/eval/release_readiness_dashboard.json
+            docs/eval/release_blocker_topn.md
+            docs/eval/release_blocker_topn.csv
+            docs/eval/low_confidence_dashboard.md
+            docs/eval/low_confidence_dashboard.json
+            docs/ops/release_fix_plan_auto.md
+            docs/ops/release_fix_plan_auto.csv
+            docs/ops/release_fix_plan_sync_report.md
+            docs/ops/release_fix_plan_sync_report.json
+            docs/ops/release_fix_overdue_report.md
+            docs/ops/release_fix_overdue_report.json
+            docs/eval/eval_dashboard_data.json
+            docs/eval/failover_status.json
+            docs/eval/failover_status.md
+
+      - name: Create or Update Same-Day Gate Alert Issue
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail' || steps.fix_sync.outputs.status == 'fail' || steps.fix_overdue.outputs.status == 'fail'
+        uses: actions/github-script@v7
+        env:
+          EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
+          EVAL_GATE_ESCALATION_STREAK_DAYS: ${{ vars.EVAL_GATE_ESCALATION_STREAK_DAYS }}
+          FIX_SYNC_STATUS: ${{ steps.fix_sync.outputs.status }}
+          FIX_OVERDUE_STATUS: ${{ steps.fix_overdue.outputs.status }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const today = new Date().toISOString().slice(0, 10);
+            const title = `[Eval Gate] ${today} gate failed`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const gateOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'gate_output.txt');
+            const policyOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_policy_output.txt');
+            const policyProdOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_policy_prod_output.txt');
+            const fixPlanOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_fix_plan_output.txt');
+            const fixSyncOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_fix_sync_output.txt');
+            const fixOverdueOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'release_fix_overdue_output.txt');
+            const riskJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_risk_note_auto.json');
+            const policyDemoJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_policy_check_demo.json');
+            const policyProdJsonPath = path.join(process.env.GITHUB_WORKSPACE, 'docs', 'eval', 'release_policy_check_prod.json');
+            const riskJsonRepoPath = 'docs/eval/release_risk_note_auto.json';
+            const riskMdRepoPath = 'docs/eval/release_risk_note_auto.md';
+            const policyDemoJsonRepoPath = 'docs/eval/release_policy_check_demo.json';
+            const policyDemoMdRepoPath = 'docs/eval/release_policy_check_demo.md';
+            const policyProdJsonRepoPath = 'docs/eval/release_policy_check_prod.json';
+            const policyProdMdRepoPath = 'docs/eval/release_policy_check_prod.md';
+            const readinessMdRepoPath = 'docs/eval/release_readiness_dashboard.md';
+            const blockerMdRepoPath = 'docs/eval/release_blocker_topn.md';
+            const fixPlanMdRepoPath = 'docs/ops/release_fix_plan_auto.md';
+
+            let gateOutput = '';
+            let policyOutput = '';
+            let policyProdOutput = '';
+            let fixPlanOutput = '';
+            let fixSyncOutput = '';
+            let fixOverdueOutput = '';
+            let gateDecision = 'BLOCK';
+            let violations = [];
+            let policyDemoStatus = 'BLOCK';
+            let policyDemoViolations = [];
+            let policyProdStatus = 'BLOCK';
+            let policyProdViolations = [];
+            let fixPlanStatus = 'BLOCK';
+            let fixSyncStatus = String(process.env.FIX_SYNC_STATUS || '').toUpperCase() || 'SKIPPED';
+            let fixOverdueStatus = String(process.env.FIX_OVERDUE_STATUS || '').toUpperCase() || 'SKIPPED';
+            try {
+              gateOutput = fs.readFileSync(gateOutputPath, 'utf8').trim();
+            } catch (e) {
+              gateOutput = '(gate output not found)';
+            }
+            try {
+              policyOutput = fs.readFileSync(policyOutputPath, 'utf8').trim();
+            } catch (e) {
+              policyOutput = '(release policy output not found)';
+            }
+            try {
+              policyProdOutput = fs.readFileSync(policyProdOutputPath, 'utf8').trim();
+            } catch (e) {
+              policyProdOutput = '(release policy(prod) output not found)';
+            }
+            try {
+              fixPlanOutput = fs.readFileSync(fixPlanOutputPath, 'utf8').trim();
+            } catch (e) {
+              fixPlanOutput = '(release fix plan output not found)';
+            }
+            try {
+              fixSyncOutput = fs.readFileSync(fixSyncOutputPath, 'utf8').trim();
+            } catch (e) {
+              fixSyncOutput = '(release fix sync output not found)';
+            }
+            try {
+              fixOverdueOutput = fs.readFileSync(fixOverdueOutputPath, 'utf8').trim();
+            } catch (e) {
+              fixOverdueOutput = '(release fix overdue output not found)';
+            }
+            try {
+              const payload = JSON.parse(fs.readFileSync(riskJsonPath, 'utf8'));
+              gateDecision = String(payload.gate_decision || 'BLOCK');
+              violations = Array.isArray(payload.violations) ? payload.violations : [];
+            } catch (e) {}
+            try {
+              const policy = JSON.parse(fs.readFileSync(policyDemoJsonPath, 'utf8'));
+              policyDemoStatus = String(policy.status || 'BLOCK');
+              policyDemoViolations = Array.isArray(policy.violations) ? policy.violations : [];
+            } catch (e) {}
+            try {
+              const policy = JSON.parse(fs.readFileSync(policyProdJsonPath, 'utf8'));
+              policyProdStatus = String(policy.status || 'BLOCK');
+              policyProdViolations = Array.isArray(policy.violations) ? policy.violations : [];
+            } catch (e) {}
+            if (fixPlanOutput.toLowerCase().includes('passed')) {
+              fixPlanStatus = 'PASS';
+            }
+
+            const violationLines = violations.length > 0
+              ? violations.map(v => `- ${v}`).join('\n')
+              : '- (no violation list in json)';
+            const policyDemoViolationLines = policyDemoViolations.length > 0
+              ? policyDemoViolations.map(v => `- ${v}`).join('\n')
+              : '- (no demo policy violation list in json)';
+            const policyProdViolationLines = policyProdViolations.length > 0
+              ? policyProdViolations.map(v => `- ${v}`).join('\n')
+              : '- (no policy violation list in json)';
+
+            const body = [
+              'Auto monitor detected eval gate failure. This issue was created by workflow.',
+              '',
+              `- Workflow Run: ${runUrl}`,
+              `- Gate Decision: \`${gateDecision}\``,
+              `- Release Policy(demo) Status: \`${policyDemoStatus}\``,
+              `- Release Policy(prod) Status: \`${policyProdStatus}\``,
+              `- Release Fix Plan Status: \`${fixPlanStatus}\``,
+              `- Release Fix Sync Status: \`${fixSyncStatus}\``,
+              `- Release Fix Overdue Status: \`${fixOverdueStatus}\``,
+              `- Risk Note JSON: \`${riskJsonRepoPath}\``,
+              `- Risk Note MD: \`${riskMdRepoPath}\``,
+              `- Release Policy(demo) JSON: \`${policyDemoJsonRepoPath}\``,
+              `- Release Policy(demo) MD: \`${policyDemoMdRepoPath}\``,
+              `- Release Policy(prod) JSON: \`${policyProdJsonRepoPath}\``,
+              `- Release Policy(prod) MD: \`${policyProdMdRepoPath}\``,
+              `- Release Readiness Dashboard: \`${readinessMdRepoPath}\``,
+              `- Release Blocker TopN: \`${blockerMdRepoPath}\``,
+              `- Release Fix Plan (Auto): \`${fixPlanMdRepoPath}\``,
+              '- Release Fix Sync Report: `docs/ops/release_fix_plan_sync_report.md`',
+              '- Release Fix Overdue Report: `docs/ops/release_fix_overdue_report.md`',
+              '',
+              '## Violations',
+              violationLines,
+              '',
+              '## Release Policy Violations (demo)',
+              policyDemoViolationLines,
+              '',
+              '## Release Policy Violations (prod)',
+              policyProdViolationLines,
+              '',
+              '## Gate Output',
+              '```text',
+              gateOutput.slice(0, 12000),
+              '```',
+              '',
+              '## Release Policy Output (demo)',
+              '```text',
+              policyOutput.slice(0, 12000),
+              '```',
+              '',
+              '## Release Policy Output (prod)',
+              '```text',
+              policyProdOutput.slice(0, 12000),
+              '```',
+              '',
+              '## Release Fix Plan Output',
+              '```text',
+              fixPlanOutput.slice(0, 12000),
+              '```',
+              '',
+              '## Release Fix Sync Output',
+              '```text',
+              fixSyncOutput.slice(0, 12000),
+              '```',
+              '',
+              '## Release Fix Overdue Output',
+              '```text',
+              fixOverdueOutput.slice(0, 12000),
+              '```',
+              '',
+              '## SLA (required for release follow-up)',
+              '- Owner: (required)',
+              '- DDL: YYYY-MM-DD (required)',
+              '',
+              '## Suggested Next Actions',
+              '- Check Dify primary route health and timeout behavior',
+              '- If this is a temporary external issue, apply a short warn_only override with approval fields',
+              '- Re-run regression after fix and confirm gate returns PASS'
+            ].join('\n');
+
+            const ensureLabel = async (name, color, description) => {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name,
+                  color,
+                  description
+                });
+              } catch (e) {
+                // label may already exist
+              }
+            };
+            await ensureLabel('eval-gate-alert', 'B60205', 'Auto-created alert issue when eval gate fails');
+            await ensureLabel('sla-missing', 'FF0000', 'Alert issue missing SLA owner or ddl');
+            await ensureLabel('p1-gate', 'D93F0B', 'Escalated P1 alert for consecutive daily gate failures');
+
+            const allIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              labels: 'eval-gate-alert',
+              per_page: 100
+            });
+            const sameDayIssue = allIssues.data.find(i => i.title === title);
+            let issueNumber = 0;
+
+            if (sameDayIssue) {
+              if (sameDayIssue.state === 'closed') {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: sameDayIssue.number,
+                  state: 'open'
+                });
+              }
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: sameDayIssue.number,
+                body
+              });
+              issueNumber = sameDayIssue.number;
+              core.setOutput('issue_number', String(issueNumber));
+              core.info(`Reused same-day issue #${sameDayIssue.number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['eval-gate-alert', 'sla-missing']
+              });
+              issueNumber = created.data.number;
+              core.setOutput('issue_number', String(issueNumber));
+              core.info(`Created issue #${created.data.number}`);
+            }
+
+            // Consecutive-failure escalation: when >= 3 calendar days including today.
+            const titleDatePattern = /^\[Eval Gate\] (\d{4}-\d{2}-\d{2}) gate failed$/;
+            const dateSet = new Set(
+              allIssues.data
+                .map(i => {
+                  const m = String(i.title || '').match(titleDatePattern);
+                  return m ? m[1] : '';
+                })
+                .filter(Boolean)
+            );
+            let streak = 0;
+            const d = new Date(`${today}T00:00:00Z`);
+            dateSet.add(today);
+            for (let i = 0; i < 14; i += 1) {
+              const key = d.toISOString().slice(0, 10);
+              if (dateSet.has(key)) {
+                streak += 1;
+                d.setUTCDate(d.getUTCDate() - 1);
+                continue;
+              }
+              break;
+            }
+            core.info(`Consecutive failure streak: ${streak} day(s)`);
+            const streakThreshold = Number.parseInt(String(process.env.EVAL_GATE_ESCALATION_STREAK_DAYS || '3'), 10);
+            const safeStreakThreshold = Number.isFinite(streakThreshold) && streakThreshold > 0 ? streakThreshold : 3;
+
+            if (streak >= safeStreakThreshold && issueNumber > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                labels: ['p1-gate']
+              });
+              const marker = `<!-- P1-ESCALATE:${today} -->`;
+              const mentions = String(process.env.EVAL_GATE_ESCALATION_MENTIONS || '').trim();
+              const mentionText = mentions || `@${context.repo.owner}`;
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                per_page: 50
+              });
+              const alreadyCommented = comments.data.some(c => String(c.body || '').includes(marker));
+              if (!alreadyCommented) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  body: [
+                    marker,
+                    `**P1 Escalation Triggered**: gate failure streak reached **${streak}** consecutive day(s) (threshold=${safeStreakThreshold}).`,
+                    '',
+                    `- Notified: ${mentionText}`,
+                    '- Requirement: prioritize route-health recovery and rerun regression.'
+                  ].join('\n')
+                });
+              }
+            }
+
+      - name: Check Alert SLA Metadata
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail' || steps.fix_sync.outputs.status == 'fail' || steps.fix_overdue.outputs.status == 'fail'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().slice(0, 10);
+            const markerMissing = `<!-- SLA-CHECK:${today}:missing -->`;
+            const markerResolved = `<!-- SLA-CHECK:${today}:resolved -->`;
+
+            const ensureLabel = async (name, color, description) => {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name,
+                  color,
+                  description
+                });
+              } catch (e) {
+                // label may already exist
+              }
+            };
+            await ensureLabel('sla-missing', 'FF0000', 'Alert issue missing SLA owner or ddl');
+
+            const openIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'eval-gate-alert',
+              per_page: 100
+            });
+
+            const isOwnerValid = (body) => {
+              const m = body.match(/^- Owner:\s*(.+)$/m);
+              if (!m) return false;
+              const v = String(m[1] || '').trim().toLowerCase();
+              return !!v && v !== '(required)' && v !== 'required' && v !== 'tbd';
+            };
+            const isDdlValid = (body) => {
+              const m = body.match(/^- DDL:\s*(.+)$/m);
+              if (!m) return false;
+              const v = String(m[1] || '').trim();
+              return /^\d{4}-\d{2}-\d{2}$/.test(v);
+            };
+
+            for (const issue of openIssues.data) {
+              const body = String(issue.body || '');
+              const hasOwner = isOwnerValid(body);
+              const hasDdl = isDdlValid(body);
+              const missing = !(hasOwner && hasDdl);
+              const hasMissingLabel = issue.labels.some(l => (l.name || '') === 'sla-missing');
+
+              if (missing) {
+                if (!hasMissingLabel) {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    labels: ['sla-missing']
+                  });
+                }
+                const comments = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  per_page: 50
+                });
+                const alreadyCommented = comments.data.some(c => String(c.body || '').includes(markerMissing));
+                if (!alreadyCommented) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: [
+                      markerMissing,
+                      '**[RED] SLA missing**: please fill required fields in issue body.',
+                      '',
+                      '- Required: `Owner`',
+                      '- Required: `DDL` in `YYYY-MM-DD` format'
+                    ].join('\n')
+                  });
+                }
+              } else {
+                if (hasMissingLabel) {
+                  try {
+                    await github.rest.issues.removeLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: issue.number,
+                      name: 'sla-missing'
+                    });
+                  } catch (e) {}
+                }
+                const comments = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  per_page: 50
+                });
+                const alreadyCommented = comments.data.some(c => String(c.body || '').includes(markerResolved));
+                if (!alreadyCommented) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: [
+                      markerResolved,
+                      'SLA metadata check passed.',
+                      '- Owner and DDL are valid.'
+                    ].join('\n')
+                  });
+                }
+              }
+            }
+
+      - name: P1 24h Postmortem Reminder
+        if: steps.gate.outputs.status == 'fail' || steps.policy.outputs.status == 'fail' || steps.policy_prod.outputs.status == 'fail' || steps.fix_plan.outputs.status == 'fail' || steps.fix_sync.outputs.status == 'fail' || steps.fix_overdue.outputs.status == 'fail'
+        uses: actions/github-script@v7
+        env:
+          EVAL_GATE_ESCALATION_MENTIONS: ${{ vars.EVAL_GATE_ESCALATION_MENTIONS }}
+          EVAL_GATE_REMINDER_HOURS_LIST: ${{ vars.EVAL_GATE_REMINDER_HOURS_LIST }}
+        with:
+          script: |
+            const now = Date.now();
+            const today = new Date().toISOString().slice(0, 10);
+            const mentions = String(process.env.EVAL_GATE_ESCALATION_MENTIONS || '').trim();
+            const mentionText = mentions || `@${context.repo.owner}`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const parsedThresholds = String(process.env.EVAL_GATE_REMINDER_HOURS_LIST || '24,48')
+              .split(',')
+              .map(v => Number.parseInt(v.trim(), 10))
+              .filter(v => Number.isFinite(v) && v > 0)
+              .sort((a, b) => a - b);
+            const thresholds = parsedThresholds.length > 0 ? parsedThresholds : [24, 48];
+
+            const openIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'eval-gate-alert,p1-gate',
+              per_page: 100
+            });
+
+            if (openIssues.data.length === 0) {
+              core.info('No open p1-gate issues to remind.');
+              return;
+            }
+
+            for (const issue of openIssues.data) {
+              const createdAt = new Date(issue.created_at).getTime();
+              const ageMs = now - createdAt;
+              const ageHours = Math.floor(ageMs / (60 * 60 * 1000));
+              const stage = thresholds.reduce((acc, h) => (ageHours >= h ? h : acc), 0);
+              if (stage <= 0) {
+                core.info(`Skip issue #${issue.number}: age < min threshold ${thresholds[0]}h`);
+                continue;
+              }
+              const marker = `<!-- P1-REMINDER:${today}:H${stage} -->`;
+
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                per_page: 100
+              });
+              const alreadyCommented = comments.data.some(c => String(c.body || '').includes(marker));
+              if (alreadyCommented) {
+                core.info(`Skip issue #${issue.number}: reminder already sent today`);
+                continue;
+              }
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: [
+                  marker,
+                  `**P1 Reminder (${stage}h stage)**: issue open for about **${ageHours}h** and not recovered yet.`,
+                  '',
+                  `- Notified: ${mentionText}`,
+                  `- Workflow Run: ${runUrl}`,
+                  '- Please update progress and complete postmortem draft (template: `docs/eval/p1_postmortem_template.md`).'
+                ].join('\n')
+              });
+              core.info(`Sent P1 reminder to issue #${issue.number}`);
+            }
+
+      - name: Close Open Gate Alert Issues On Recovery
+        if: always()
+        env:
+          GATE_STATUS: ${{ steps.gate.outputs.status }}
+          POLICY_DEMO_STATUS: ${{ steps.policy.outputs.status }}
+          POLICY_PROD_STATUS: ${{ steps.policy_prod.outputs.status }}
+          FIX_PLAN_STATUS: ${{ steps.fix_plan.outputs.status }}
+          FIX_SYNC_STATUS: ${{ steps.fix_sync.outputs.status }}
+          FIX_OVERDUE_STATUS: ${{ steps.fix_overdue.outputs.status }}
+          EVAL_POLICY_ENFORCE_PROD: ${{ vars.EVAL_POLICY_ENFORCE_PROD }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const gateStatus = String(process.env.GATE_STATUS || '').toLowerCase();
+            const demoStatus = String(process.env.POLICY_DEMO_STATUS || '').toLowerCase();
+            const prodStatus = String(process.env.POLICY_PROD_STATUS || '').toLowerCase();
+            const fixPlanStatus = String(process.env.FIX_PLAN_STATUS || '').toLowerCase();
+            const fixSyncStatus = String(process.env.FIX_SYNC_STATUS || '').toLowerCase();
+            const fixOverdueStatus = String(process.env.FIX_OVERDUE_STATUS || '').toLowerCase();
+            const enforceProd = String(process.env.EVAL_POLICY_ENFORCE_PROD || 'false').toLowerCase() === 'true';
+            const syncOk = (fixSyncStatus === 'pass' || fixSyncStatus === '');
+            const overdueOk = (fixOverdueStatus === 'pass' || fixOverdueStatus === '');
+            const recoverable = gateStatus === 'pass' && demoStatus === 'pass' && fixPlanStatus === 'pass' && syncOk && overdueOk && (!enforceProd || prodStatus === 'pass');
+            if (!recoverable) {
+              core.info('Skip recovery close: status not fully recovered under current policy mode.');
+              return;
+            }
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              'Gate check has recovered to PASS in daily monitor.',
+              '',
+              `- Workflow Run: ${runUrl}`,
+              '- Action: close this alert issue as recovered',
+              '',
+              'If gate fails again, workflow will auto-create or update a same-day alert issue.'
+            ].join('\n');
+
+            const openIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'eval-gate-alert',
+              per_page: 100
+            });
+
+            if (openIssues.data.length === 0) {
+              core.info('No open eval-gate-alert issues to close.');
+              return;
+            }
+
+            for (const issue of openIssues.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+              core.info(`Closed recovered issue #${issue.number}`);
+            }
+
+      - name: Fail Workflow On Gate Failure
+        env:
+          GATE_STATUS: ${{ steps.gate.outputs.status }}
+          POLICY_DEMO_STATUS: ${{ steps.policy.outputs.status }}
+          POLICY_PROD_STATUS: ${{ steps.policy_prod.outputs.status }}
+          FIX_PLAN_STATUS: ${{ steps.fix_plan.outputs.status }}
+          FIX_SYNC_STATUS: ${{ steps.fix_sync.outputs.status }}
+          FIX_OVERDUE_STATUS: ${{ steps.fix_overdue.outputs.status }}
+          EVAL_POLICY_ENFORCE_PROD: ${{ vars.EVAL_POLICY_ENFORCE_PROD }}
+          LIVE_READY: ${{ steps.live_mode.outputs.live_ready }}
+        run: |
+          set -e
+          if [ "${LIVE_READY}" != "true" ]; then
+            echo "Daily monitor pass in snapshot-only mode (live credentials missing)."
+            exit 0
+          fi
+          gate_status="$(echo "${GATE_STATUS}" | tr '[:upper:]' '[:lower:]')"
+          demo_status="$(echo "${POLICY_DEMO_STATUS}" | tr '[:upper:]' '[:lower:]')"
+          prod_status="$(echo "${POLICY_PROD_STATUS}" | tr '[:upper:]' '[:lower:]')"
+          fix_plan_status="$(echo "${FIX_PLAN_STATUS}" | tr '[:upper:]' '[:lower:]')"
+          fix_sync_status="$(echo "${FIX_SYNC_STATUS}" | tr '[:upper:]' '[:lower:]')"
+          fix_overdue_status="$(echo "${FIX_OVERDUE_STATUS}" | tr '[:upper:]' '[:lower:]')"
+          enforce_prod="$(echo "${EVAL_POLICY_ENFORCE_PROD:-false}" | tr '[:upper:]' '[:lower:]')"
+
+          if [ "$gate_status" = "fail" ] || [ "$demo_status" = "fail" ] || [ "$fix_plan_status" = "fail" ] || [ "$fix_sync_status" = "fail" ] || [ "$fix_overdue_status" = "fail" ]; then
+            echo "Gate or demo release policy or release fix plan validation/sync/overdue escalation failed."
+            exit 1
+          fi
+
+          if [ "$prod_status" = "fail" ]; then
+            if [ "$enforce_prod" = "true" ]; then
+              echo "Prod release policy failed and enforcement is enabled."
+              exit 1
+            fi
+            echo "Prod release policy failed, but enforcement is disabled (warning only)."
+          fi
+
+          echo "Daily monitor pass under current enforcement settings."

@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-03-30T22:59:32+08:00",
+  "overall": "PASS",
+  "summary": {
+    "blockers": 0,
+    "warnings": 0,
+    "checks": 9
+  },
+  "checks": [
+    {
+      "key": "release_package::knowledge_base_import_ready.csv",
+      "ok": true,
+      "level": "info",
+      "detail": "ok"
+    },
+    {
+      "key": "release_package::README.md",
+      "ok": true,
+      "level": "info",
+      "detail": "ok"
+    },
+    {
+      "key": "release_package::web_seed_urls_v8_1_prefetch_status.csv",
+      "ok": true,
+      "level": "info",
+      "detail": "ok"
+    },
+    {
+      "key": "release_oneclick",
+      "ok": true,
+      "level": "info",
+      "detail": "latest status=success (/root/lab-safe-assistant-github/artifacts/release_stability_check/run_20260330_220716/round_01/run_20260330_220716/eval_release_oneclick_report.json)"
+    },
+    {
+      "key": "release_policy_demo",
+      "ok": true,
+      "level": "info",
+      "detail": "status=PASS"
+    },
+    {
+      "key": "release_policy_prod",
+      "ok": true,
+      "level": "info",
+      "detail": "status=BLOCK; violations=latency_p95_ms too high: 30981.91 > max_latency_p95_ms=30000.00; failover window fail count exceeded: 4 > max_fail_window=1; non-blocking (enforce_prod_policy=false)"
+    },
+    {
+      "key": "risk_note",
+      "ok": true,
+      "level": "info",
+      "detail": "gate_decision=PASS; emergency_pass_rate=1.0000"
+    },
+    {
+      "key": "gate_override",
+      "ok": true,
+      "level": "info",
+      "detail": "override enabled=false"
+    },
+    {
+      "key": "web_health",
+      "ok": true,
+      "level": "info",
+      "detail": "http://127.0.0.1:8088/health ok"
+    }
+  ]
+}

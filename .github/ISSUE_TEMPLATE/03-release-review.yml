@@ -1,0 +1,56 @@
+name: 发布与验收任务
+description: 提交发布前验收任务（给发布负责人）
+title: "[发布验收] <批次名> <日期>"
+labels:
+  - release-review
+  - todo
+assignees: []
+body:
+  - type: input
+    id: release_name
+    attributes:
+      label: 发布批次
+      placeholder: 例：release-kb-20260318
+    validations:
+      required: true
+  - type: textarea
+    id: required_inputs
+    attributes:
+      label: 必要输入
+      value: |
+        - 本批次 knowledge_base_unified.csv
+        - 清洗报告 run_report.json
+        - 人工审核结果摘要
+        - eval_set_v1.csv
+    validations:
+      required: true
+  - type: textarea
+    id: review_items
+    attributes:
+      label: 人工审核项（必查）
+      value: |
+        1) 是否有危险建议
+        2) 是否有明确步骤
+        3) 是否强调应急优先级
+        4) 是否出现高风险错误结论
+    validations:
+      required: true
+  - type: textarea
+    id: gate
+    attributes:
+      label: 发布门禁
+      value: |
+        - 来源可追溯率 = 100%
+        - 人工审核完成率 = 100%
+        - 高风险错误建议 = 0
+        - 回归通过率 >= 80%
+    validations:
+      required: true
+  - type: input
+    id: deadline
+    attributes:
+      label: 截止时间
+      placeholder: YYYY-MM-DD
+    validations:
+      required: true
+

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Web Content Fetcher"
+  short_description: "多通道网页正文提取与失败可解释化路由技能"
+  default_prompt: "Use $web-content-fetcher to extract link content first, then summarize only from extracted正文."

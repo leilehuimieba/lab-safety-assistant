@@ -1,0 +1,4 @@
+﻿source_id,title,url,status,quality_score,assignee_role,task_type,priority,suggested_action
+WEB82-024,HSE Biosafety Blood-borne Viruses,https://www.hse.gov.uk/biosafety/blood-borne-viruses/index.htm,ok,0.6597,cleaner,rewrite_structured_summary,P2,Manually clean and rewrite WEB82-024 (HSE Biosafety Blood-borne Viruses) into answer/steps/ppe/forbidden/emergency structure.
+WEB82-026,HSE Biosafety Infection,https://www.hse.gov.uk/biosafety/infection.htm,ok,0.6739,cleaner,rewrite_structured_summary,P2,Manually clean and rewrite WEB82-026 (HSE Biosafety Infection) into answer/steps/ppe/forbidden/emergency structure.
+WEB82-027,HSE COSHH,https://www.hse.gov.uk/coshh/,ok,0.6558,cleaner,rewrite_structured_summary,P2,Manually clean and rewrite WEB82-027 (HSE COSHH) into answer/steps/ppe/forbidden/emergency structure.

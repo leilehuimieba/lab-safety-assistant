@@ -1,0 +1,59 @@
+name: 数据清洗与人工审核任务
+description: 提交清洗与人工审核任务（给清洗/审核同学）
+title: "[数据清洗] <批次名> <截止日期>"
+labels:
+  - data-cleaning
+  - todo
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请确保本任务已关联一个“数据收集任务”或明确的数据来源清单。
+  - type: input
+    id: batch_name
+    attributes:
+      label: 批次名称
+      placeholder: 例：dify_kb_batch_v3
+    validations:
+      required: true
+  - type: textarea
+    id: input_sources
+    attributes:
+      label: 输入来源
+      description: 指定 manifest、规则表、数据目录
+      value: |
+        - data_sources/document_manifest.csv
+        - data_sources/pdf_special_rules.csv
+        - data_sources/web_seed_urls.csv
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: 执行命令
+      value: |
+        1) powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run_pdf_batch_check.ps1 -InputRoot <你的资料目录>
+        2) 人工填写 manual_review_sheet.csv
+        3) powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run_unified_batch.ps1 -DocumentInputRoot <你的资料目录>
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      value: |
+        - manual_review_status 全部为 done
+        - 乱码高风险比例 <= 5%
+        - 元数据完整率 >= 98%
+        - 可导出 knowledge_base_unified.csv
+    validations:
+      required: true
+  - type: input
+    id: deadline
+    attributes:
+      label: 截止时间
+      placeholder: YYYY-MM-DD
+    validations:
+      required: true
+

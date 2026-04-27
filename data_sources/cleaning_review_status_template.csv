@@ -1,0 +1,3 @@
+batch_id,doc_path,need_ocr,body_start_page,skip_pages,garbled_level,cover_toc_removed_ok,manual_review_status,reviewer,notes
+BATCH-V3,raw/institutional/WuyiU_实验室危化品管理制度_2025-09_zh-CN.pdf,no,2,1,low,yes,done,王五,文本清晰
+BATCH-V3,raw/standards/某标准.pdf,yes,4,1;2;3,high,yes,done,赵六,字体映射异常，已强制OCR

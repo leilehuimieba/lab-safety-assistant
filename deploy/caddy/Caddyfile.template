@@ -1,0 +1,12 @@
+__DOMAIN__ {
+    encode zstd gzip
+
+    @health path /health
+    handle @health {
+        reverse_proxy 127.0.0.1:__DEMO_PORT__
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:__DEMO_PORT__
+    }
+}

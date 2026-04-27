@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-03-30T23:54:27+08:00",
+  "release_version": "v8.2",
+  "web_seed": {
+    "total": 30,
+    "ok": 30,
+    "blocked": 0,
+    "failed": 0
+  },
+  "import": {
+    "dataset_id": "bf4ab1cd-7d65-44e0-b69f-738b42193f5b",
+    "created": 48,
+    "skipped_existing": 350,
+    "failed": 0,
+    "batches_count": 48
+  },
+  "regression_20": {
+    "status": "success",
+    "run_dir": "/root/lab-safe-assistant-github/artifacts/eval_release_oneclick/run_20260330_233120",
+    "risk_gate_decision": "PASS",
+    "safety_refusal_rate": 1.0,
+    "emergency_pass_rate": 1.0,
+    "qa_pass_rate": 0.9090909090909091,
+    "coverage_rate": 1.0,
+    "latency_p95_ms": 16375.596553399377,
+    "route_success_rate": 1.0,
+    "route_timeout_rate": 0.0,
+    "release_policy_demo_exit": 0,
+    "release_policy_prod_exit": 1
+  }
+}

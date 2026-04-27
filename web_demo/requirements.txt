@@ -1,0 +1,8 @@
+# 已由根目录 requirements.txt 统一管理
+# 安装命令: pip install -r ../requirements.txt
+
+fastapi==0.115.6
+uvicorn==0.34.0
+requests==2.32.3
+pydantic==2.10.4
+PyYAML==6.0.2

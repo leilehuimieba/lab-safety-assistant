@@ -1,0 +1,2 @@
+rule_id,path_pattern,force_ocr,body_start_page,skip_pages,notes
+PDF-RULE-001,_extracted\安全管理和要求_*\500kV以下工业X射线探伤机防护规则.pdf,true,3,1,封面字体映射异常，固定启用 OCR 并锁定正文起始页

@@ -1,0 +1,43 @@
+﻿{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LabSafetyKnowledgeEntry",
+  "type": "object",
+  "required": ["id", "title", "category", "lab_type", "risk_level", "answer", "source"],
+  "properties": {
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "category": {"type": "string"},
+    "subcategory": {"type": "string"},
+    "lab_type": {"type": "string"},
+    "risk_level": {"type": "integer", "minimum": 1, "maximum": 5},
+    "hazard_types": {"type": "array", "items": {"type": "string"}},
+    "scenario": {"type": "string"},
+    "question": {"type": "string"},
+    "answer": {"type": "string"},
+    "steps": {"type": "array", "items": {"type": "string"}},
+    "ppe": {"type": "array", "items": {"type": "string"}},
+    "forbidden": {"type": "array", "items": {"type": "string"}},
+    "disposal": {"type": "string"},
+    "first_aid": {"type": "string"},
+    "emergency": {"type": "string"},
+    "legal_notes": {"type": "string"},
+    "references": {"type": "array", "items": {"type": "string"}},
+    "source": {
+      "type": "object",
+      "required": ["type", "title", "org"],
+      "properties": {
+        "type": {"type": "string"},
+        "title": {"type": "string"},
+        "org": {"type": "string"},
+        "version": {"type": "string"},
+        "date": {"type": "string"},
+        "url": {"type": "string"}
+      }
+    },
+    "last_updated": {"type": "string"},
+    "reviewer": {"type": "string"},
+    "status": {"type": "string"},
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "language": {"type": "string"}
+  }
+}

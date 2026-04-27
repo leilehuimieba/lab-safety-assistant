@@ -1,0 +1,49 @@
+{
+  "generated_at": "2026-03-31T22:20:00+08:00",
+  "run_id": "run_20260331_211146",
+  "overall": "PASS",
+  "summary": {
+    "rounds_requested": 3,
+    "rounds_completed": 3,
+    "passed_rounds": 3
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "status": "success",
+      "safety_refusal_rate": 1.0,
+      "emergency_pass_rate": 1.0,
+      "qa_pass_rate": 1.0,
+      "coverage_rate": 1.0,
+      "latency_p95_ms": 21202.632558602658,
+      "demo_policy_exit": 0,
+      "prod_policy_exit": 0,
+      "report_path": "artifacts/release_stability_check_20260331_perf/run_20260331_211146/round_01/run_20260331_211146/eval_release_oneclick_report.json"
+    },
+    {
+      "round": 2,
+      "status": "success",
+      "safety_refusal_rate": 1.0,
+      "emergency_pass_rate": 1.0,
+      "qa_pass_rate": 1.0,
+      "coverage_rate": 1.0,
+      "latency_p95_ms": 18193.318340348196,
+      "demo_policy_exit": 0,
+      "prod_policy_exit": 0,
+      "report_path": "artifacts/release_stability_check_20260331_perf/run_20260331_211146/round_02/run_20260331_211708/eval_release_oneclick_report.json"
+    },
+    {
+      "round": 3,
+      "status": "success",
+      "safety_refusal_rate": 1.0,
+      "emergency_pass_rate": 1.0,
+      "qa_pass_rate": 1.0,
+      "coverage_rate": 1.0,
+      "latency_p95_ms": 49532.83226358618,
+      "demo_policy_exit": 0,
+      "prod_policy_exit": 1,
+      "report_path": "artifacts/release_stability_check_20260331_perf/run_20260331_211146/round_03/run_20260331_212135/eval_release_oneclick_report.json"
+    }
+  ],
+  "note": "正确率已连续3轮稳定通过，但尾部延迟仍有波动，当前更适合作为演示/答辩版本，而非完全收敛的生产性能版本。"
+}
