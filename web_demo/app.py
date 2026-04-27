@@ -507,6 +507,16 @@ class TrainingRosterStatusResponse(BaseModel):
     incomplete_students: list[TrainingRosterItem] = Field(default_factory=list)
 
 
+class TrainingRosterUploadRequest(BaseModel):
+    csv_text: str = Field(min_length=1)
+
+
+class TrainingRosterUploadResponse(BaseModel):
+    message: str
+    saved_count: int
+    status: TrainingRosterStatusResponse
+
+
 class DashboardMetric(BaseModel):
     label: str
     value: str
@@ -1734,6 +1744,43 @@ def load_training_roster_rows() -> list[dict[str, str]]:
     return read_csv_rows(TRAINING_ROSTER_TEMPLATE_FILE)
 
 
+TRAINING_ROSTER_HEADERS = ["student_id", "name", "class_name", "lab_group", "required_training"]
+
+
+def normalize_training_roster_csv(csv_text: str) -> list[dict[str, str]]:
+    buffer = io.StringIO(csv_text.lstrip("﻿"))
+    reader = csv.DictReader(buffer)
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="CSV 缺少表头。")
+
+    normalized_headers = {name.strip().lower(): name for name in reader.fieldnames if name}
+    if "name" not in normalized_headers and "student_id" not in normalized_headers:
+        raise HTTPException(status_code=400, detail="CSV 至少需要 name 或 student_id 列。")
+
+    rows: list[dict[str, str]] = []
+    for raw in reader:
+        row = {key: (raw.get(normalized_headers.get(key, ""), "") or "").strip() for key in TRAINING_ROSTER_HEADERS}
+        if not row["student_id"] and not row["name"]:
+            continue
+        if not row["required_training"]:
+            row["required_training"] = "true"
+        rows.append(row)
+
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV 没有有效学生记录。")
+    return rows
+
+
+def save_training_roster_csv(csv_text: str) -> TrainingRosterUploadResponse:
+    rows = normalize_training_roster_csv(csv_text)
+    write_csv_rows(TRAINING_ROSTER_FILE, TRAINING_ROSTER_HEADERS, rows)
+    return TrainingRosterUploadResponse(
+        message=f"已导入 {len(rows)} 名学生名单。",
+        saved_count=len(rows),
+        status=load_training_roster_status(),
+    )
+
+
 def load_training_roster_status() -> TrainingRosterStatusResponse:
     roster_rows = [row for row in load_training_roster_rows() if truthy_csv_value(row.get("required_training", "true"))]
     attempts = read_csv_rows(TRAINING_ATTEMPTS_FILE)
@@ -2578,6 +2625,11 @@ def training_stats() -> TrainingStatsResponse:
 @app.get("/api/training/roster_status", response_model=TrainingRosterStatusResponse)
 def training_roster_status() -> TrainingRosterStatusResponse:
     return load_training_roster_status()
+
+
+@app.post("/api/training/roster_upload", response_model=TrainingRosterUploadResponse)
+def training_roster_upload(payload: TrainingRosterUploadRequest) -> TrainingRosterUploadResponse:
+    return save_training_roster_csv(payload.csv_text)
 
 
 @app.post("/api/demo/teacher-seed", response_model=DemoSeedResponse)

@@ -1722,11 +1722,22 @@
       cursor: pointer;
       white-space: nowrap;
     }
-    .teacher-workbench-head button.secondary {
+    .teacher-workbench-head button.secondary,
+    .teacher-workbench-head label.secondary {
       background: #fff;
       color: #9a3412;
       border: 1px solid #fed7aa;
     }
+    .teacher-workbench-head label {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .teacher-workbench-head input[type="file"] { display: none; }
 
     .teacher-workbench {
       display: none;
@@ -2168,6 +2179,8 @@
               <span id="teacherSeedStatus">没有真实记录时，可一键生成几条演示记录。</span>
             </div>
             <div class="teacher-demo-actions">
+              <label class="secondary" for="uploadTrainingRosterInput">上传培训名单 CSV</label>
+              <input type="file" id="uploadTrainingRosterInput" accept=".csv,text/csv" />
               <button type="button" id="seedTeacherDemoBtn">一键生成演示数据</button>
               <button class="secondary" type="button" id="clearTeacherDemoBtn">清空演示数据</button>
               <button class="secondary" type="button" id="exportTeacherReportBtn">导出老师处理清单</button>
@@ -2808,6 +2821,7 @@
     const seedTeacherDemoBtn = document.getElementById('seedTeacherDemoBtn');
     const clearTeacherDemoBtn = document.getElementById('clearTeacherDemoBtn');
     const exportTeacherReportBtn = document.getElementById('exportTeacherReportBtn');
+    const uploadTrainingRosterInput = document.getElementById('uploadTrainingRosterInput');
     const teacherSeedStatus = document.getElementById('teacherSeedStatus');
     const teacherPendingCard = document.getElementById('teacherPendingCard');
     const teacherPendingCount = document.getElementById('teacherPendingCount');
@@ -3389,6 +3403,15 @@
       return data;
     }
 
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('文件读取失败。'));
+        reader.readAsText(file, 'utf-8');
+      });
+    }
+
     async function checkAcceptanceEvidenceLinks() {
       if (!acceptanceCheckLinksBtn) return;
       setButtonBusy(acceptanceCheckLinksBtn, true, '检查证据链接', '检查中...');
@@ -3901,6 +3924,24 @@
       }
     }
 
+    async function uploadTrainingRoster(file) {
+      if (!file) return;
+      if (teacherSeedStatus) teacherSeedStatus.textContent = '正在导入培训名单...';
+      try {
+        const csvText = await readFileAsText(file);
+        const data = await postJson('/api/training/roster_upload', { csv_text: csvText });
+        latestTrainingRosterStatus = data.status || null;
+        await loadAdminDashboard();
+        if (teacherSeedStatus) teacherSeedStatus.textContent = data.message || '培训名单已导入。';
+        announce('培训名单已导入。');
+      } catch (err) {
+        if (teacherSeedStatus) teacherSeedStatus.textContent = `导入失败：${err.message}`;
+        announce(`培训名单导入失败：${err.message}`);
+      } finally {
+        if (uploadTrainingRosterInput) uploadTrainingRosterInput.value = '';
+      }
+    }
+
     function enterTeacherDemoMode() {
       applyRole('teacher');
       setActiveView('overview');
@@ -4307,6 +4348,9 @@
     }
     if (clearTeacherDemoBtn) {
       clearTeacherDemoBtn.addEventListener('click', clearTeacherDemoData);
+    }
+    if (uploadTrainingRosterInput) {
+      uploadTrainingRosterInput.addEventListener('change', () => uploadTrainingRoster(uploadTrainingRosterInput.files?.[0]));
     }
     if (exportTeacherReportBtn) {
       exportTeacherReportBtn.addEventListener('click', async () => {
