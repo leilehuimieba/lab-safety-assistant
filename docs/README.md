@@ -8,12 +8,13 @@
 |---|---|
 | 老师工作台答辩演示说明 | `docs/demo/teacher_workbench_defense_demo.md` |
 | 产品优化方案 | `docs/product/product_optimization_plan_20260426.md` |
+| 产品化交付说明 | `docs/product/product_delivery_note_20260427.md` |
 
 建议现场演示顺序：
 
 1. 打开首页
-2. 点“老师演示模式”
-3. 点“答辩演示下一步”
+2. 点“老师工作台快捷入口”
+3. 点“工作台引导下一步”
 4. 看老师工作台
 5. 导出老师处理清单
 6. 切到管理员模式，看“课题验收看板”
@@ -112,7 +113,7 @@ python -m pytest -q
 
 ## 7. 运行入口
 
-启动演示服务：
+启动服务：
 
 ```powershell
 cd web_demo

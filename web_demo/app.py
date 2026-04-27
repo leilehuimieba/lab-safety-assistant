@@ -46,7 +46,7 @@ DEFAULT_FALLBACK_MODELS = "grok-3-mini,grok-4,grok-3"
 DEFAULT_TOP_K = 4
 DEFAULT_LOW_CONFIDENCE_TOP_SCORE = 3.5
 DEFAULT_TRAINING_PASS_THRESHOLD = 80
-APP_VERSION = "defense-freeze-20260331"
+APP_VERSION = "product-preview-20260427"
 FORMAL_EVAL_SCORE = "20/20"
 STABILITY_EVIDENCE = "3/3 PASS"
 KB_IMPORT_SUCCESS_COUNT = 398
@@ -544,13 +544,13 @@ class AdminDashboardResponse(BaseModel):
     overdue_incidents: list[str] = Field(default_factory=list)
 
 
-class DemoSeedResponse(BaseModel):
+class SampleSeedResponse(BaseModel):
     created: bool
     message: str
     dashboard: AdminDashboardResponse
 
 
-class DemoMetaResponse(BaseModel):
+class ProductMetaResponse(BaseModel):
     app_version: str
     chat_lane_lab: str
     chat_lane_agent: str
@@ -559,7 +559,7 @@ class DemoMetaResponse(BaseModel):
     stability_status: str
     knowledge_base_rows: int
     knowledge_base_imported: int
-    demo_port: str
+    service_port: str
     runtime_model: str
 
 
@@ -1105,19 +1105,19 @@ def build_user_message(question: str, citations: list[Citation]) -> str:
     return f"Question:\n{question}\n\nKB Context:\n{context}\n\nUse KB first and avoid fabrication."
 
 
-def get_demo_meta() -> DemoMetaResponse:
+def get_product_meta() -> ProductMetaResponse:
     kb_rows = len(get_kb_entries())
     dify_app_key = os.getenv("DIFY_APP_API_KEY", "").strip()
-    return DemoMetaResponse(
+    return ProductMetaResponse(
         app_version=APP_VERSION,
         chat_lane_lab="Dify 正式知识库工作流" if dify_app_key else "Dify 未配置，当前处于结构化回退模式",
         chat_lane_agent="OpenAI 兼容直连",
-        acceptance_status="已封版",
+        acceptance_status="产品预览版可交付",
         formal_eval_score=FORMAL_EVAL_SCORE,
         stability_status=STABILITY_EVIDENCE,
         knowledge_base_rows=kb_rows,
         knowledge_base_imported=KB_IMPORT_SUCCESS_COUNT,
-        demo_port=os.getenv("DEMO_PORT", "8088").strip() or "8088",
+        service_port=os.getenv("SERVICE_PORT", os.getenv("DEMO_PORT", "8088")).strip() or "8088",
         runtime_model=os.getenv("OPENAI_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL,
     )
 
@@ -1295,7 +1295,7 @@ def call_dify_lab(question: str) -> tuple[str, str]:
                 "query": question,
                 "response_mode": "streaming",
                 "conversation_id": "",
-                "user": "web-demo-lab",
+                "user": "lab-safety-workspace",
                 "auto_generate_name": False,
             },
             timeout=(20, timeout),
@@ -2051,27 +2051,27 @@ def export_rows_to_csv(headers: list[str], rows: list[dict[str, Any]]) -> str:
     return buffer.getvalue()
 
 
-def seed_teacher_demo_data() -> DemoSeedResponse:
+def seed_teacher_sample_data() -> SampleSeedResponse:
     now = datetime.now()
-    marker = "teacher-demo-seed"
+    marker = "teacher-sample-seed"
     existing_checklists = read_csv_rows(CHECKLIST_RUNS_FILE)
     existing_training = read_csv_rows(TRAINING_ATTEMPTS_FILE)
     created = False
 
     if not any(marker in (row.get("notes") or "") for row in existing_checklists):
-        demo_rows = [
+        sample_rows = [
             ("夜间乙醇回流实验，审批未闭环且现场只有一人", "critical", "false", "缺少双人值守 | 审批未闭环"),
             ("通风橱内进行易燃溶剂加热，灭火器检查未完成", "high", "false", "消防与通风条件未确认"),
             ("普通试剂称量，PPE 和台账均已确认", "medium", "true", ""),
         ]
-        for idx, (scenario, risk_level, allow_start, reasons) in enumerate(demo_rows, start=1):
+        for idx, (scenario, risk_level, allow_start, reasons) in enumerate(sample_rows, start=1):
             write_csv_row(
                 CHECKLIST_RUNS_FILE,
                 CHECKLIST_HEADERS,
                 {
-                    "record_id": f"DEMO-CHECK-{now.strftime('%Y%m%d')}-{idx}",
+                    "record_id": f"SAMPLE-CHECK-{now.strftime('%Y%m%d')}-{idx}",
                     "submitted_at": (now - timedelta(hours=idx)).isoformat(timespec="seconds"),
-                    "operator": "演示学生",
+                    "operator": "示例学生",
                     "scenario": scenario,
                     "risk_score": "5" if risk_level == "critical" else ("4" if risk_level == "high" else "3"),
                     "risk_level": risk_level,
@@ -2097,7 +2097,7 @@ def seed_teacher_demo_data() -> DemoSeedResponse:
                 TRAINING_ATTEMPTS_FILE,
                 TRAINING_ATTEMPT_HEADERS,
                 {
-                    "attempt_id": f"DEMO-TRAIN-{now.strftime('%Y%m%d')}-{idx}",
+                    "attempt_id": f"SAMPLE-TRAIN-{now.strftime('%Y%m%d')}-{idx}",
                     "submitted_at": (now - timedelta(minutes=idx * 12)).isoformat(timespec="seconds"),
                     "participant": participant,
                     "session_id": f"{marker}-{now.strftime('%Y%m%d')}",
@@ -2110,11 +2110,11 @@ def seed_teacher_demo_data() -> DemoSeedResponse:
             )
         created = True
 
-    if not any(item.reporter == "teacher-demo" for item in load_incident_records()):
+    if not any(item.reporter == "teacher-sample" for item in load_incident_records()):
         create_incident_record(
             IncidentCreateRequest(
-                reporter="teacher-demo",
-                title="演示：高风险实验审批未闭环",
+                reporter="teacher-sample",
+                title="示例：高风险实验审批未闭环",
                 scenario="夜间乙醇回流实验审批未闭环，系统已阻断开工。",
                 severity="high",
                 location="化学实验室 A203",
@@ -2128,15 +2128,15 @@ def seed_teacher_demo_data() -> DemoSeedResponse:
         created = True
 
     dashboard = load_admin_dashboard(days=30)
-    return DemoSeedResponse(
+    return SampleSeedResponse(
         created=created,
-        message="演示数据已生成。" if created else "演示数据已存在，已刷新看板。",
+        message="示例数据已生成。" if created else "示例数据已存在，已刷新看板。",
         dashboard=dashboard,
     )
 
 
-def clear_teacher_demo_data() -> DemoSeedResponse:
-    marker = "teacher-demo-seed"
+def clear_teacher_sample_data() -> SampleSeedResponse:
+    marker = "teacher-sample-seed"
     created = False
 
     checklist_rows = read_csv_rows(CHECKLIST_RUNS_FILE)
@@ -2158,15 +2158,15 @@ def clear_teacher_demo_data() -> DemoSeedResponse:
         created = True
 
     incidents = load_incident_records()
-    kept_incidents = [item for item in incidents if item.reporter != "teacher-demo"]
+    kept_incidents = [item for item in incidents if item.reporter != "teacher-sample"]
     if len(kept_incidents) != len(incidents):
         write_incident_records(kept_incidents)
         created = True
 
     dashboard = load_admin_dashboard(days=30)
-    return DemoSeedResponse(
+    return SampleSeedResponse(
         created=created,
-        message="演示数据已清空。" if created else "没有可清空的演示数据。",
+        message="示例数据已清空。" if created else "没有可清空的示例数据。",
         dashboard=dashboard,
     )
 
@@ -2217,7 +2217,7 @@ def build_teacher_action_report_markdown(days: int = 30) -> str:
 
 
 def build_acceptance_package_markdown(days: int = 30) -> str:
-    meta = get_demo_meta()
+    meta = get_product_meta()
     workspace = build_workspace_status()
     dashboard = load_admin_dashboard(days=days)
     lines = [
@@ -2405,7 +2405,7 @@ def load_admin_dashboard(days: int = 30, risk_level: str = "", incident_status: 
     )
 
 
-app = FastAPI(title="Lab Safety Assistant Demo", version="0.5.0", default_response_class=JSONResponse)
+app = FastAPI(title="Lab Safety Assistant", version="0.6.0", default_response_class=JSONResponse)
 
 
 @app.get("/")
@@ -2556,9 +2556,9 @@ def chat(payload: ChatRequest) -> ChatResponse:
     )
 
 
-@app.get("/api/meta", response_model=DemoMetaResponse)
-def demo_meta() -> DemoMetaResponse:
-    return get_demo_meta()
+@app.get("/api/meta", response_model=ProductMetaResponse)
+def product_meta() -> ProductMetaResponse:
+    return get_product_meta()
 
 
 @app.post("/api/risk_assess", response_model=RiskAssessResponse)
@@ -2643,14 +2643,14 @@ def training_roster_template() -> FileResponse:
     )
 
 
-@app.post("/api/demo/teacher-seed", response_model=DemoSeedResponse)
-def demo_teacher_seed() -> DemoSeedResponse:
-    return seed_teacher_demo_data()
+@app.post("/api/sample/teacher-seed", response_model=SampleSeedResponse)
+def sample_teacher_seed() -> SampleSeedResponse:
+    return seed_teacher_sample_data()
 
 
-@app.post("/api/demo/teacher-clear", response_model=DemoSeedResponse)
-def demo_teacher_clear() -> DemoSeedResponse:
-    return clear_teacher_demo_data()
+@app.post("/api/sample/teacher-clear", response_model=SampleSeedResponse)
+def sample_teacher_clear() -> SampleSeedResponse:
+    return clear_teacher_sample_data()
 
 
 @app.get("/api/admin/dashboard", response_model=AdminDashboardResponse)
