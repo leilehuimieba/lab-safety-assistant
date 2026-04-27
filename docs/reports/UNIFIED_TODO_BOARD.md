@@ -30,7 +30,7 @@
 | REL-FIX-14 | P2 | done | 发布与验收负责人 | 修复 `prod risk violation count` 超阈值 | 已完成：prod risk violations=0，且 `release_fix_plan_auto.md` 显示 `Total Tasks: 0` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
 | REL-FIX-19 | P2 | done | 发布与验收负责人 | 修复 `prod emergency_pass_rate` 阈值不达标 | `release_fix_plan_auto` 不再出现 `REL-FIX-19` 阻断原因 | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
 | REL-FIX-20 | P2 | done | 发布与验收负责人 | 修复 `prod coverage_rate` 阈值不达标 | 已完成：prod readiness PASS，且 `release_fix_plan_auto.md` 显示 `Total Tasks: 0` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
-| DOC-ARCH-01 | P2 | todo | 发布与验收负责人 | 补 `docs/README.md` 作为文档执行入口（避免状态分散） | `docs/README.md` 存在且指向本表为唯一待办入口 | CMD-DOC-01 |
+| DOC-ARCH-01 | P2 | done | 发布与验收负责人 | 补 `docs/README.md` 作为文档执行入口（避免状态分散） | 已完成：`docs/README.md` 已存在，并指向答辩、验收、测试、待办材料入口 | CMD-DOC-01 |
 
 ## 本轮成功 Run 证据（2026-04-26）
 
