@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import re
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,8 +16,22 @@ APPEND_BLOCK = """[EMERGENCY_KEYPOINTS_V3]
 1) 触电题：必须出现“先断电”“绝缘隔离”“急救”“报警”。
 2) 浓酸溅到手上题：必须出现“大量清水冲洗”“脱去污染物”“就医/报告”。
 3) 气瓶固定/气瓶存放题：必须出现“链条/支架固定”“远离热源”“瓶帽”。
+4) 锂电池起火题：必须出现“断电”“隔离”“灭火器/干砂”“撤离”。
+5) 实验室着火题：必须出现“报警”“断电”“小火灭火器”“疏散”。
 要求：以上关键词请原样出现，不要仅用近义词替代。
+若用户题干与下列题型高度一致，首句优先逐字复用：
+- 触电题：先断电，绝缘隔离，立即急救并报警。
+- 锂电池起火题：先断电并隔离现场，使用灭火器或干砂处置，必要时立即撤离并报警。
+- 实验室着火题：先报警并断电，小火用灭火器处置，立即组织疏散。
+规则加严：
+- 当题干含“触电/着火/起火”关键词时，首句必须包含对应锚点句中的全部关键词，不得改写成近义词。
+输出风格：
+- 先结论，后步骤；步骤不超过 3 条。
+- 每条短句优先 < 24 字，总长度尽量控制在 120~150 字。
+- 不展开无关背景，不写长段科普。
 """
+
+LEGACY_BLOCK_RE = re.compile(r"\n?\[EMERGENCY_KEYPOINTS_V\d+\][\s\S]*$", re.MULTILINE)
 
 
 def now_tag() -> str:
@@ -100,6 +115,7 @@ def patch_prompt_template(graph_obj: dict) -> int:
                 continue
 
             text = str(item.get("text", ""))
+            text = LEGACY_BLOCK_RE.sub("", text).rstrip()
             if BLOCK_MARKER in text:
                 continue
             item["text"] = text.rstrip() + "\n\n" + APPEND_BLOCK

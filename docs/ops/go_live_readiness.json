@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-04-08T23:26:04+08:00",
-  "overall": "BLOCK",
+  "generated_at": "2026-04-26T23:44:01+08:00",
+  "overall": "PASS",
   "summary": {
-    "blockers": 2,
+    "blockers": 0,
     "warnings": 0,
     "checks": 9
   },
@@ -20,7 +20,7 @@
       "detail": "ok"
     },
     {
-      "key": "release_package::web_seed_urls_v8_1_prefetch_status.csv",
+      "key": "release_package::web_seed_urls_v8_2_prefetch_status.csv",
       "ok": true,
       "level": "info",
       "detail": "ok"
@@ -29,7 +29,7 @@
       "key": "release_oneclick",
       "ok": true,
       "level": "info",
-      "detail": "latest status=success (D:\\workspace\\lab-safe-assistant-github\\artifacts\\release_stability_check\\run_20260330_114443\\round_01\\run_20260330_114443\\eval_release_oneclick_report.json)"
+      "detail": "latest status=success (D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\release_stability_check\\run_20260426_232914\\round_03\\run_20260426_233547\\eval_release_oneclick_report.json)"
     },
     {
       "key": "release_policy_demo",
@@ -39,9 +39,9 @@
     },
     {
       "key": "release_policy_prod",
-      "ok": false,
-      "level": "blocker",
-      "detail": "status=BLOCK; violations=failover window fail count exceeded: 4 > max_fail_window=1"
+      "ok": true,
+      "level": "info",
+      "detail": "status=PASS"
     },
     {
       "key": "risk_note",
@@ -57,9 +57,9 @@
     },
     {
       "key": "web_health",
-      "ok": false,
-      "level": "blocker",
-      "detail": "http://127.0.0.1:8088/health unreachable: <urlopen error [WinError 10061] 由于目标计算机积极拒绝，无法连接。>"
+      "ok": true,
+      "level": "info",
+      "detail": "http://127.0.0.1:8088/health ok"
     }
   ]
 }

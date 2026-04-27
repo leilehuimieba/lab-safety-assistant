@@ -1,11 +1,1 @@
 ﻿rank,reason,count,profiles,priority,recommended_action
-1,metric emergency_pass_rate too low: 0.0000 < min=0.8000,1,demo,P2,Fix listed blockers and rerun one-click release validation.
-2,metric coverage_rate too low: 0.0000 < min=0.7500,1,demo,P2,Fix listed blockers and rerun one-click release validation.
-3,"gate_decision not allowed: WARN_ONLY not in ['PASS', 'WARN']",1,prod,P2,Fix listed blockers and rerun one-click release validation.
-4,risk violation count exceeded: 2 > max_violation_count=0,1,prod,P2,Fix listed blockers and rerun one-click release validation.
-5,override mode not allowed for profile prod: warn_only not in [],1,prod,P1,Disable temporary override or switch to an allowed release profile before release.
-6,route_success_rate too low: 0.0000 < min_route_success_rate=0.8000,1,prod,P0,"Recover primary route availability first; check Dify gateway, model routing, and network path."
-7,route_timeout_rate too high: 1.0000 > max_route_timeout_rate=0.2000,1,prod,P0,Reduce concurrency and investigate SSE timeout path; enable fallback channel and rerun canary.
-8,latency_p95_ms too high: 60139.45 > max_latency_p95_ms=30000.00,1,prod,P1,"Optimize prompt and retrieval path, reduce latency, and tune rate limits."
-9,metric emergency_pass_rate too low: 0.0000 < min=0.9000,1,prod,P2,Fix listed blockers and rerun one-click release validation.
-10,metric coverage_rate too low: 0.0000 < min=0.8500,1,prod,P2,Fix listed blockers and rerun one-click release validation.

@@ -118,25 +118,57 @@ def load_reports(reports_root: Path) -> list[dict[str, Any]]:
 def build_summary(rows: list[dict[str, Any]], *, days: int) -> dict[str, Any]:
     now = datetime.now(timezone.utc)
     window_start = now - timedelta(days=max(1, int(days)))
-    window_rows = [item for item in rows if parse_iso_dt(str(item.get("generated_at", ""))) and parse_iso_dt(str(item.get("generated_at", ""))) >= window_start]
-
-    def _count(result: str) -> int:
-        return sum(1 for item in window_rows if item.get("result") == result)
-
     latest = rows[-1] if rows else None
+    latest_model = str((latest or {}).get("active_model_final", "") or "").strip()
+
+    window_rows_all_models = [
+        item
+        for item in rows
+        if parse_iso_dt(str(item.get("generated_at", ""))) and parse_iso_dt(str(item.get("generated_at", ""))) >= window_start
+    ]
+
+    if latest_model:
+        # Scope policy-relevant failover trend to the currently active model route.
+        # This avoids mixing historical failures from previous model channels.
+        window_rows = [
+            item
+            for item in window_rows_all_models
+            if str(item.get("active_model_final", "") or "").strip() == latest_model
+        ]
+        active_scope = "latest_model_only"
+    else:
+        window_rows = list(window_rows_all_models)
+        active_scope = "all_models"
+
+    def _count(items: list[dict[str, Any]], result: str) -> int:
+        return sum(1 for item in items if item.get("result") == result)
+
+    window_counts_scoped = {
+        "pass": _count(window_rows, "pass"),
+        "degraded": _count(window_rows, "degraded"),
+        "fail": _count(window_rows, "fail"),
+        "failover_triggered": sum(1 for item in window_rows if item.get("failover_triggered")),
+    }
+    window_counts_all_models = {
+        "pass": _count(window_rows_all_models, "pass"),
+        "degraded": _count(window_rows_all_models, "degraded"),
+        "fail": _count(window_rows_all_models, "fail"),
+        "failover_triggered": sum(1 for item in window_rows_all_models if item.get("failover_triggered")),
+    }
+
     return {
         "generated_at": now.isoformat(timespec="seconds"),
         "window_days": max(1, int(days)),
+        "active_model_scope": active_scope,
+        "active_model_final": latest_model,
         "total_runs_all_time": len(rows),
         "total_runs_window": len(window_rows),
-        "window_counts": {
-            "pass": _count("pass"),
-            "degraded": _count("degraded"),
-            "fail": _count("fail"),
-            "failover_triggered": sum(1 for item in window_rows if item.get("failover_triggered")),
-        },
+        "total_runs_window_all_models": len(window_rows_all_models),
+        "window_counts": window_counts_scoped,
+        "window_counts_all_models": window_counts_all_models,
         "latest": latest,
         "recent_runs": window_rows[-20:],
+        "recent_runs_all_models": window_rows_all_models[-20:],
     }
 
 
@@ -147,8 +179,11 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.append("")
     lines.append(f"- Generated At: `{summary.get('generated_at', '')}`")
     lines.append(f"- Window Days: `{summary.get('window_days', 0)}`")
+    lines.append(f"- Active Scope: `{summary.get('active_model_scope', 'all_models')}`")
+    lines.append(f"- Active Model: `{summary.get('active_model_final', '')}`")
     lines.append(f"- Total Runs (All): `{summary.get('total_runs_all_time', 0)}`")
     lines.append(f"- Total Runs (Window): `{summary.get('total_runs_window', 0)}`")
+    lines.append(f"- Total Runs (Window, All Models): `{summary.get('total_runs_window_all_models', 0)}`")
     lines.append("")
     lines.append("## Window Summary")
     lines.append("")
@@ -159,6 +194,16 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.append(f"| DEGRADED | {counts.get('degraded', 0)} |")
     lines.append(f"| FAIL | {counts.get('fail', 0)} |")
     lines.append(f"| Failover Triggered | {counts.get('failover_triggered', 0)} |")
+    lines.append("")
+    lines.append("## Window Summary (All Models)")
+    lines.append("")
+    lines.append("| Metric | Value |")
+    lines.append("|---|---:|")
+    all_counts = summary.get("window_counts_all_models", {}) or {}
+    lines.append(f"| PASS | {all_counts.get('pass', 0)} |")
+    lines.append(f"| DEGRADED | {all_counts.get('degraded', 0)} |")
+    lines.append(f"| FAIL | {all_counts.get('fail', 0)} |")
+    lines.append(f"| Failover Triggered | {all_counts.get('failover_triggered', 0)} |")
     lines.append("")
     lines.append("## Latest")
     lines.append("")

@@ -1,26 +1,38 @@
 # Failover Status
 
-- Generated At: `2026-03-30T03:44:43+00:00`
+- Generated At: `2026-04-26T15:38:13+00:00`
 - Window Days: `1`
-- Total Runs (All): `4`
-- Total Runs (Window): `4`
+- Active Scope: `latest_model_only`
+- Active Model: `deepseek-v4-pro`
+- Total Runs (All): `13`
+- Total Runs (Window): `9`
+- Total Runs (Window, All Models): `13`
 
 ## Window Summary
 
 | Metric | Value |
 |---|---:|
-| PASS | 4 |
+| PASS | 8 |
 | DEGRADED | 0 |
-| FAIL | 0 |
+| FAIL | 1 |
+| Failover Triggered | 0 |
+
+## Window Summary (All Models)
+
+| Metric | Value |
+|---|---:|
+| PASS | 8 |
+| DEGRADED | 0 |
+| FAIL | 5 |
 | Failover Triggered | 0 |
 
 ## Latest
 
 - Result: `pass`
-- Generated At: `2026-03-30T02:59:51+00:00`
-- Final Model: `gpt-5.2-codex`
+- Generated At: `2026-04-26T15:35:48+00:00`
+- Final Model: `deepseek-v4-pro`
 - Failover Triggered: `False`
 - Failover Reason: ``
 - Fetch Error Count: `0`
 - Timeout Error Ratio: `0.0000`
-- Report Path: `D:\workspace\lab-safe-assistant-github\artifacts\model_failover_eval\run_20260330_105951\model_failover_report.json`
+- Report Path: `D:\newwork\lab-safe-assistant-workspace\lab-safety-assistant-remote\artifacts\model_failover_eval\run_20260426_233548\model_failover_report.json`
