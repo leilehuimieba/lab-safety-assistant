@@ -172,6 +172,35 @@ class TrainingStatsResponse(BaseModel):
     recent_scores: list[int] = Field(default_factory=list)
 
 
+class TrainingRosterItem(BaseModel):
+    student_id: str = ""
+    name: str
+    class_name: str = ""
+    lab_group: str = ""
+    completed: bool = False
+    passed: bool = False
+    latest_score: int = 0
+    latest_submitted_at: str = ""
+
+
+class TrainingRosterStatusResponse(BaseModel):
+    total_required: int
+    completed_count: int
+    passed_count: int
+    incomplete_count: int
+    incomplete_students: list[TrainingRosterItem] = Field(default_factory=list)
+
+
+class TrainingRosterUploadRequest(BaseModel):
+    csv_text: str = Field(min_length=1)
+
+
+class TrainingRosterUploadResponse(BaseModel):
+    message: str
+    saved_count: int
+    status: TrainingRosterStatusResponse
+
+
 class DashboardMetric(BaseModel):
     label: str
     value: str

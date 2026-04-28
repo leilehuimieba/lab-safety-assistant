@@ -8,7 +8,8 @@ FASTAPI_AVAILABLE = importlib.util.find_spec("fastapi") is not None
 
 if FASTAPI_AVAILABLE:
     from fastapi.testclient import TestClient
-    import app as web_app
+    from web_demo import app as web_app
+    from web_demo.routers import training_routes as _tr
 
     def test_training_roster_status_uses_roster_and_attempts(monkeypatch, tmp_path) -> None:
         roster = tmp_path / "training_roster.csv"
@@ -26,9 +27,9 @@ if FASTAPI_AVAILABLE:
             "B1,2026-04-27T09:10:00,学生B,s1,60,5,80,false,Chemical\n",
             encoding="utf-8-sig",
         )
-        monkeypatch.setattr(web_app, "TRAINING_ROSTER_FILE", roster)
-        monkeypatch.setattr(web_app, "TRAINING_ROSTER_TEMPLATE_FILE", roster)
-        monkeypatch.setattr(web_app, "TRAINING_ATTEMPTS_FILE", attempts)
+        monkeypatch.setattr(_tr, "TRAINING_ROSTER_FILE", roster)
+        monkeypatch.setattr(_tr, "TRAINING_ROSTER_TEMPLATE_FILE", roster)
+        monkeypatch.setattr(_tr, "TRAINING_ATTEMPTS_FILE", attempts)
 
         client = TestClient(web_app.app)
         resp = client.get("/api/training/roster_status")
@@ -51,9 +52,9 @@ if FASTAPI_AVAILABLE:
             encoding="utf-8-sig",
         )
         template.write_text("student_id,name,class_name,lab_group,required_training\n", encoding="utf-8-sig")
-        monkeypatch.setattr(web_app, "TRAINING_ROSTER_FILE", roster)
-        monkeypatch.setattr(web_app, "TRAINING_ROSTER_TEMPLATE_FILE", template)
-        monkeypatch.setattr(web_app, "TRAINING_ATTEMPTS_FILE", attempts)
+        monkeypatch.setattr(_tr, "TRAINING_ROSTER_FILE", roster)
+        monkeypatch.setattr(_tr, "TRAINING_ROSTER_TEMPLATE_FILE", template)
+        monkeypatch.setattr(_tr, "TRAINING_ATTEMPTS_FILE", attempts)
 
         client = TestClient(web_app.app)
         resp = client.post(
@@ -77,7 +78,7 @@ if FASTAPI_AVAILABLE:
             "student_id,name,class_name,lab_group,required_training\n2026001,张三,化学工程1班,A组,true\n",
             encoding="utf-8-sig",
         )
-        monkeypatch.setattr(web_app, "TRAINING_ROSTER_TEMPLATE_FILE", template)
+        monkeypatch.setattr(_tr, "TRAINING_ROSTER_TEMPLATE_FILE", template)
 
         client = TestClient(web_app.app)
         resp = client.get("/api/training/roster_template.csv")

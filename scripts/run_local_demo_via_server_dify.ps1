@@ -126,7 +126,7 @@ $demoCommand = @"
 `$env:DIFY_APP_API_KEY='$DifyAppKey'
 `$env:DIFY_TIMEOUT='120'
 `$env:DEMO_PORT='$DemoPort'
-$PythonExe -m uvicorn app:app --host 127.0.0.1 --port $DemoPort
+$PythonExe -m uvicorn web_demo.app:app --host 127.0.0.1 --port $DemoPort
 "@
 
 $demoProc = Start-Process -FilePath "powershell" `

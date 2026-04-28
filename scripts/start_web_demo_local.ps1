@@ -100,8 +100,8 @@ $pyLines = @(
     '        continue',
     '    os.environ[key] = str(value)',
     'os.chdir(cfg["WORKDIR"])',
-    'sys.path.insert(0, cfg["WORKDIR"])',
-    'uvicorn.run("app:app", host="127.0.0.1", port=int(cfg["DEMO_PORT"]))'
+    'sys.path.insert(0, str(Path(cfg["WORKDIR"]).parent))',
+    'uvicorn.run("web_demo.app:app", host="127.0.0.1", port=int(cfg["DEMO_PORT"]))'
 )
 Set-Content -Path $LaunchPyFile -Value $pyLines -Encoding UTF8
 
