@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import csv
@@ -15,7 +16,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
 
 DEFAULT_FIELDS = [
     "title",
@@ -45,7 +45,6 @@ DEFAULT_FIELDS = [
     "language",
 ]
 
-
 @dataclass
 class ImportResult:
     created: int = 0
@@ -53,9 +52,6 @@ class ImportResult:
     failed: int = 0
     batches: list[str] | None = None
 
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def parse_args() -> argparse.Namespace:
@@ -144,10 +140,8 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def _url(base_url: str, path: str) -> str:
     return f"{base_url.rstrip('/')}{path}"
-
 
 def request_json(
     method: str,
@@ -179,7 +173,6 @@ def request_json(
             payload = {"message": raw}
         return exc.code, payload
 
-
 def run_psql_sql(
     *,
     container: str,
@@ -205,7 +198,6 @@ def run_psql_sql(
     if completed.returncode != 0:
         raise RuntimeError((completed.stderr or completed.stdout).strip())
     return completed.stdout.strip()
-
 
 def auto_detect_dataset_id(args: argparse.Namespace) -> str:
     dataset_name_sql = args.dataset_name.replace("'", "''")
@@ -236,7 +228,6 @@ def auto_detect_dataset_id(args: argparse.Namespace) -> str:
     if not dataset_id:
         raise RuntimeError("Cannot auto-detect dataset id from database.")
     return dataset_id
-
 
 def auto_provision_dataset_token(args: argparse.Namespace, dataset_id: str) -> str:
     tenant_sql = (
@@ -276,7 +267,6 @@ def auto_provision_dataset_token(args: argparse.Namespace, dataset_id: str) -> s
         raise RuntimeError("Failed to auto-provision dataset token.")
     return created
 
-
 def read_rows(path: Path, limit: int = 0) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f))
@@ -284,14 +274,12 @@ def read_rows(path: Path, limit: int = 0) -> list[dict[str, str]]:
         return rows[:limit]
     return rows
 
-
 def build_doc_name(row: dict[str, str]) -> str:
     raw = f"{(row.get('id') or '').strip()} {(row.get('title') or '').strip()}".strip()
     if not raw:
         raw = f"kb-{int(time.time() * 1000)}"
     # Keep the name short for easier list/lookup.
     return raw[:180]
-
 
 def build_doc_text(row: dict[str, str]) -> str:
     lines: list[str] = []
@@ -303,7 +291,6 @@ def build_doc_text(row: dict[str, str]) -> str:
         if value:
             lines.append(f"{field}: {value}")
     return "\n".join(lines).strip()
-
 
 def list_existing_names(base_url: str, dataset_id: str, token: str) -> set[str]:
     names: set[str] = set()
@@ -329,7 +316,6 @@ def list_existing_names(base_url: str, dataset_id: str, token: str) -> set[str]:
         page += 1
     return names
 
-
 def create_document(base_url: str, dataset_id: str, token: str, *, name: str, text: str) -> tuple[int, dict[str, Any]]:
     payload = {
         "name": name,
@@ -344,7 +330,6 @@ def create_document(base_url: str, dataset_id: str, token: str, *, name: str, te
         url = _url(base_url, f"/v1/datasets/{dataset_id}/document/create_by_text")
         status, result = request_json("POST", url, token=token, payload=payload, timeout=60.0)
     return status, result
-
 
 def poll_batch_indexing(
     base_url: str,
@@ -388,7 +373,6 @@ def poll_batch_indexing(
     for key in list(pending.keys()):
         pending[key] = "timeout"
     return pending
-
 
 def write_report(
     *,
@@ -441,7 +425,6 @@ def write_report(
 
     report_md.parent.mkdir(parents=True, exist_ok=True)
     report_md.write_text("\n".join(lines), encoding="utf-8")
-
 
 def main() -> int:
     args = parse_args()
@@ -531,7 +514,6 @@ def main() -> int:
     print(f"- report_json: {report_json}")
     print(f"- report_md: {report_md}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

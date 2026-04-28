@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-demo_app = pytest.importorskip("app")
+from web_demo import app as demo_app
 
 
 def test_retrieve_citations_hits_kb_entries() -> None:

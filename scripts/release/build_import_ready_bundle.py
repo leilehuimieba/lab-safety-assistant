@@ -1,5 +1,7 @@
 ﻿#!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso
+from libs.ingest_io import write_csv
 
 import argparse
 import csv
@@ -10,9 +12,6 @@ from pathlib import Path
 
 import ai_review_kb as ark
 
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,7 +24,6 @@ def parse_args() -> argparse.Namespace:
         help="Priority-ordered source item, format: name=path. Higher priority first.",
     )
     return parser.parse_args()
-
 
 def parse_sources(items: list[str]) -> list[tuple[str, Path]]:
     parsed: list[tuple[str, Path]] = []
@@ -40,7 +38,6 @@ def parse_sources(items: list[str]) -> list[tuple[str, Path]]:
         parsed.append((name, path))
     return parsed
 
-
 def default_sources() -> list[tuple[str, Path]]:
     repo_root = Path(".").resolve()
     return [
@@ -54,11 +51,9 @@ def default_sources() -> list[tuple[str, Path]]:
         ("v1_unified", (repo_root / "artifacts" / "dify_kb_batch_v1" / "knowledge_base_unified.csv").resolve()),
     ]
 
-
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         return list(csv.DictReader(f))
-
 
 def normalize_row(row: dict[str, str]) -> dict[str, str]:
     normalized: dict[str, str] = {}
@@ -66,21 +61,11 @@ def normalize_row(row: dict[str, str]) -> dict[str, str]:
         normalized[field] = (row.get(field) or "").strip()
     return normalized
 
-
-def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
-    with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=ark.KB_FIELDNAMES)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({field: row.get(field, "") for field in ark.KB_FIELDNAMES})
-
-
 def count_by(rows: list[dict[str, str]], key: str) -> dict[str, int]:
     counter: Counter[str] = Counter()
     for row in rows:
         counter[(row.get(key) or "").strip() or "unknown"] += 1
     return dict(counter)
-
 
 def main() -> int:
     args = parse_args()
@@ -188,7 +173,6 @@ def main() -> int:
     print(f"- report_md: {report_md}")
     print(f"- total_rows: {len(merged_rows)}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

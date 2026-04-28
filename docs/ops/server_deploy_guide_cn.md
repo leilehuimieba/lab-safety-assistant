@@ -26,7 +26,7 @@
 
 ```bash
 # 本地执行（Windows PowerShell）
-cd D:\workspace\lab-safe-assistant-github
+cd D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github
 tar -czf deploy_bundle.tar.gz web_demo deploy docs scripts data_sources README.md
 scp deploy_bundle.tar.gz youruser@<服务器IP>:~/
 ```

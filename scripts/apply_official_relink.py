@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import csv
@@ -7,13 +8,11 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-
 @dataclass
 class ManifestJob:
     name: str
     input_csv: Path
     output_csv: Path
-
 
 DEFAULT_JOBS = [
     ManifestJob("v1", Path("data_sources/web_seed_urls.csv"), Path("data_sources/web_seed_urls_v1_1_candidates.csv")),
@@ -30,16 +29,12 @@ DEFAULT_JOBS = [
 ]
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-
 
 def default_tag_from_map_path(map_csv: str) -> str:
     stem = Path(map_csv).stem
     if stem.startswith("relink_official_map_"):
         return stem[len("relink_official_map_") :]
     return stem
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Apply official relink map to web seed manifests.")
@@ -66,13 +61,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--v3-output", default=str(DEFAULT_JOBS[2].output_csv), help="V3 output manifest.")
     return parser.parse_args()
 
-
 def read_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
         return (reader.fieldnames or []), rows
-
 
 def write_rows(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -81,7 +74,6 @@ def write_rows(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) ->
         writer.writeheader()
         for row in rows:
             writer.writerow({k: row.get(k, "") for k in fieldnames})
-
 
 def parse_map(path: Path) -> dict[str, dict[str, str]]:
     _, rows = read_rows(path)
@@ -92,13 +84,11 @@ def parse_map(path: Path) -> dict[str, dict[str, str]]:
             output[sid] = row
     return output
 
-
 def append_tag(raw: str, token: str) -> str:
     parts = [item.strip() for item in (raw or "").split(";") if item.strip()]
     if token not in parts:
         parts.append(token)
     return ";".join(parts)
-
 
 def apply_job(job: ManifestJob, mapping: dict[str, dict[str, str]], tag_token: str) -> tuple[int, int, list[dict[str, str]]]:
     fieldnames, rows = read_rows(job.input_csv)
@@ -154,7 +144,6 @@ def apply_job(job: ManifestJob, mapping: dict[str, dict[str, str]], tag_token: s
 
     write_rows(job.output_csv, fieldnames, rows)
     return changed, missing, detail_rows
-
 
 def main() -> int:
     args = parse_args()
@@ -265,7 +254,6 @@ def main() -> int:
     print(f"- detail: {detail_csv}")
     print(f"- summary: {summary_md}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

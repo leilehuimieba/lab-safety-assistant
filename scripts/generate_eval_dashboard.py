@@ -298,15 +298,7 @@ def delta_str(current: float, previous: float, as_percent: bool) -> str:
 
 def week_key(dt: datetime) -> str:
     iso = dt.isocalendar()
-    # Python 3.8 may return a plain tuple from isocalendar(),
-    # while newer versions return an object with year/week attrs.
-    if hasattr(iso, "year") and hasattr(iso, "week"):
-        year = int(iso.year)
-        week = int(iso.week)
-    else:
-        year = int(iso[0])
-        week = int(iso[1])
-    return f"{year}-W{week:02d}"
+    return f"{iso.year}-W{iso.week:02d}"
 
 
 def aggregate_weekly(records: list[RunRecord]) -> list[dict[str, object]]:
@@ -713,4 +705,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 

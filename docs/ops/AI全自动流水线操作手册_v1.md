@@ -21,7 +21,7 @@
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\run_ai_oneclick.ps1 `
-  -DocumentInputRoot "D:\workspace\data" `
+  -DocumentInputRoot "..\data" `
   -WebManifest "data_sources\web_seed_urls_v4_candidates.csv" `
   -WebFetcherMode "auto" `
   -AuditMinScore 72 `

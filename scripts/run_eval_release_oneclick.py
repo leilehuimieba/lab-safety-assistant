@@ -9,6 +9,7 @@ One-click eval release pipeline:
 """
 
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import json
@@ -20,13 +21,9 @@ from pathlib import Path
 from typing import Any
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-
 
 def now_tag() -> str:
     return datetime.now(timezone.utc).astimezone().strftime("%Y%m%d_%H%M%S")
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run one-click eval release chain.")
@@ -181,7 +178,6 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def run_cmd(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         cmd,
@@ -192,7 +188,6 @@ def run_cmd(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
         errors="replace",
         check=False,
     )
-
 
 def sanitize_command(cmd: list[str]) -> list[str]:
     secret_flags = {"--dify-app-key", "--fallback-dify-app-key"}
@@ -208,7 +203,6 @@ def sanitize_command(cmd: list[str]) -> list[str]:
         i += 1
     return sanitized
 
-
 def summarize_step(completed: subprocess.CompletedProcess[str], cmd: list[str]) -> dict[str, Any]:
     return {
         "command": sanitize_command(cmd),
@@ -216,7 +210,6 @@ def summarize_step(completed: subprocess.CompletedProcess[str], cmd: list[str]) 
         "stdout_tail": (completed.stdout or "")[-5000:],
         "stderr_tail": (completed.stderr or "")[-3000:],
     }
-
 
 def parse_failover_report_path(stdout_text: str) -> str:
     prefix = "Failover report:"
@@ -226,13 +219,11 @@ def parse_failover_report_path(stdout_text: str) -> str:
             return text.split(prefix, 1)[1].strip()
     return ""
 
-
 def resolve_path(repo_root: Path, path_like: str) -> Path:
     path = Path(path_like)
     if path.is_absolute():
         return path
     return (repo_root / path).resolve()
-
 
 def read_json(path: Path) -> dict[str, Any]:
     if not path.exists():
@@ -242,7 +233,6 @@ def read_json(path: Path) -> dict[str, Any]:
     except (json.JSONDecodeError, OSError):
         return {}
     return raw if isinstance(raw, dict) else {}
-
 
 def write_report(run_dir: Path, payload: dict[str, Any]) -> tuple[Path, Path]:
     json_path = run_dir / "eval_release_oneclick_report.json"
@@ -297,7 +287,6 @@ def write_report(run_dir: Path, payload: dict[str, Any]) -> tuple[Path, Path]:
     lines.append("")
     md_path.write_text("\n".join(lines), encoding="utf-8")
     return json_path, md_path
-
 
 def build_failover_eval_cmd(args: argparse.Namespace, repo_root: Path) -> list[str]:
     effective_canary_timeout = max(1.0, float(args.canary_timeout))
@@ -367,7 +356,6 @@ def build_failover_eval_cmd(args: argparse.Namespace, repo_root: Path) -> list[s
     if args.skip_failure_analysis:
         cmd.append("--skip-failure-analysis")
     return cmd
-
 
 def main() -> int:
     args = parse_args()
@@ -545,7 +533,6 @@ def main() -> int:
         print(f"Report: {json_path}")
         print(f"Markdown: {md_path}")
         return 1
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

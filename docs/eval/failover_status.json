@@ -1,130 +1,29 @@
 {
-  "generated_at": "2026-04-26T15:38:13+00:00",
+  "generated_at": "2026-03-30T03:44:43+00:00",
   "window_days": 1,
-  "active_model_scope": "latest_model_only",
-  "active_model_final": "deepseek-v4-pro",
-  "total_runs_all_time": 13,
-  "total_runs_window": 9,
-  "total_runs_window_all_models": 13,
+  "total_runs_all_time": 4,
+  "total_runs_window": 4,
   "window_counts": {
-    "pass": 8,
+    "pass": 4,
     "degraded": 0,
-    "fail": 1,
-    "failover_triggered": 0
-  },
-  "window_counts_all_models": {
-    "pass": 8,
-    "degraded": 0,
-    "fail": 5,
+    "fail": 0,
     "failover_triggered": 0
   },
   "latest": {
-    "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_233548\\model_failover_report.json",
-    "generated_at": "2026-04-26T15:35:48+00:00",
+    "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260330_105951\\model_failover_report.json",
+    "generated_at": "2026-03-30T02:59:51+00:00",
     "result": "pass",
     "failover_triggered": false,
     "failover_reason": "",
-    "active_model_final": "deepseek-v4-pro",
+    "active_model_final": "gpt-5.2-codex",
     "fetch_error_count": 0,
     "timeout_error_ratio": 0.0
   },
   "recent_runs": [
     {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_220052\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:00:52+00:00",
-      "result": "fail",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_221338\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:13:38+00:00",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260330_103639\\model_failover_report.json",
+      "generated_at": "2026-03-30T02:36:39+00:00",
       "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_224131\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:41:31+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_224642\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:46:42+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_225043\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:50:43+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_225546\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:55:46+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_232915\\model_failover_report.json",
-      "generated_at": "2026-04-26T15:29:15+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_233322\\model_failover_report.json",
-      "generated_at": "2026-04-26T15:33:22+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_233548\\model_failover_report.json",
-      "generated_at": "2026-04-26T15:35:48+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    }
-  ],
-  "recent_runs_all_models": [
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_175118\\model_failover_report.json",
-      "generated_at": "2026-04-26T09:51:18+00:00",
-      "result": "fail",
       "failover_triggered": false,
       "failover_reason": "",
       "active_model_final": "gpt-5.2-codex",
@@ -132,9 +31,9 @@
       "timeout_error_ratio": 0.0
     },
     {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_175407\\model_failover_report.json",
-      "generated_at": "2026-04-26T09:54:07+00:00",
-      "result": "fail",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260330_104251\\model_failover_report.json",
+      "generated_at": "2026-03-30T02:42:51+00:00",
+      "result": "pass",
       "failover_triggered": false,
       "failover_reason": "",
       "active_model_final": "gpt-5.2-codex",
@@ -142,79 +41,9 @@
       "timeout_error_ratio": 0.0
     },
     {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_215545\\model_failover_report.json",
-      "generated_at": "2026-04-26T13:55:45+00:00",
-      "result": "fail",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "gpt-5.3-codex",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_220052\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:00:52+00:00",
-      "result": "fail",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_221338\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:13:38+00:00",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260330_105006\\model_failover_report.json",
+      "generated_at": "2026-03-30T02:50:06+00:00",
       "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_224131\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:41:31+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_224642\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:46:42+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_225043\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:50:43+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_225546\\model_failover_report.json",
-      "generated_at": "2026-04-26T14:55:46+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_232841\\model_failover_report.json",
-      "generated_at": "2026-04-26T15:28:41+00:00",
-      "result": "fail",
       "failover_triggered": false,
       "failover_reason": "",
       "active_model_final": "gpt-5.2-codex",
@@ -222,32 +51,12 @@
       "timeout_error_ratio": 0.0
     },
     {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_232915\\model_failover_report.json",
-      "generated_at": "2026-04-26T15:29:15+00:00",
+      "path": "D:\\workspace\\lab-safe-assistant-github\\artifacts\\model_failover_eval\\run_20260330_105951\\model_failover_report.json",
+      "generated_at": "2026-03-30T02:59:51+00:00",
       "result": "pass",
       "failover_triggered": false,
       "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_233322\\model_failover_report.json",
-      "generated_at": "2026-04-26T15:33:22+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
-      "fetch_error_count": 0,
-      "timeout_error_ratio": 0.0
-    },
-    {
-      "path": "D:\\newwork\\lab-safe-assistant-workspace\\lab-safety-assistant-remote\\artifacts\\model_failover_eval\\run_20260426_233548\\model_failover_report.json",
-      "generated_at": "2026-04-26T15:35:48+00:00",
-      "result": "pass",
-      "failover_triggered": false,
-      "failover_reason": "",
-      "active_model_final": "deepseek-v4-pro",
+      "active_model_final": "gpt-5.2-codex",
       "fetch_error_count": 0,
       "timeout_error_ratio": 0.0
     }

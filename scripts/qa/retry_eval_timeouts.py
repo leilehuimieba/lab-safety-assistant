@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import csv
@@ -10,9 +11,6 @@ from pathlib import Path
 
 import eval_smoke
 
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def parse_args() -> argparse.Namespace:
@@ -57,11 +55,9 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def read_rows(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         return list(csv.DictReader(f))
-
 
 def classify_root_cause(attempts: list[dict[str, str]]) -> str:
     if not attempts:
@@ -83,7 +79,6 @@ def classify_root_cause(attempts: list[dict[str, str]]) -> str:
     if "empty_stream_answer" in errors:
         return "empty_stream_response"
     return "unknown_failure"
-
 
 def main() -> int:
     args = parse_args()
@@ -260,7 +255,6 @@ def main() -> int:
     print(f"- summary_md: {summary_md}")
     print(f"- recovered: {recovered_count}/{len(failed)}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

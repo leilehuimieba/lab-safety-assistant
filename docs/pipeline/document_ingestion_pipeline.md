@@ -41,22 +41,22 @@ Manifest 模板：
 ## 运行前准备
 
 ```powershell
-cd D:\workspace\lab-safe-assistant-github
+cd D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github
 .venv\Scripts\python -m pip install -r scripts\requirements-document-ingest.txt
 ```
 
 ## 最常用的运行方式
 
-### 1. 直接扫 `D:\workspace\data`
+### 1. 直接扫 `..\data`
 
-项目当前默认输入根目录是 `..\data`，也就是：
+项目当前默认输入根目录是仓库同级的 `..\data`，在当前新工作区下对应：
 
-- `D:\workspace\data`
+- `D:\newwork\lab-safe-assistant-workspace\data`
 
 直接运行：
 
 ```powershell
-cd D:\workspace\lab-safe-assistant-github
+cd D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github
 .venv\Scripts\python scripts\document_ingest_pipeline.py
 ```
 
@@ -204,7 +204,7 @@ _extracted\安全管理和要求_20260310_110503\工业自动化产品安全要�
 
 ## 推荐工作流
 
-1. 先把资料放到 `D:\workspace\data`
+1. 先把资料放到 `D:\newwork\lab-safe-assistant-workspace\data`
 2. 如果大部分是压缩包，先跑 `--extract-zips`
 3. 看 `run_report.json` 和 `clean_documents.jsonl`
 4. 用 `document_manifest.csv` 给重要文档补元数据

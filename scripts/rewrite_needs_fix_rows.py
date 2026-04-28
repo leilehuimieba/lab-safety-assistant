@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import ai_review_kb as ark
+
+from libs.common_io import read_csv, write_csv
 
 
 REWRITE_FIELDS = [
@@ -64,35 +65,15 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def read_csv(path: Path) -> list[dict[str, str]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as f:
-        return list(csv.DictReader(f))
-
-
-def write_kb_csv(path: Path, rows: list[dict[str, str]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=ark.KB_FIELDNAMES)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({field: row.get(field, "") for field in ark.KB_FIELDNAMES})
-
-
-def write_log_csv(path: Path, rows: list[dict[str, str]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = [
-        "id",
-        "rewritten",
-        "used_model",
-        "error",
-        "changed_fields",
-        "before_decision",
-        "before_score",
-    ]
-    with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
+LOG_FIELDNAMES = [
+    "id",
+    "rewritten",
+    "used_model",
+    "error",
+    "changed_fields",
+    "before_decision",
+    "before_score",
+]
 
 
 def now_date() -> str:
@@ -328,8 +309,8 @@ def main() -> int:
         if to_int(row.get("risk_level", "0")) >= 4:
             ensure_minimum_fields(row)
 
-    write_kb_csv(output_csv, kb_rows)
-    write_log_csv(log_csv, logs)
+    write_csv(output_csv, kb_rows, fieldnames=ark.KB_FIELDNAMES)
+    write_csv(log_csv, logs, fieldnames=LOG_FIELDNAMES)
 
     failed = sum(1 for item in logs if item.get("error"))
     print("Rewrite completed:")

@@ -385,7 +385,7 @@ python scripts/run_eval_regression_pipeline.py --repo-root . --update-dashboard 
 python scripts/run_model_ab_eval.py `
   --repo-root . `
   --app-id <your_app_id> `
-  --dify-base-url http://localhost:8080 `
+  --dify-base-url http://localhost:8081 `
   --model-a MiniMax-M2.5 `
   --model-b gpt-5.2-codex `
   --limit 6 `
@@ -398,7 +398,7 @@ python scripts/run_model_ab_eval.py `
 先做运行前健康体检（推荐每次都执行）：
 
 ```powershell
-set DIFY_BASE_URL=http://localhost:8080
+set DIFY_BASE_URL=http://localhost:8081
 set DIFY_APP_API_KEY=<app-xxxx>
 python scripts/check_live_eval_health.py `
   --repo-root . `
@@ -417,7 +417,7 @@ python scripts/fix_embedding_host_mapping.py --embed-container fake-ollama --con
 体检通过后执行自动回退回归：
 
 ```powershell
-set DIFY_BASE_URL=http://localhost:8080
+set DIFY_BASE_URL=http://localhost:8081
 set DIFY_APP_API_KEY=<app-xxxx>
 python scripts/run_eval_with_model_failover.py `
   --repo-root . `
@@ -474,7 +474,7 @@ python scripts/validate_eval_dashboard_gate.py `
 一键串联（健康检查 -> 回归/回退 -> failover快照 -> 风险说明 -> 门禁）：
 
 ```powershell
-set DIFY_BASE_URL=http://localhost:8080
+set DIFY_BASE_URL=http://localhost:8081
 set DIFY_APP_API_KEY=<app-xxxx>
 python scripts/run_eval_release_oneclick.py `
   --repo-root . `
@@ -634,7 +634,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run_release_stability_check.ps1
   -Rounds 3 `
   -IntervalSec 30 `
   -WorkflowId <workflow_id> `
-  -DifyBaseUrl http://localhost:8080 `
+  -DifyBaseUrl http://localhost:8081 `
   -DifyAppKey <app_key> `
   -SkipHealthCheck `
   -SkipCanary

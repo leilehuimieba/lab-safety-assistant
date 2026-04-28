@@ -4,6 +4,7 @@ Generate release readiness dashboard and blocker TopN from release policy checks
 """
 
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import csv
@@ -32,9 +33,6 @@ ACTION_PLAN_FIELDNAMES = [
 
 ALLOWED_ACTION_STATUS = {"todo", "in_progress", "blocked", "done", "wont_fix"}
 
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def parse_args() -> argparse.Namespace:
@@ -93,20 +91,17 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def resolve_path(repo_root: Path, value: str) -> Path:
     path = Path(value)
     if path.is_absolute():
         return path
     return (repo_root / path).resolve()
 
-
 def to_repo_rel(path: Path, repo_root: Path) -> str:
     try:
         return str(path.resolve().relative_to(repo_root.resolve())).replace("\\", "/")
     except ValueError:
         return str(path)
-
 
 def run_cmd(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
@@ -119,7 +114,6 @@ def run_cmd(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
         check=False,
     )
 
-
 def load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
@@ -128,7 +122,6 @@ def load_json(path: Path) -> dict[str, Any]:
     except (json.JSONDecodeError, OSError):
         return {}
     return payload if isinstance(payload, dict) else {}
-
 
 def classify_priority(reason: str) -> str:
     lowered = reason.lower()
@@ -143,7 +136,6 @@ def classify_priority(reason: str) -> str:
     if "latency_p95_ms" in lowered:
         return "P1"
     return "P2"
-
 
 def suggest_action(reason: str) -> str:
     lowered = reason.lower()
@@ -162,7 +154,6 @@ def suggest_action(reason: str) -> str:
     if "latency_p95_ms" in lowered:
         return "Optimize prompt and retrieval path, reduce latency, and tune rate limits."
     return "Fix listed blockers and rerun one-click release validation."
-
 
 def build_blocker_rows(policy_results: list[dict[str, Any]], top_n: int) -> list[dict[str, str]]:
     reason_counter: Counter[str] = Counter()
@@ -195,7 +186,6 @@ def build_blocker_rows(policy_results: list[dict[str, Any]], top_n: int) -> list
         )
     return rows
 
-
 def write_blocker_csv(path: Path, rows: list[dict[str, str]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8-sig", newline="") as f:
@@ -206,7 +196,6 @@ def write_blocker_csv(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
-
 
 def write_blocker_md(path: Path, rows: list[dict[str, str]]) -> None:
     lines = [
@@ -228,7 +217,6 @@ def write_blocker_md(path: Path, rows: list[dict[str, str]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-
 def load_existing_action_plan(path: Path) -> dict[str, dict[str, str]]:
     if not path.exists():
         return {}
@@ -241,7 +229,6 @@ def load_existing_action_plan(path: Path) -> dict[str, dict[str, str]]:
                 continue
             records[reason] = {k: str(v or "").strip() for k, v in row.items()}
         return records
-
 
 def build_action_plan_rows(
     blocker_rows: list[dict[str, str]],
@@ -319,7 +306,6 @@ def build_action_plan_rows(
         )
     return rows
 
-
 def write_action_plan_csv(path: Path, rows: list[dict[str, str]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8-sig", newline="") as f:
@@ -327,7 +313,6 @@ def write_action_plan_csv(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writeheader()
         for row in rows:
             writer.writerow({k: row.get(k, "") for k in ACTION_PLAN_FIELDNAMES})
-
 
 def write_action_plan_md(path: Path, rows: list[dict[str, str]]) -> None:
     status_counter: Counter[str] = Counter(str(row.get("status", "todo")).strip().lower() for row in rows)
@@ -354,7 +339,6 @@ def write_action_plan_md(path: Path, rows: list[dict[str, str]]) -> None:
         lines.append("| - | - | done | - | - | - | none | none | none |")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
 
 def main() -> int:
     args = parse_args()
@@ -494,7 +478,6 @@ def main() -> int:
     if args.fail_on_block and overall_status == "BLOCK":
         return 1
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

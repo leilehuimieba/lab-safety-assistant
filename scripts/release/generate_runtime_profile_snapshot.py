@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import json
@@ -11,16 +12,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
 REDACT_KEYWORDS = (
     "TOKEN",
     "SECRET",
     "PASSWORD",
 )
 
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,13 +40,11 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def resolve(repo_root: Path, rel_or_abs: str) -> Path:
     p = Path(rel_or_abs)
     if p.is_absolute():
         return p
     return (repo_root / p).resolve()
-
 
 def run_cmd(cmd: list[str]) -> tuple[int, str]:
     try:
@@ -59,7 +54,6 @@ def run_cmd(cmd: list[str]) -> tuple[int, str]:
     out = (cp.stdout or "").strip()
     err = (cp.stderr or "").strip()
     return cp.returncode, out if out else err
-
 
 def redact_value(key: str, value: str) -> str:
     upper = key.upper()
@@ -73,7 +67,6 @@ def redact_value(key: str, value: str) -> str:
             return "***"
         return value[:3] + "***" + value[-3:]
     return value
-
 
 def parse_env_file(path: Path) -> dict[str, str]:
     if not path.exists():
@@ -89,14 +82,12 @@ def parse_env_file(path: Path) -> dict[str, str]:
         data[key] = redact_value(key, value)
     return data
 
-
 def collect_basic_info() -> dict[str, Any]:
     return {
         "hostname": platform.node(),
         "platform": platform.platform(),
         "python_version": platform.python_version(),
     }
-
 
 def collect_git_info(repo_root: Path) -> dict[str, Any]:
     rc1, head = run_cmd(["git", "-C", str(repo_root), "rev-parse", "HEAD"])
@@ -107,7 +98,6 @@ def collect_git_info(repo_root: Path) -> dict[str, Any]:
         "branch": branch if rc2 == 0 else "",
         "dirty": bool(status.strip()) if rc3 == 0 else True,
     }
-
 
 def collect_docker_info() -> dict[str, Any]:
     rc_v, docker_v = run_cmd(["docker", "version", "--format", "{{json .}}"])
@@ -122,7 +112,6 @@ def collect_docker_info() -> dict[str, Any]:
         "docker_version_raw": docker_v if rc_v == 0 else "",
         "containers": containers,
     }
-
 
 def to_markdown(payload: dict[str, Any]) -> str:
     lines: list[str] = []
@@ -163,7 +152,6 @@ def to_markdown(payload: dict[str, Any]) -> str:
     lines.append("")
     return "\n".join(lines)
 
-
 def main() -> int:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
@@ -189,7 +177,6 @@ def main() -> int:
     print(f"runtime profile snapshot generated: {output_json}")
     print(f"runtime profile snapshot markdown: {output_md}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

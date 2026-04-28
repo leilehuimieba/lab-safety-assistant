@@ -12,7 +12,7 @@ def test_web_demo_smoke_dependency_marker() -> None:
 
 if FASTAPI_AVAILABLE:
     from fastapi.testclient import TestClient
-    import app as web_app
+    from web_demo import app as web_app
 
     def test_sanitize_llm_output_removes_think_block() -> None:
         raw = "<think>internal reasoning</think>\nConclusion:\nUse the approved SOP."
@@ -32,13 +32,12 @@ if FASTAPI_AVAILABLE:
             )
         ]
 
-        monkeypatch.setattr(web_app, "retrieve_citations", lambda _q, top_k=4: citations[:top_k])
+        monkeypatch.setattr("web_demo.routers.chat_routes.retrieve_citations", lambda _q, top_k=4: citations[:top_k])
         monkeypatch.setattr(
-            web_app,
-            "match_rule",
+            "web_demo.routers.chat_routes.match_rule",
             lambda _q: {"id": "R-LAB-1", "action": "safe_answer", "severity": "high", "response": "Follow strict PPE controls."},
         )
-        monkeypatch.setattr(web_app, "call_dify_lab", lambda *_args, **_kwargs: ("Structured safe answer.", "dify-workflow"))
+        monkeypatch.setattr("web_demo.routers.chat_routes.call_dify_lab", lambda *_args, **_kwargs: ("Structured safe answer.", "dify-workflow"))
 
         client = TestClient(web_app.app)
         resp = client.post("/api/chat", json={"mode": "lab", "question": "How to handle concentrated acid safely?"})
@@ -51,8 +50,7 @@ if FASTAPI_AVAILABLE:
 
     def test_search_endpoint_returns_citations(monkeypatch) -> None:
         monkeypatch.setattr(
-            web_app,
-            "retrieve_citations",
+            "web_demo.routers.chat_routes.retrieve_citations",
             lambda _q, top_k=5: [
                 web_app.Citation(
                     kb_id="KB-S-1",

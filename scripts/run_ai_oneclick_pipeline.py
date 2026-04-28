@@ -10,16 +10,16 @@ One-click AI pipeline:
 """
 
 from __future__ import annotations
+from libs.common_io import now_iso, write_csv
 
 import argparse
-import csv
+
 import json
 import os
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-
 
 KB_FIELDNAMES = [
     "id",
@@ -54,13 +54,9 @@ KB_FIELDNAMES = [
 ]
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-
 
 def now_tag() -> str:
     return datetime.now(timezone.utc).astimezone().strftime("%Y%m%d_%H%M%S")
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run one-click AI full pipeline.")
@@ -239,7 +235,6 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def run_cmd(cmd: list[str], cwd: Path) -> dict:
     completed = subprocess.run(
         cmd,
@@ -254,7 +249,6 @@ def run_cmd(cmd: list[str], cwd: Path) -> dict:
         "stdout": completed.stdout,
         "stderr": completed.stderr,
     }
-
 
 def sanitize_command(cmd: list[str]) -> list[str]:
     sanitized: list[str] = []
@@ -271,7 +265,6 @@ def sanitize_command(cmd: list[str]) -> list[str]:
         i += 1
     return sanitized
 
-
 def summarize_run(step: dict) -> dict:
     return {
         "command": sanitize_command(step["command"]),
@@ -280,13 +273,11 @@ def summarize_run(step: dict) -> dict:
         "stderr_tail": step["stderr"][-3000:],
     }
 
-
 def count_rows(path: Path) -> int:
     if not path.exists():
         return 0
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         return sum(1 for _ in csv.DictReader(f))
-
 
 def read_csv_rows(path: Path) -> list[dict[str, str]]:
     if not path.exists():
@@ -294,15 +285,6 @@ def read_csv_rows(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         return [{field: (row.get(field) or "") for field in KB_FIELDNAMES} for row in reader]
-
-
-def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
-    with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=KB_FIELDNAMES)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({field: row.get(field, "") for field in KB_FIELDNAMES})
-
 
 def merge_unique(target: Path, incoming: Path) -> dict[str, int]:
     base_rows = read_csv_rows(target)
@@ -320,9 +302,8 @@ def merge_unique(target: Path, incoming: Path) -> dict[str, int]:
         seen_ids.add(row_id)
         appended += 1
 
-    write_csv(target, base_rows)
+    write_csv(target, base_rows, fieldnames=KB_FIELDNAMES)
     return {"incoming_rows": len(incoming_rows), "appended_rows": appended, "skipped_rows": skipped}
-
 
 def load_json(path: Path) -> dict:
     if not path.exists():
@@ -331,7 +312,6 @@ def load_json(path: Path) -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {}
-
 
 def main() -> int:
     args = parse_args()
@@ -598,7 +578,6 @@ def main() -> int:
     print(f"- report: {report_json}")
     print(f"- appended rows: {merge_stat['appended_rows']}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

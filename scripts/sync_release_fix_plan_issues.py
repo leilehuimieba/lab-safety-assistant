@@ -4,9 +4,10 @@ Sync release fix plan tasks to GitHub issues.
 """
 
 from __future__ import annotations
+from libs.common_io import now_iso, read_csv_rows, write_csv
 
 import argparse
-import csv
+
 import json
 import os
 import re
@@ -18,20 +19,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
 DEFAULT_LABELS = ["release-fix-task"]
 ACTIVE_STATUS = {"todo", "in_progress", "blocked"}
 CLOSED_STATUS = {"done", "wont_fix"}
-
 
 @dataclass
 class OwnerParseResult:
     valid: list[str]
     invalid: list[str]
 
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def parse_args() -> argparse.Namespace:
@@ -82,17 +78,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--quiet", action="store_true", help="Print concise output.")
     return parser.parse_args()
 
-
 def resolve_path(repo_root: Path, value: str) -> Path:
     path = Path(value)
     if path.is_absolute():
         return path
     return (repo_root / path).resolve()
 
-
 def marker_for_task(task_id: str) -> str:
     return f"<!-- RELEASE_FIX_TASK:{task_id} -->"
-
 
 def short_text(text: str, limit: int = 80) -> str:
     compact = re.sub(r"\s+", " ", str(text or "")).strip()
@@ -100,11 +93,9 @@ def short_text(text: str, limit: int = 80) -> str:
         return compact
     return compact[: max(0, limit - 3)] + "..."
 
-
 def build_issue_title(task_id: str, reason: str) -> str:
     reason_part = short_text(reason, limit=70)
     return f"[Release Fix] {task_id} {reason_part}".strip()
-
 
 def parse_owner_field(owner: str) -> OwnerParseResult:
     raw = str(owner or "").strip()
@@ -123,15 +114,12 @@ def parse_owner_field(owner: str) -> OwnerParseResult:
             invalid.append(candidate)
     return OwnerParseResult(valid=sorted(set(valid)), invalid=sorted(set(invalid)))
 
-
 def parse_owner_to_assignees(owner: str) -> list[str]:
     return parse_owner_field(owner).valid
-
 
 def is_assignee_error(exc: Exception) -> bool:
     text = str(exc or "").lower()
     return "assignee" in text or "could not resolve to a user" in text
-
 
 def build_issue_body(row: dict[str, str]) -> str:
     task_id = str(row.get("task_id", "")).strip()
@@ -169,30 +157,12 @@ def build_issue_body(row: dict[str, str]) -> str:
         ]
     )
 
-
-def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        headers = reader.fieldnames or []
-        rows = [{str(k): str(v or "") for k, v in row.items()} for row in reader]
-    return headers, rows
-
-
-def write_csv(path: Path, headers: list[str], rows: list[dict[str, str]]) -> None:
-    with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=headers)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({k: row.get(k, "") for k in headers})
-
-
 def ensure_headers(headers: list[str], required: list[str]) -> list[str]:
     out = list(headers)
     for item in required:
         if item not in out:
             out.append(item)
     return out
-
 
 class GitHubClient:
     def __init__(self, *, token: str, repo_slug: str):
@@ -242,7 +212,6 @@ class GitHubClient:
         data = self._request("PATCH", f"/repos/{self.repo_slug}/issues/{issue_number}", payload=payload)
         return data if isinstance(data, dict) else {}
 
-
 def index_issues_by_task(issues: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {}
     pattern = re.compile(r"<!--\s*RELEASE_FIX_TASK:([^>]+)\s*-->")
@@ -256,16 +225,13 @@ def index_issues_by_task(issues: list[dict[str, Any]]) -> dict[str, dict[str, An
             result[task_id] = issue
     return result
 
-
 def status_norm(value: str) -> str:
     return str(value or "").strip().lower()
-
 
 def priority_match(value: str, target: str) -> bool:
     if not str(target or "").strip():
         return True
     return str(value or "").strip().upper() == str(target or "").strip().upper()
-
 
 def upsert_row_sync_meta(row: dict[str, str], *, issue: dict[str, Any] | None) -> None:
     if issue is None:
@@ -273,7 +239,6 @@ def upsert_row_sync_meta(row: dict[str, str], *, issue: dict[str, Any] | None) -
     row["issue_number"] = str(issue.get("number", "") or "")
     row["issue_url"] = str(issue.get("html_url", "") or "")
     row["last_synced_at"] = now_iso()
-
 
 def upsert_issue_with_assignee_fallback(
     *,
@@ -306,7 +271,6 @@ def upsert_issue_with_assignee_fallback(
             issue = client.update_issue(issue_number, fallback_payload)
         return issue, True
 
-
 def main() -> int:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
@@ -318,7 +282,7 @@ def main() -> int:
         print(f"release fix issue sync failed: missing csv: {csv_path}")
         return 1
 
-    headers, rows = read_csv(csv_path)
+    headers, rows = read_csv_rows(csv_path)
     headers = ensure_headers(headers, ["issue_number", "issue_url", "last_synced_at"])
 
     repo_slug = str(args.repo_slug or "").strip() or str(os.environ.get("GITHUB_REPOSITORY", "")).strip()
@@ -453,7 +417,7 @@ def main() -> int:
             errors.append(f"{task_id}: {exc}")
 
     if not dry_run:
-        write_csv(csv_path, headers, rows)
+        write_csv(csv_path, rows, fieldnames=headers)
 
     report = {
         "generated_at": now_iso(),
@@ -525,7 +489,6 @@ def main() -> int:
         )
 
     return 0 if not errors else 1
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

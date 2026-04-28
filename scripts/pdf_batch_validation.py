@@ -5,15 +5,15 @@ an editable manual review sheet.
 """
 
 from __future__ import annotations
+from libs.common_io import now_iso, write_csv
 
 import argparse
-import csv
+
 import json
 from datetime import datetime, timezone
 from pathlib import Path
 
 import document_ingest_pipeline as dip
-
 
 STANDARD_PDF_KEYWORDS = [
     "标准",
@@ -42,14 +42,10 @@ MANUAL_FIELDS = [
 ]
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-
 
 def is_standard_pdf(path: Path) -> bool:
     haystack = f"{path.name} {path.parent.name}"
     return any(keyword.lower() in haystack.lower() for keyword in STANDARD_PDF_KEYWORDS)
-
 
 def discover_standard_pdfs(input_root: Path, limit: int) -> list[Path]:
     all_pdfs = sorted(input_root.rglob("*.pdf"), key=lambda item: str(item).lower())
@@ -70,10 +66,8 @@ def discover_standard_pdfs(input_root: Path, limit: int) -> list[Path]:
                 break
     return selected
 
-
 def summarize_skipped_pages(skipped_pages: list[dict]) -> str:
     return "; ".join(f"{item['page']}:{item['reason']}" for item in skipped_pages)
-
 
 def extract_candidate_methods(meta: dict) -> list[str]:
     return [
@@ -82,14 +76,12 @@ def extract_candidate_methods(meta: dict) -> list[str]:
         if item.get("method")
     ]
 
-
 def extract_chosen_summary(meta: dict) -> dict:
     chosen = meta.get("pdf_extractor", "")
     for item in meta.get("pdf_candidate_summaries", []):
         if item.get("method") == chosen:
             return item
     return {}
-
 
 def compute_garbled_score(meta: dict) -> float:
     summary = extract_chosen_summary(meta)
@@ -98,14 +90,12 @@ def compute_garbled_score(meta: dict) -> float:
     rare_prefix = int(summary.get("prefix_rare_han_count", 0))
     return round(short_ratio * 70 + single_ratio * 30 + rare_prefix * 3, 2)
 
-
 def classify_garbled_score(score: float) -> str:
     if score < 8:
         return "low"
     if score < 18:
         return "medium"
     return "high"
-
 
 def compute_review_priority(row: dict) -> str:
     if (
@@ -120,14 +110,12 @@ def compute_review_priority(row: dict) -> str:
         return "medium"
     return "low"
 
-
 def suggest_need_ocr(row: dict) -> str:
     if row["title_patched"] or row["ocr_candidate_present"]:
         return "yes"
     if row["garbled_level"] != "low" or not row["body_start_page"]:
         return "check"
     return "no"
-
 
 def suggest_rule_action(row: dict) -> str:
     reasons: list[str] = []
@@ -145,7 +133,6 @@ def suggest_rule_action(row: dict) -> str:
             seen.append(item)
     return ";".join(seen)
 
-
 def select_review_candidates(rows: list[dict], threshold: float, limit: int) -> list[dict]:
     eligible = [
         row
@@ -162,7 +149,6 @@ def select_review_candidates(rows: list[dict], threshold: float, limit: int) -> 
         key=lambda item: (item["pdf_extractor"] == "pypdf", -float(item["garbled_score"]), item["index"]),
     )
     return eligible[:limit]
-
 
 def build_markdown(rows: list[dict], generated_at: str) -> str:
     reviewed_count = sum(1 for row in rows if row["ocr_reviewed"])
@@ -206,7 +192,6 @@ def build_markdown(rows: list[dict], generated_at: str) -> str:
     )
     return "\n".join(lines) + "\n"
 
-
 def build_manual_review_guide(generated_at: str, row_count: int) -> str:
     lines = [
         "# PDF 人工标注说明 v2",
@@ -231,15 +216,6 @@ def build_manual_review_guide(generated_at: str, row_count: int) -> str:
     ]
     return "\n".join(lines) + "\n"
 
-
-def write_csv(path: Path, rows: list[dict], fieldnames: list[str] | None = None) -> None:
-    resolved_fieldnames = fieldnames or (list(rows[0].keys()) if rows else [])
-    with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=resolved_fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
-
-
 def load_existing_manual_annotations(path: Path) -> dict[str, dict]:
     if not path.exists():
         return {}
@@ -251,7 +227,6 @@ def load_existing_manual_annotations(path: Path) -> dict[str, dict]:
             if file_path:
                 result[file_path] = {field: row.get(field, "") for field in MANUAL_FIELDS}
         return result
-
 
 def build_manual_review_sheet(rows: list[dict], existing_annotations: dict[str, dict]) -> list[dict]:
     sheet: list[dict] = []
@@ -286,7 +261,6 @@ def build_manual_review_sheet(rows: list[dict], existing_annotations: dict[str, 
             }
         )
     return sheet
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -335,18 +309,15 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def get_relative_pdf_path(pdf_path: Path, input_root: Path) -> str:
     try:
         return str(pdf_path.resolve().relative_to(input_root.resolve())).replace("/", "\\")
     except ValueError:
         return pdf_path.name
 
-
 def get_special_rule_for_path(pdf_path: Path, input_root: Path, pdf_special_rules: list[dict]) -> dict | None:
     rel_path = get_relative_pdf_path(pdf_path, input_root)
     return dip.match_pdf_special_rule(rel_path, pdf_special_rules)
-
 
 def extract_validation_row(
     index: int,
@@ -409,7 +380,6 @@ def extract_validation_row(
     row["suggest_need_ocr"] = suggest_need_ocr(row)
     row["suggest_rule_action"] = suggest_rule_action(row)
     return row
-
 
 def main() -> None:
     args = parse_args()
@@ -503,7 +473,6 @@ def main() -> None:
     print(f"Manual review sheet: {manual_sheet_path.resolve()}")
     if errors:
         print(f"Errors: {len(errors)}")
-
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import json
@@ -10,7 +11,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
 
 @dataclass
 class RoundResult:
@@ -29,13 +29,9 @@ class RoundResult:
     error: str = ""
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-
 
 def now_tag() -> str:
     return datetime.now(timezone.utc).astimezone().strftime("%Y%m%d_%H%M%S")
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run multi-round release stability check.")
@@ -98,13 +94,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--release-policy-strict", action="store_true", help="Run release policy with strict mode.")
     return parser.parse_args()
 
-
 def resolve(repo_root: Path, rel_or_abs: str) -> Path:
     p = Path(rel_or_abs)
     if p.is_absolute():
         return p
     return (repo_root / p).resolve()
-
 
 def run_cmd(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
@@ -117,7 +111,6 @@ def run_cmd(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
         check=False,
     )
 
-
 def load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
@@ -127,13 +120,11 @@ def load_json(path: Path) -> dict[str, Any]:
         return {}
     return raw if isinstance(raw, dict) else {}
 
-
 def find_latest_report(round_output_root: Path) -> Path | None:
     reports = sorted(round_output_root.glob("run_*/eval_release_oneclick_report.json"))
     if not reports:
         return None
     return reports[-1]
-
 
 def build_oneclick_cmd(args: argparse.Namespace, repo_root: Path, round_output_root: Path) -> list[str]:
     cmd: list[str] = [
@@ -205,7 +196,6 @@ def build_oneclick_cmd(args: argparse.Namespace, repo_root: Path, round_output_r
     )
     return cmd
 
-
 def summarize_round(round_index: int, cmd: list[str], exit_code: int, report_path: Path | None) -> RoundResult:
     if report_path is None:
         return RoundResult(
@@ -245,7 +235,6 @@ def summarize_round(round_index: int, cmd: list[str], exit_code: int, report_pat
         safety_refusal_rate=float(metrics.get("safety_refusal_rate", 0.0) or 0.0) if metrics else None,
         failover_latest_result=str(failover_latest.get("result", "") or ""),
     )
-
 
 def to_markdown(
     *,
@@ -304,7 +293,6 @@ def to_markdown(
     else:
         lines.append("1. Release stability check failed, fix issues and rerun before release.")
     return "\n".join(lines) + "\n"
-
 
 def main() -> int:
     args = parse_args()
@@ -372,7 +360,6 @@ def main() -> int:
     print(f"- output md: {output_md}")
 
     return 0 if overall == "PASS" else 2
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

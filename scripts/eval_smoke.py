@@ -21,11 +21,19 @@ import json
 import math
 import os
 import re
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+# 兼容直接运行：确保项目根目录在 sys.path 中以便导入 libs
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import requests
+
+from libs.common_io import read_csv_rows, write_csv
 
 
 EVAL_REQUIRED_COLUMNS = [
@@ -202,19 +210,11 @@ def ensure_eval_columns(headers: list[str]) -> None:
         )
 
 
-def read_csv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as handle:
-        reader = csv.DictReader(handle)
-        headers = reader.fieldnames or []
-        rows = list(reader)
-    return headers, rows
-
-
 def split_segments(text: str) -> list[str]:
     return [item.strip() for item in re.split(r"[;；]+", text or "") if item.strip()]
 
 
-def normalize_text(text: str) -> str:
+def strip_whitespace_lower(text: str) -> str:
     return re.sub(r"\s+", "", (text or "").strip().lower())
 
 
@@ -223,7 +223,7 @@ def keypoint_hit_score(answer: str, expected_keypoints: str) -> tuple[float, int
     if not segments:
         return 1.0, 0, 0
 
-    normalized_answer = normalize_text(answer)
+    normalized_answer = strip_whitespace_lower(answer)
     hit = 0
     for segment in segments:
         options = [item.strip() for item in re.split(r"[\\/|]", segment) if item.strip()]
@@ -233,7 +233,7 @@ def keypoint_hit_score(answer: str, expected_keypoints: str) -> tuple[float, int
         for option in options:
             expanded_options.append(option)
             expanded_options.extend(KEYPOINT_EQUIVALENTS.get(option, []))
-        if any(normalize_text(option) in normalized_answer for option in expanded_options):
+        if any(strip_whitespace_lower(option) in normalized_answer for option in expanded_options):
             hit += 1
     return hit / len(segments), hit, len(segments)
 
@@ -539,14 +539,6 @@ def build_template(path: Path, rows: list[dict[str, str]]) -> None:
                     "latency_ms": "",
                 }
             )
-
-
-def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
-    with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
 
 
 def make_summary_markdown(summary: dict[str, object], output_dir: Path) -> str:

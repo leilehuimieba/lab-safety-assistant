@@ -1,5 +1,5 @@
 param(
-  [string]$DocumentInputRoot = "D:\workspace\data",
+  [string]$DocumentInputRoot = "..\data",
   [string]$OutputDir = "",
   [string]$DocumentManifest = "data_sources\document_manifest.csv",
   [string]$PdfSpecialRules = "data_sources\pdf_special_rules.csv",

@@ -4,9 +4,10 @@ Escalate overdue P0 release-fix tasks by labeling and commenting linked GitHub i
 """
 
 from __future__ import annotations
+from libs.common_io import now_iso, read_csv_rows
 
 import argparse
-import csv
+
 import json
 import os
 import re
@@ -18,12 +19,10 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
 ACTIVE_STATUS = {"todo", "in_progress", "blocked"}
 TASK_MARKER_PATTERN = re.compile(r"<!--\s*RELEASE_FIX_TASK:([^>]+)\s*-->")
 DEFAULT_OVERDUE_LABEL = "release-fix-overdue"
 DEFAULT_P1_LABEL = "p1-release-fix"
-
 
 @dataclass
 class OverdueTask:
@@ -36,9 +35,6 @@ class OverdueTask:
     overdue_days: int
     reason: str
 
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def parse_args() -> argparse.Namespace:
@@ -102,13 +98,11 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def resolve_path(repo_root: Path, value: str) -> Path:
     path = Path(value)
     if path.is_absolute():
         return path
     return (repo_root / path).resolve()
-
 
 def parse_date(value: str) -> date | None:
     raw = str(value or "").strip()
@@ -119,22 +113,11 @@ def parse_date(value: str) -> date | None:
     except ValueError:
         return None
 
-
-def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        headers = reader.fieldnames or []
-        rows = [{str(k): str(v or "") for k, v in row.items()} for row in reader]
-    return headers, rows
-
-
 def marker_for_task(task_id: str) -> str:
     return f"<!-- RELEASE_FIX_TASK:{task_id} -->"
 
-
 def marker_for_daily_comment(task_id: str, today: date) -> str:
     return f"<!-- RELEASE_FIX_OVERDUE:{task_id}:{today.isoformat()} -->"
-
 
 def issue_task_id(issue: dict[str, Any]) -> str:
     body = str(issue.get("body", "") or "")
@@ -142,7 +125,6 @@ def issue_task_id(issue: dict[str, Any]) -> str:
     if not match:
         return ""
     return match.group(1).strip()
-
 
 def collect_overdue_tasks(
     rows: list[dict[str, str]],
@@ -185,7 +167,6 @@ def collect_overdue_tasks(
         )
     return sorted(result, key=lambda x: (-x.overdue_days, x.task_id))
 
-
 def build_overdue_comment(task: OverdueTask, *, today: date) -> str:
     marker = marker_for_daily_comment(task.task_id, today)
     return "\n".join(
@@ -202,7 +183,6 @@ def build_overdue_comment(task: OverdueTask, *, today: date) -> str:
             "Please update owner/eta/status and post remediation progress.",
         ]
     )
-
 
 class GitHubClient:
     def __init__(self, *, token: str, repo_slug: str):
@@ -253,7 +233,6 @@ class GitHubClient:
         data = self._request("POST", f"/repos/{self.repo_slug}/issues/{issue_number}/comments", {"body": body})
         return data if isinstance(data, dict) else {}
 
-
 def index_issues(issues: list[dict[str, Any]]) -> tuple[dict[int, dict[str, Any]], dict[str, dict[str, Any]]]:
     by_number: dict[int, dict[str, Any]] = {}
     by_task: dict[str, dict[str, Any]] = {}
@@ -266,7 +245,6 @@ def index_issues(issues: list[dict[str, Any]]) -> tuple[dict[int, dict[str, Any]
             by_task[task_id] = issue
     return by_number, by_task
 
-
 def labels_union(current: list[str], required: list[str]) -> list[str]:
     result = list(current)
     existing = {item for item in current}
@@ -275,7 +253,6 @@ def labels_union(current: list[str], required: list[str]) -> list[str]:
             result.append(item)
             existing.add(item)
     return result
-
 
 def main() -> int:
     args = parse_args()
@@ -437,7 +414,6 @@ def main() -> int:
         f"notified={notified}, p1_escalated={p1_escalated}, errors={len(errors)}"
     )
     return 0 if not errors else 1
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

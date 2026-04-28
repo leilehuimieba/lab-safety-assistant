@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import json
@@ -9,13 +10,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-
 
 def now_tag() -> str:
     return datetime.now(timezone.utc).astimezone().strftime("%Y%m%d_%H%M%S")
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run baseline audit -> cluster -> rewrite -> second audit/recheck.")
@@ -50,7 +47,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--strict-high-risk", action="store_true", help="Enable strict high-risk post rules.")
     return parser.parse_args()
 
-
 def run_cmd(cmd: list[str], cwd: Path) -> dict:
     completed = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, check=False)
     return {
@@ -59,7 +55,6 @@ def run_cmd(cmd: list[str], cwd: Path) -> dict:
         "stdout": completed.stdout,
         "stderr": completed.stderr,
     }
-
 
 def sanitize_command(cmd: list[str]) -> list[str]:
     sanitized: list[str] = []
@@ -74,7 +69,6 @@ def sanitize_command(cmd: list[str]) -> list[str]:
         i += 1
     return sanitized
 
-
 def summarize_run(step: dict) -> dict:
     return {
         "command": sanitize_command(step["command"]),
@@ -83,7 +77,6 @@ def summarize_run(step: dict) -> dict:
         "stderr_tail": step["stderr"][-3000:],
     }
 
-
 def load_json(path: Path) -> dict:
     if not path.exists():
         return {}
@@ -91,7 +84,6 @@ def load_json(path: Path) -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {}
-
 
 def main() -> int:
     args = parse_args()
@@ -327,7 +319,6 @@ def main() -> int:
     print(f"- report json: {summary_json}")
     print(f"- report md:   {summary_md}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

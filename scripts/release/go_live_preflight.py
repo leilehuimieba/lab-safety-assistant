@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import json
@@ -11,7 +12,6 @@ from typing import Any
 from urllib.error import URLError
 from urllib.request import urlopen
 
-
 @dataclass
 class CheckResult:
     key: str
@@ -19,9 +19,6 @@ class CheckResult:
     level: str
     detail: str
 
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def parse_args() -> argparse.Namespace:
@@ -81,13 +78,11 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def resolve(repo_root: Path, rel_or_abs: str) -> Path:
     path = Path(rel_or_abs)
     if path.is_absolute():
         return path
     return (repo_root / path).resolve()
-
 
 def load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
@@ -97,7 +92,6 @@ def load_json(path: Path) -> dict[str, Any]:
     except (OSError, json.JSONDecodeError):
         return {}
     return raw if isinstance(raw, dict) else {}
-
 
 def check_release_policy(path: Path, profile: str) -> CheckResult:
     payload = load_json(path)
@@ -127,7 +121,6 @@ def check_release_policy(path: Path, profile: str) -> CheckResult:
         detail=f"status={status}",
     )
 
-
 def check_override_disabled(path: Path) -> CheckResult:
     payload = load_json(path)
     if not payload:
@@ -151,7 +144,6 @@ def check_override_disabled(path: Path) -> CheckResult:
         level="info",
         detail="override enabled=false",
     )
-
 
 def check_risk_note(path: Path) -> CheckResult:
     payload = load_json(path)
@@ -186,7 +178,6 @@ def check_risk_note(path: Path) -> CheckResult:
         detail=f"gate_decision={gate_decision}; emergency_pass_rate={emergency:.4f}",
     )
 
-
 def check_latest_release_oneclick(reports_root: Path, stability_root: Path) -> CheckResult:
     reports: list[Path] = []
     if reports_root.exists():
@@ -220,12 +211,10 @@ def check_latest_release_oneclick(reports_root: Path, stability_root: Path) -> C
         detail=f"latest status=success ({latest})",
     )
 
-
 def expected_prefetch_status_name(path: Path) -> str:
     release_name = path.name.strip().lower() or "v8.1"
     normalized = release_name.replace(".", "_")
     return f"web_seed_urls_{normalized}_prefetch_status.csv"
-
 
 def check_release_package(path: Path) -> list[CheckResult]:
     required = [
@@ -255,7 +244,6 @@ def check_release_package(path: Path) -> list[CheckResult]:
             )
         )
     return results
-
 
 def check_web_health(url: str, skip: bool) -> CheckResult:
     if skip:
@@ -296,7 +284,6 @@ def check_web_health(url: str, skip: bool) -> CheckResult:
         level="info",
         detail=f"{url} ok",
     )
-
 
 def to_markdown(
     *,
@@ -340,7 +327,6 @@ def to_markdown(
     else:
         lines.append("1. Ready for release window.")
     return "\n".join(lines) + "\n"
-
 
 def main() -> int:
     args = parse_args()
@@ -419,7 +405,6 @@ def main() -> int:
     if warnings and not args.allow_warning_pass:
         return 3
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

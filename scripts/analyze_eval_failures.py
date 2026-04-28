@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso, write_csv
 
 import argparse
 import csv
@@ -8,7 +9,6 @@ import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-
 
 DETAIL_REQUIRED_COLUMNS = {
     "id",
@@ -42,7 +42,6 @@ TOP10_REASON_PRIORITY = {
     "other_fail": 6,
 }
 
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Analyze eval_smoke detailed_results and build failure clusters.")
     parser.add_argument("--detailed-results", required=True, help="Path to detailed_results.csv.")
@@ -70,9 +69,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-
 
 def read_rows(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as f:
@@ -86,12 +82,10 @@ def read_rows(path: Path) -> list[dict[str, str]]:
             )
         return list(reader)
 
-
 def pct(n: int, d: int) -> str:
     if d <= 0:
         return "0.0%"
     return f"{(n / d) * 100:.1f}%"
-
 
 def safe_float(raw: str, default: float = 0.0) -> float:
     try:
@@ -99,13 +93,11 @@ def safe_float(raw: str, default: float = 0.0) -> float:
     except ValueError:
         return default
 
-
 def looks_like_identity_talk(text: str) -> bool:
     normalized = (text or "").strip()
     if not normalized:
         return False
     return any(pattern.search(normalized) for pattern in IDENTITY_PATTERNS)
-
 
 def infer_fail_reason(row: dict[str, str]) -> str:
     fetch_error = (row.get("fetch_error") or "").strip()
@@ -131,7 +123,6 @@ def infer_fail_reason(row: dict[str, str]) -> str:
         return "missing_keypoints"
     return "other_fail"
 
-
 def infer_pattern_tags(row: dict[str, str]) -> str:
     tags: list[str] = []
     text = row.get("response", "") or ""
@@ -149,7 +140,6 @@ def infer_pattern_tags(row: dict[str, str]) -> str:
             tags.append("over_refusal")
     return ";".join(tags)
 
-
 def reason_action(reason: str) -> str:
     mapping = {
         "fetch_error": "检查 Dify/网关可用性并重试；必要时降级直连模型。",
@@ -161,15 +151,6 @@ def reason_action(reason: str) -> str:
         "other_fail": "逐题人工确认并补充规则库。",
     }
     return mapping.get(reason, "逐题人工确认并修复。")
-
-
-def write_csv(path: Path, rows: list[dict[str, str]], fieldnames: list[str]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
-
 
 def main() -> int:
     args = parse_args()
@@ -348,7 +329,6 @@ def main() -> int:
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

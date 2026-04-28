@@ -6,11 +6,12 @@ Validate data_sources CSV schemas and key field constraints.
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import re
 import sys
 from pathlib import Path
+
+from libs.common_io import read_csv_rows
 
 
 RISK_LEVELS = {"1", "2", "3", "4", "5"}
@@ -68,14 +69,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        headers = reader.fieldnames or []
-        rows = list(reader)
-    return headers, rows
-
-
 def split_hazard_types(raw: str) -> list[str]:
     normalized = raw.replace("；", ";").replace("，", ";").replace(",", ";")
     return [item.strip() for item in normalized.split(";") if item.strip()]
@@ -107,7 +100,7 @@ def validate_manifest(
         errors.append(f"缺少文件：{path}")
         return
 
-    headers, rows = read_csv(path)
+    headers, rows = read_csv_rows(path)
     if headers != MANIFEST_HEADERS:
         errors.append(
             f"{path.name} 表头不匹配。\n  expected={MANIFEST_HEADERS}\n  actual={headers}"

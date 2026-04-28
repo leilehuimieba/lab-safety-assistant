@@ -16,11 +16,12 @@ Outputs:
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import math
 from datetime import datetime, timezone
 from pathlib import Path
+
+from libs.common_io import read_csv_rows, write_csv
 
 
 YES_SET = {"yes", "y", "true", "1"}
@@ -90,22 +91,6 @@ def parse_args() -> argparse.Namespace:
         help="Generate manual review template CSV and exit if no manual CSV provided.",
     )
     return parser.parse_args()
-
-
-def read_csv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as handle:
-        reader = csv.DictReader(handle)
-        headers = reader.fieldnames or []
-        rows = list(reader)
-    return headers, rows
-
-
-def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
-    with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
 
 
 def norm_yes_no(value: str) -> str:

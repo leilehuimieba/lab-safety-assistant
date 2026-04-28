@@ -401,23 +401,6 @@
       grid-template-columns: 1.05fr 0.95fr;
       gap: 18px;
     }
-    .product-status-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-    .product-status-card {
-      padding: 18px;
-      border-radius: 20px;
-      border: 1px solid #dbe7f5;
-      background: #fff;
-      box-shadow: 0 14px 34px rgba(15, 23, 42, .06);
-    }
-    .product-status-card strong { display: block; color: #102a4c; font-size: 18px; margin-bottom: 10px; }
-    .product-status-card ul { margin: 0; padding-left: 20px; color: #52657a; line-height: 1.9; }
-    .product-status-card.is-gap { border-color: #fed7aa; background: #fffaf3; }
-    .product-status-card.is-ok { border-color: #bbf7d0; background: #f7fff9; }
-    .product-status-card.is-wide { grid-column: 1 / -1; }
     .training-shell {
       display: grid;
       grid-template-columns: 0.95fr 1.05fr;
@@ -1655,560 +1638,6 @@
       .assistant-workbench { grid-template-columns: 1fr; }
       .assistant-input-card { position: static; }
     }
-    /* Product conversion pass: homepage entries and cleaner result cards */
-    .home-hero {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      padding: 34px;
-      border-radius: 28px;
-      background: linear-gradient(135deg, #2563eb, #0f766e);
-      color: #fff;
-      box-shadow: 0 24px 60px rgba(37,99,235,.22);
-      margin-bottom: 22px;
-    }
-    .home-kicker {
-      display: inline-flex;
-      padding: 7px 12px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.16);
-      color: rgba(255,255,255,.92);
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 14px;
-    }
-    .home-hero h3 { margin: 0; font-size: 38px; letter-spacing: -0.04em; }
-    .home-hero p { margin: 12px 0 0; color: rgba(255,255,255,.86); font-size: 17px; max-width: 720px; }
-
-    .role-switch {
-      margin: 14px 0 18px;
-      padding: 12px;
-      border: 1px solid rgba(255,255,255,.16);
-      border-radius: 18px;
-      background: rgba(255,255,255,.08);
-    }
-    .role-switch strong { display:block; font-size: 13px; margin-bottom: 9px; }
-    .role-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-    .role-btn {
-      border: 1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.08);
-      color: #fff;
-      border-radius: 999px;
-      padding: 8px 0;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .role-btn.is-active { background: #fff; color: #14324a; font-weight: 800; }
-    .role-hint {
-      margin-top: 10px;
-      color: rgba(255,255,255,.76);
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-
-    .teacher-workbench-head {
-      display: none;
-      grid-column: 1 / -1;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 14px 16px;
-      border-radius: 18px;
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      color: #7c2d12;
-    }
-    .teacher-workbench-head.is-visible { display: flex; }
-    .teacher-workbench-head strong { display: block; color: #7c2d12; }
-    .teacher-workbench-head span { font-size: 13px; color: #9a3412; }
-    .teacher-workspace-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-    .teacher-workbench-head button {
-      border: 0;
-      border-radius: 12px;
-      padding: 10px 14px;
-      background: #ea580c;
-      color: #fff;
-      font-weight: 900;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .teacher-workbench-head button.secondary,
-    .teacher-workbench-head label.secondary {
-      background: #fff;
-      color: #9a3412;
-      border: 1px solid #fed7aa;
-    }
-    .teacher-workbench-head label {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-weight: 900;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .teacher-workbench-head input[type="file"] { display: none; }
-
-    .teacher-workbench {
-      display: none;
-      grid-column: 1 / -1;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-    }
-    .teacher-workbench.is-visible { display: grid; }
-    .teacher-task-card {
-      border-radius: 18px;
-      padding: 18px;
-      border: 1px solid rgba(30, 64, 175, .12);
-      background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
-      box-shadow: 0 14px 36px rgba(20, 45, 90, .08);
-    }
-    .teacher-task-card.is-ok {
-      border-color: #bbf7d0;
-      background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
-    }
-    .teacher-task-card.is-warn {
-      border-color: #fed7aa;
-      background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%);
-    }
-    .teacher-task-card.is-danger {
-      border-color: #fecaca;
-      background: linear-gradient(180deg, #ffffff 0%, #fef2f2 100%);
-    }
-    .teacher-task-card.is-ok span { background: #dcfce7; color: #166534; }
-    .teacher-task-card.is-warn span { background: #ffedd5; color: #9a3412; }
-    .teacher-task-card.is-danger span { background: #fee2e2; color: #991b1b; }
-    .teacher-task-card span {
-      display: inline-flex;
-      padding: 5px 10px;
-      border-radius: 999px;
-      background: #eef4ff;
-      color: #2452a3;
-      font-size: 12px;
-      font-weight: 800;
-    }
-    .teacher-task-card strong {
-      display: block;
-      margin-top: 12px;
-      font-size: 26px;
-      color: #12243d;
-    }
-    .teacher-task-card p {
-      margin: 8px 0 14px;
-      color: #52657a;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    .teacher-card-latest {
-      margin: -2px 0 14px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: #f8fafc;
-      border: 1px solid #e5edf7;
-      color: #334155;
-      font-size: 13px;
-      line-height: 1.55;
-    }
-    .teacher-card-latest b { color: #0f2f57; }
-    .teacher-advice {
-      display: none;
-      grid-column: 1 / -1;
-      padding: 16px 18px;
-      border-radius: 18px;
-      background: #f8fbff;
-      border: 1px solid #dbeafe;
-      color: #16304f;
-    }
-    .teacher-advice.is-visible { display: block; }
-    .teacher-advice strong { display: block; margin-bottom: 8px; }
-    .teacher-advice ol { margin: 0; padding-left: 20px; line-height: 1.8; }
-    .teacher-workspace-entry {
-      grid-column: 1 / -1;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 18px 20px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #123c69 0%, #2452a3 100%);
-      color: #fff;
-      box-shadow: 0 18px 42px rgba(18, 60, 105, .22);
-    }
-    .teacher-workspace-entry strong { display: block; font-size: 20px; color: #fff; }
-    .teacher-workspace-entry p { margin: 6px 0 0; color: rgba(255,255,255,.82); }
-    .teacher-workspace-entry-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-    .teacher-workspace-entry button {
-      border: 0;
-      border-radius: 14px;
-      padding: 12px 18px;
-      background: #fff;
-      color: #123c69;
-      font-weight: 900;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .teacher-workspace-entry button.secondary {
-      background: rgba(255,255,255,.16);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.35);
-    }
-    .admin-acceptance-entry {
-      display: none;
-      grid-column: 1 / -1;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 18px 20px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
-      color: #fff;
-      box-shadow: 0 18px 42px rgba(15, 23, 42, .25);
-    }
-    .admin-acceptance-entry.is-visible { display: flex; }
-    .admin-acceptance-entry strong { display: block; font-size: 20px; color: #fff; }
-    .admin-acceptance-entry p { margin: 6px 0 0; color: rgba(255,255,255,.84); }
-    .admin-acceptance-entry-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-    .admin-acceptance-entry button {
-      border: 0;
-      border-radius: 14px;
-      padding: 12px 18px;
-      background: #fff;
-      color: #123c69;
-      font-weight: 900;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .admin-acceptance-entry button.secondary {
-      background: rgba(255,255,255,.16);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.35);
-    }
-    .admin-acceptance-board {
-      display: none;
-      grid-column: 1 / -1;
-      gap: 14px;
-    }
-    .admin-acceptance-board.is-visible { display: grid; }
-    .admin-acceptance-head {
-      padding: 18px 20px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
-      color: #fff;
-    }
-    .admin-acceptance-head strong { display: block; font-size: 20px; color: #fff; }
-    .admin-acceptance-head p { margin: 6px 0 0; color: rgba(255,255,255,.82); }
-    .acceptance-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-    .acceptance-card {
-      padding: 16px;
-      border-radius: 18px;
-      border: 1px solid #dbeafe;
-      background: #f8fbff;
-    }
-    .acceptance-card span { color: #4f6782; font-size: 12px; }
-    .acceptance-card strong { display: block; margin-top: 8px; font-size: 24px; color: #102a4c; }
-    .acceptance-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .acceptance-actions button {
-      border: 0;
-      border-radius: 12px;
-      padding: 10px 14px;
-      background: #123c69;
-      color: #fff;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .acceptance-actions button.secondary { background: #e8f0fb; color: #123c69; }
-    .guide-step-status {
-      margin-top: 8px;
-      color: rgba(255,255,255,.82);
-      font-size: 13px;
-    }
-    .teacher-task-card button {
-      width: 100%;
-      border: 0;
-      border-radius: 12px;
-      padding: 10px 12px;
-      background: #123c69;
-      color: #fff;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .teacher-task-card.is-clickable { cursor: pointer; }
-    .teacher-task-card.is-clickable:hover { transform: translateY(-1px); }
-
-    .simple-modal {
-      position: fixed;
-      inset: 0;
-      z-index: 60;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      background: rgba(15, 23, 42, .42);
-    }
-    .simple-modal.is-visible { display: flex; }
-    .simple-modal-card {
-      width: min(720px, 100%);
-      max-height: min(78vh, 680px);
-      overflow: auto;
-      border-radius: 22px;
-      background: #fff;
-      box-shadow: 0 24px 70px rgba(15, 23, 42, .28);
-    }
-    .simple-modal-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-      padding: 18px 20px;
-      border-bottom: 1px solid #e5edf7;
-    }
-    .simple-modal-head strong { display: block; font-size: 18px; color: #12243d; }
-    .simple-modal-head p { margin: 5px 0 0; color: #64748b; font-size: 13px; }
-    .simple-modal-close {
-      border: 0;
-      border-radius: 999px;
-      width: 34px;
-      height: 34px;
-      background: #f1f5f9;
-      color: #334155;
-      cursor: pointer;
-      font-size: 20px;
-    }
-    .simple-modal-body { padding: 16px 20px 20px; }
-    .simple-modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-    .simple-modal-actions button {
-      border: 0;
-      border-radius: 12px;
-      padding: 10px 14px;
-      background: #123c69;
-      color: #fff;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .roster-list { display: grid; gap: 10px; }
-    .roster-list-row {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr .8fr .8fr;
-      gap: 10px;
-      align-items: center;
-      padding: 12px;
-      border: 1px solid #e5edf7;
-      border-radius: 14px;
-      background: #f8fafc;
-      color: #334155;
-      font-size: 14px;
-    }
-    .roster-list-row b { color: #12243d; }
-    .roster-list-row .tag {
-      justify-self: start;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: #fee2e2;
-      color: #991b1b;
-      font-size: 12px;
-      font-weight: 800;
-    }
-    .onboarding-steps { display: grid; gap: 12px; }
-    .onboarding-step {
-      display: grid;
-      grid-template-columns: 38px 1fr;
-      gap: 12px;
-      padding: 14px;
-      border: 1px solid #e5edf7;
-      border-radius: 16px;
-      background: #f8fafc;
-    }
-    .onboarding-step b {
-      display: inline-flex;
-      width: 32px;
-      height: 32px;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      background: #dbeafe;
-      color: #1d4ed8;
-    }
-    .onboarding-step strong { display: block; color: #12243d; margin-bottom: 4px; }
-    .onboarding-step span { color: #52657a; font-size: 13px; line-height: 1.55; }
-    .simple-modal-actions button.secondary { background: #e8f0fb; color: #123c69; }
-
-    .role-flow {
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .role-flow span {
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: #f5f8ff;
-      color: #234;
-      font-weight: 700;
-      font-size: 13px;
-    }
-
-    .one-click-guide {
-      min-width: 260px;
-      background: #fff !important;
-      color: #1d4ed8 !important;
-      border-color: #fff !important;
-      box-shadow: 0 14px 30px rgba(15,23,42,.18) !important;
-    }
-    .entry-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
-      margin-bottom: 22px;
-    }
-    .entry-card {
-      text-align: left;
-      padding: 24px;
-      min-height: 180px;
-      border-radius: 24px;
-      border: 1px solid #e4e7ec;
-      background: #fff;
-      box-shadow: 0 16px 40px rgba(16,24,40,.07);
-      cursor: pointer;
-    }
-    .entry-card:hover { border-color: #93c5fd; transform: translateY(-2px); }
-    .entry-card span { color: #2563eb; font-weight: 800; font-size: 14px; }
-    .entry-card strong { display:block; margin-top: 16px; font-size: 24px; color: #172033; }
-    .entry-card small { display:block; margin-top: 10px; color: #667085; font-size: 15px; line-height: 1.6; }
-    .welcome-hero {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap: 18px;
-      align-items: stretch;
-      padding: 24px;
-      border-radius: 28px;
-      background: linear-gradient(135deg, #123c69 0%, #2452a3 100%);
-      color: #fff;
-      box-shadow: 0 22px 54px rgba(18, 60, 105, .24);
-    }
-    .welcome-hero h3 { margin: 6px 0 10px; font-size: clamp(26px, 3vw, 38px); letter-spacing: -0.04em; }
-    .welcome-hero p { color: rgba(255,255,255,.84); max-width: 760px; }
-    .welcome-badges { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
-    .welcome-badges span { padding: 7px 10px; border-radius: 999px; background: rgba(255,255,255,.14); color:#fff; font-weight:800; }
-    .welcome-status {
-      display: grid;
-      gap: 10px;
-      padding: 16px;
-      border-radius: 20px;
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.18);
-    }
-    .welcome-status div { display:flex; justify-content:space-between; gap:12px; color: rgba(255,255,255,.82); }
-    .welcome-status b { color:#fff; }
-    .welcome-entry-card { min-height: 160px; }
-    .welcome-entry-card button { margin-top: 16px; width: 100%; }
-    @media (max-width: 900px) { .welcome-hero { grid-template-columns: 1fr; } }
-    .compact-overview { grid-template-columns: 1.1fr .9fr; }
-    .short-answer {
-      display: grid;
-      gap: 14px;
-    }
-    .answer-block {
-      border-radius: 18px;
-      border: 1px solid #e4e7ec;
-      background: #fff;
-      padding: 16px 18px;
-    }
-    .answer-block h4 { margin: 0 0 8px; font-size: 15px; color: #667085; }
-    .answer-block strong.answer-conclusion { font-size: 22px; color: #172033; }
-    .answer-block ul { margin-top: 8px; }
-    .answer-block li { margin: 6px 0; }
-    .teacher-alert-box {
-      border-radius: 16px;
-      border: 1px solid #fecaca;
-      background: #fef2f2;
-      color: #991b1b;
-      padding: 14px 16px;
-      font-weight: 800;
-      line-height: 1.7;
-    }
-    .teacher-alert-box strong { display: block; margin-bottom: 6px; font-size: 16px; }
-    .evidence-card-link {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      font-weight: 700;
-    }
-    .gate-step-strip {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-    .gate-step-card {
-      padding: 16px;
-      border-radius: 18px;
-      border: 1px solid #e4e7ec;
-      background: #fff;
-    }
-    .gate-step-card strong { display:block; color:#172033; font-size:16px; }
-    .gate-step-card span { display:block; color:#667085; font-size:13px; margin-top:5px; }
-    @media (max-width: 980px) {
-      .home-hero { display:block; }
-      .one-click-guide { margin-top: 18px; width: 100%; }
-      .entry-grid, .compact-overview, .gate-step-strip, .role-flow, .teacher-workbench, .acceptance-grid { grid-template-columns: 1fr; }
-      .teacher-workbench-head, .teacher-workspace-entry, .admin-acceptance-entry { display: none; align-items: flex-start; }
-      .teacher-workbench-head.is-visible, .teacher-workspace-entry, .admin-acceptance-entry.is-visible { display: grid; }
-    }
-    .record-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
-    }
-    .decision-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #fee2e2;
-      color: #991b1b;
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-    .decision-badge.ok { background:#dcfce7; color:#166534; }
-    .decision-badge.warn { background:#fef3c7; color:#92400e; }
   </style>
 </head>
 <body>
@@ -2216,22 +1645,11 @@
     <aside class="sidebar">
       <section class="sidebar-brand">
         <div class="sidebar-toprow">
-          <span class="sidebar-kicker">Lab Safety Suite</span>
+          <span class="sidebar-kicker">Safety Workspace</span>
           <button class="sidebar-toggle" type="button" id="sidebarToggle" aria-expanded="true">收起导航</button>
         </div>
         <h1>实验室安全小助手</h1>
-        <p>问答、准入、培训、复盘，一套轻量安全工作台。</p>
-      </section>
-
-
-      <section class="role-switch" aria-label="角色模式">
-        <strong>我是谁</strong>
-        <div class="role-options">
-          <button class="role-btn is-active" type="button" data-role="student">学生</button>
-          <button class="role-btn" type="button" data-role="teacher">老师</button>
-          <button class="role-btn" type="button" data-role="admin">管理员</button>
-        </div>
-        <p class="role-hint" id="roleHint">按学生视角：先问清楚，再判断能不能开工。</p>
+        <p>问答、风险、准入、培训，一页清楚展示。</p>
       </section>
 
       <nav class="sidebar-nav" aria-label="功能导航">
@@ -2250,10 +1668,6 @@
         <button class="nav-btn" type="button" data-view-target="workspace" aria-current="false">
           <strong>知识库状态</strong>
           <span>查看配置和知识库</span>
-        </button>
-        <button class="nav-btn" type="button" data-view-target="productStatus" aria-current="false">
-          <strong>产品状态</strong>
-          <span>能用什么/未接什么</span>
         </button>
         <button class="nav-btn" type="button" data-view-target="training" aria-current="false">
           <strong>培训与看板</strong>
@@ -2276,100 +1690,22 @@
         <div>
           <p class="content-kicker">Lab Safety Assistant</p>
           <h2 id="pageTitle">平台总览</h2>
-          <p id="pageDesc">选择左侧功能，按步骤完成日常安全管理。</p>
+          <p id="pageDesc">选择左侧功能，按步骤完成演示。</p>
         </div>
-        <button class="jump-btn" type="button" id="openOnboardingBtn">查看使用引导</button>
       </header>
       <div id="liveRegion" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
-      <div class="simple-modal" id="onboardingModal" role="dialog" aria-modal="true" aria-labelledby="onboardingModalTitle">
-        <div class="simple-modal-card">
-          <div class="simple-modal-head">
-            <div>
-              <strong id="onboardingModalTitle">首次使用引导</strong>
-              <p>先选角色，再按推荐流程使用；不需要学习复杂菜单。</p>
-            </div>
-            <button class="simple-modal-close" type="button" id="closeOnboardingBtn" aria-label="关闭">×</button>
-          </div>
-          <div class="simple-modal-body">
-            <div class="onboarding-steps">
-              <div class="onboarding-step"><b>1</b><div><strong>学生怎么用</strong><span>先问安全问题，再做风险评估，最后生成开工检查；需要时完成培训题。</span></div></div>
-              <div class="onboarding-step"><b>2</b><div><strong>老师怎么用</strong><span>切到“老师”，看待审核开工、高风险提醒、未完成培训名单；名单可下载模板后上传。</span></div></div>
-              <div class="onboarding-step"><b>3</b><div><strong>管理员怎么用</strong><span>切到“管理员”，查看知识库、证据链接、测试结果，并导出验收包。</span></div></div>
-            </div>
-            <div class="simple-modal-actions" style="margin-top:16px;">
-              <button class="secondary" type="button" id="onboardingStudentBtn">学生开始</button>
-              <button class="secondary" type="button" id="onboardingTeacherBtn">老师工作台</button>
-              <button type="button" id="onboardingDoneBtn">知道了</button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <section class="view-section is-active" data-view-panel="overview">
         <section class="overview-grid">
-          <section class="welcome-hero" aria-label="项目验收欢迎页">
-            <div>
-              <span class="section-kicker">Lab Safety Assistant</span>
-              <h3>实验室安全助手平台</h3>
-              <p>面向高校实验室的安全问答、开工准入、培训留痕和验收材料工作台。当前适合课题验收、小范围试点和老师日常辅助管理。</p>
-              <div class="welcome-badges"><span>问答</span><span>准入</span><span>培训</span><span>老师工作台</span><span>验收看板</span></div>
-            </div>
-            <div class="welcome-status">
-              <div><span>当前版本</span><b id="welcomeVersion">加载中</b></div>
-              <div><span>交付状态</span><b id="welcomeAcceptance">加载中</b></div>
-              <div><span>知识库</span><b id="welcomeKbStatus">加载中</b></div>
-              <div><span>学校平台</span><b>未接入</b></div>
-            </div>
-          </section>
-          <article class="entry-card welcome-entry-card" data-welcome-role="student">
-            <span>学生入口</span>
-            <strong>先问，再判断能不能开工</strong>
-            <small>适合提安全问题、做风险评估、生成开工检查、完成培训。</small>
-            <button class="jump-btn" type="button">进入学生使用</button>
-          </article>
-          <article class="entry-card welcome-entry-card" data-welcome-role="teacher">
-            <span>老师入口</span>
-            <strong>看审核、风险和未培训名单</strong>
-            <small>适合查看待审核开工、高风险提醒、上传名单、复制未完成培训名单。</small>
-            <button class="jump-btn" type="button">进入老师工作台</button>
-          </article>
-          <article class="entry-card welcome-entry-card" data-welcome-role="admin">
-            <span>管理员入口</span>
-            <strong>看验收状态和导出材料</strong>
-            <small>适合查看知识库、证据链接、测试结果，并导出验收包。</small>
-            <button class="jump-btn" type="button">进入验收看板</button>
-          </article>
           <article class="overview-card">
             <span>当前工作场景</span>
             <strong id="currentScenarioText">还没有输入场景。</strong>
             <p>输入场景后，后续功能会自动沿用。</p>
           </article>
-          <section class="teacher-workspace-entry" aria-label="老师工作台快捷入口">
-            <div>
-              <strong>老师工作台快捷入口</strong>
-              <p>直接进入老师工作台，处理开工审核、高风险提醒和培训名单。</p>
-              <div class="guide-step-status" id="guideStepStatus">使用顺序：准备数据 → 查看工作台 → 导出清单</div>
-            </div>
-            <div class="teacher-workspace-entry-actions">
-              <button type="button" id="teacherWorkspaceModeBtn">进入老师工作台</button>
-              <button class="secondary" type="button" id="guideStepNextBtn">工作台引导下一步</button>
-            </div>
-          </section>
-          <section class="admin-acceptance-entry" id="adminAcceptanceEntry" aria-label="管理员验收看板入口">
-            <div>
-              <strong>管理员验收看板入口</strong>
-              <p>一键查看知识库、证据链接、测试结果和可导出材料。</p>
-              <div class="guide-step-status" id="adminAcceptanceStatus">使用顺序：切管理员模式 → 查看验收看板 → 导出验收包</div>
-            </div>
-            <div class="admin-acceptance-entry-actions">
-              <button type="button" id="adminAcceptanceModeBtn">进入管理员验收看板</button>
-              <button class="secondary" type="button" id="adminAcceptanceExportBtn">导出验收包</button>
-            </div>
-          </section>
           <article class="overview-card">
             <h3>常用入口</h3>
-            <p id="roleEntryIntro">选择一个入口开始。</p>
-            <div class="overview-actions" id="roleEntryActions">
+            <p>选择一个入口开始。</p>
+            <div class="overview-actions">
               <button class="jump-btn" type="button" data-view-jump="assistant">智能问答</button>
               <button class="jump-btn" type="button" data-view-jump="gate">准入阻断</button>
               <button class="jump-btn" type="button" data-view-jump="workspace">知识库状态</button>
@@ -2378,91 +1714,8 @@
           </article>
           <article class="overview-card">
             <h3>使用建议</h3>
-            <p id="roleFlowText">推荐：问答 → 风险评估 → 开工检查。</p>
-            <div class="role-flow" id="roleFlowSteps">
-              <span>问答</span><span>风险评估</span><span>开工检查</span>
-            </div>
+            <p>推荐：问答 → 风险评估 → 开工检查。</p>
           </article>
-          <section class="teacher-workbench-head" id="teacherWorkbenchHead" aria-label="老师工作台数据">
-            <div>
-              <strong>老师工作台数据</strong>
-              <span id="teacherSeedStatus">没有真实记录时，可生成示例记录快速体验。</span>
-            </div>
-            <div class="teacher-workspace-actions">
-              <button class="secondary" type="button" id="downloadTrainingRosterTemplateBtn">下载名单模板</button>
-              <label class="secondary" for="uploadTrainingRosterInput">上传培训名单 CSV</label>
-              <input type="file" id="uploadTrainingRosterInput" accept=".csv,text/csv" />
-              <button type="button" id="seedTeacherSampleBtn">生成示例数据</button>
-              <button class="secondary" type="button" id="clearTeacherSampleBtn">清空示例数据</button>
-              <button class="secondary" type="button" id="exportTeacherReportBtn">导出老师处理清单</button>
-            </div>
-          </section>
-          <section class="teacher-workbench" id="teacherWorkbench" aria-label="老师工作台">
-            <article class="teacher-task-card" id="teacherPendingCard">
-              <span>待审核开工</span>
-              <strong id="teacherPendingCount">加载中</strong>
-              <p id="teacherPendingDesc">正在读取最近的开工记录。</p>
-              <div class="teacher-card-latest" id="teacherPendingLatest"><b>最近：</b>暂无</div>
-              <button type="button" data-view-jump="gate">去审核</button>
-            </article>
-            <article class="teacher-task-card" id="teacherHighRiskCard">
-              <span>高风险提醒</span>
-              <strong id="teacherHighRiskCount">加载中</strong>
-              <p id="teacherHighRiskDesc">正在读取高风险提醒。</p>
-              <div class="teacher-card-latest" id="teacherHighRiskLatest"><b>最近：</b>暂无</div>
-              <button type="button" data-view-jump="training">看提醒</button>
-            </article>
-            <article class="teacher-task-card" id="teacherTrainingCard">
-              <span>未完成培训</span>
-              <strong id="teacherTrainingCount">加载中</strong>
-              <p id="teacherTrainingDesc">正在读取培训记录。</p>
-              <div class="teacher-card-latest" id="teacherTrainingLatest"><b>最近：</b>暂无</div>
-              <button type="button" id="openTrainingRosterModalBtn">看名单</button>
-            </article>
-          </section>
-          <section class="teacher-advice" id="teacherAdvice" aria-label="老师处理建议">
-            <strong>处理建议</strong>
-            <ol id="teacherAdviceList"><li>暂无待处理事项。</li></ol>
-          </section>
-          <div class="simple-modal" id="trainingRosterModal" role="dialog" aria-modal="true" aria-labelledby="trainingRosterModalTitle">
-            <div class="simple-modal-card">
-              <div class="simple-modal-head">
-                <div>
-                  <strong id="trainingRosterModalTitle">未完成培训名单</strong>
-                  <p id="trainingRosterModalSummary">正在读取名单...</p>
-                </div>
-                <button class="simple-modal-close" type="button" id="closeTrainingRosterModalBtn" aria-label="关闭">×</button>
-              </div>
-              <div class="simple-modal-body">
-                <div class="simple-modal-actions">
-                  <button type="button" id="copyTrainingRosterBtn">复制未完成名单</button>
-                </div>
-                <div class="roster-list" id="trainingRosterModalList"></div>
-              </div>
-            </div>
-          </div>
-          <section class="admin-acceptance-board" id="adminAcceptanceBoard" aria-label="课题验收看板">
-            <div class="admin-acceptance-head">
-              <strong>课题验收看板</strong>
-              <p>管理员视角重点看：知识库数量、证据链接、测试结果、可导出材料。</p>
-            </div>
-            <div class="acceptance-grid">
-              <article class="acceptance-card"><span>知识库条目</span><strong id="acceptanceKbCount">加载中</strong></article>
-              <article class="acceptance-card"><span>证据链接</span><strong id="acceptanceEvidenceCount">加载中</strong></article>
-              <article class="acceptance-card"><span>测试结果</span><strong id="acceptanceTestResult">加载中</strong></article>
-              <article class="acceptance-card"><span>导出材料</span><strong id="acceptanceExportStatus">可导出</strong></article>
-            </div>
-            <div class="summary-card">
-              <strong>验收口径</strong>
-              <span id="acceptanceSummary">正在读取验收状态...</span>
-            </div>
-            <div class="acceptance-actions">
-              <button type="button" id="acceptanceGoWorkspaceBtn">看知识库状态</button>
-              <button type="button" id="acceptanceGoTrainingBtn">看测试/看板</button>
-              <button type="button" id="acceptanceCheckLinksBtn">检查证据链接</button>
-              <button class="secondary" type="button" id="acceptanceExportBtn">导出验收包</button>
-            </div>
-          </section>
         </section>
       </section>
 
@@ -2513,7 +1766,7 @@
                   <button class="result-tab" type="button" data-result-target="emergency">应急</button>
                 </div>
                 <div class="result-panel is-active" data-result-panel="answer">
-                  <div id="result" class="result">等待输入问题...</div>
+                  <div id="result" class="result">等待输入演示问题...</div>
                 </div>
                 <div class="result-panel" data-result-panel="risk">
                   <div id="riskBox" class="panel">运行风险评估后，这里会显示结构化风险结果。</div>
@@ -2525,30 +1778,18 @@
                   <div id="emergencyMatch" class="panel">输入一个事故场景后，系统会自动匹配最合适的应急卡片。</div>
                 </div>
               </div>
-              <div class="record-actions">
-                <button class="btn-soft" type="button" id="saveRecordBtn">保存本次记录</button>
-                <button class="btn-soft" type="button" id="copyRecordBtn">复制记录</button>
-                <button class="btn-ghost" type="button" data-feedback="useful">有用</button>
-                <button class="btn-ghost" type="button" data-feedback="wrong_source">来源错误</button>
-              </div>
               <p id="routeInfo" class="muted"></p>
               <div id="lowConfidenceAlert" class="alert warn"></div>
             </article>
             </div>
-          </section>
         </section>
       </section>
 
       <section class="view-section" data-view-panel="gate">
-                <section class="gate-step-strip">
-          <article class="gate-step-card"><strong>第 1 步：确认场景</strong><span>沿用智能问答里的实验内容。</span></article>
-          <article class="gate-step-card"><strong>第 2 步：生成检查项</strong><span>系统列出必须满足的安全条件。</span></article>
-          <article class="gate-step-card"><strong>第 3 步：判断能否开工</strong><span>未满足关键项时直接阻断。</span></article>
-        </section>
         <section class="gate-shell">
           <div class="stack">
           <article class="card">
-            <h2>当前实验场景</h2>
+            <h2>1. 当前准入判断对象</h2>
             <p class="muted">当前准入阻断始终围绕“智能问答页”里输入的那条场景展开。这样页面切换后，用户也不会丢失上下文。</p>
             <div id="checklistScenarioText" class="panel">当前还没有输入场景，建议先去“智能问答与风险评估”页填写问题。</div>
             <div class="actions" style="margin-top: 12px;">
@@ -2574,7 +1815,7 @@
           </div>
           <div class="stack">
           <article class="card">
-            <h2>开工检查清单</h2>
+            <h2>2. 开工前检查清单</h2>
             <div class="row">
               <input id="operatorName" placeholder="操作人 / 复核人" />
               <input id="checklistNotes" placeholder="阻断说明或补充备注" />
@@ -2601,81 +1842,12 @@
           </div>
         </section>
       </section>
-      <section class="view-section" data-view-panel="productStatus">
-        <section class="section-shell">
-          <div class="section-heading">
-            <div>
-              <span class="section-kicker">Product Status</span>
-              <h2>产品状态页</h2>
-              <p>明确当前版本能做什么、还没接什么，避免误认为已经对接学校学生平台。</p>
-            </div>
-          </div>
-          <div class="product-status-grid">
-            <article class="product-status-card is-ok">
-              <strong>当前可用功能</strong>
-              <ul>
-                <li>安全问答、风险评估、开工检查</li>
-                <li>培训抽题、评分、培训记录统计</li>
-                <li>老师工作台：待审核、高风险、未完成培训</li>
-                <li>培训名单 CSV 下载、上传、查看、复制</li>
-                <li>管理员验收看板、证据链接检查、验收包导出</li>
-              </ul>
-            </article>
-            <article class="product-status-card is-gap">
-              <strong>当前未接入功能</strong>
-              <ul>
-                <li>未接学校统一身份认证</li>
-                <li>未接教务系统/学生平台</li>
-                <li>未自动同步真实班级名单</li>
-                <li>未自动同步校级培训完成状态</li>
-                <li>当前仍以本系统记录和 CSV 名单为准</li>
-              </ul>
-            </article>
-            <article class="product-status-card">
-              <strong>适合使用场景</strong>
-              <ul>
-                <li>课题验收、答辩展示、小范围试点</li>
-                <li>老师手动维护班级名单</li>
-                <li>学生在本系统完成培训和开工检查</li>
-                <li>管理员导出阶段性验收材料</li>
-              </ul>
-            </article>
-            <article class="product-status-card">
-              <strong>暂不建议使用场景</strong>
-              <ul>
-                <li>直接替代学校正式学生平台</li>
-                <li>作为唯一强制准入系统</li>
-                <li>依赖自动账号权限和统一登录的正式生产环境</li>
-              </ul>
-            </article>
-            <article class="product-status-card is-wide">
-              <strong>导出材料</strong>
-              <ul>
-                <li>整合产品状态、老师工作台、管理员验收看板、证据链接和后续计划。</li>
-              </ul>
-              <div class="acceptance-actions" style="margin-top:12px;">
-                <button type="button" id="productStatusExportBtn">导出项目验收材料包</button>
-              </div>
-            </article>
-            <article class="product-status-card is-wide">
-              <strong>当前版本信息</strong>
-              <ul>
-                <li>版本：<span id="productStatusVersion">加载中</span></li>
-                <li>交付状态：<span id="productStatusAcceptance">加载中</span></li>
-                <li>知识库：<span id="productStatusKb">加载中</span></li>
-                <li>运行通道：<span id="productStatusLane">加载中</span></li>
-              </ul>
-            </article>
-          </div>
-        </section>
-      </section>
-
       <section class="view-section" data-view-panel="workspace">
         <section class="workspace-grid">
           <div class="stack">
             <article class="card">
               <h2>1. 本地 Dify 工作区状态</h2>
-              <p class="muted">这里直接展示当前 Dify 配置状态、基础连接情况和回退口径，方便快速判断系统是否可用。</p>
+              <p class="muted">这里不再只讲“接没接上”，而是直接展示当前本地 Dify 配置状态、基础连接情况和回退口径，让答辩或演示时一眼能说明白。</p>
               <div id="workspaceStatusList" class="status-list">
                 <div class="status-item"><div><strong>状态加载中...</strong><span>正在读取知识库状态工作区状态。</span></div></div>
               </div>
@@ -2726,7 +1898,7 @@
               <div class="panel">
                 <ul>
                   <li>如果 Dify 未配置：先明确是否恢复本机 `127.0.0.1:8080` 的本地 Dify。</li>
-                  <li>如果知识命中偏少：优先补高频问题对应条目，不要先大面积重写全部知识库。</li>
+                  <li>如果知识命中偏少：优先补“高频演示问题”对应条目，不要先大面积重写全部知识库。</li>
                   <li>如果页面继续要像产品：下一轮可把培训与事故复盘做成更明显的列表 + 表单双栏工作台。</li>
                 </ul>
               </div>
@@ -2744,7 +1916,7 @@
               <h2>先看培训准备，再看管理结果</h2>
               <p>这一页不再把培训和看板简单堆在一起，而是明确分成“培训动作”和“管理结果”两层：左侧更偏操作，右侧更偏管理洞察。</p>
             </div>
-            <div class="inline-tip">使用时重点看三件事：培训能抽题评分、看板能看到风险趋势、数据能反向驱动知识库补强。</div>
+            <div class="inline-tip">答辩展示时，建议只讲三件事：培训能抽题评分、看板能看到风险趋势、这些数据会反过来驱动知识库补强。</div>
           </article>
         </section>
         <section class="training-shell">
@@ -2762,7 +1934,7 @@
               <button class="btn-secondary" id="startQuizBtn">开始抽题</button>
               <button class="btn-primary" id="submitQuizBtn" disabled>提交评分</button>
             </div>
-            <div id="quizBox" class="panel" style="margin-top: 10px;">点击“开始抽题”后，这里会生成一组培训题目。</div>
+            <div id="quizBox" class="panel" style="margin-top: 10px;">点击“开始抽题”后，这里会生成一组演示题目。</div>
             <div id="quizResult" class="panel" style="margin-top: 10px;">提交后会显示成绩、薄弱项和错题复盘。</div>
             </article>
 
@@ -2785,7 +1957,7 @@
               <div class="section-heading">
                 <span class="section-caption">管理端视角</span>
                 <h2>3. 管理端看板</h2>
-                <p>这里用于老师和管理员日常查看。优先关注阻断率、培训通过率、低置信问题和最近高风险场景。</p>
+                <p>这部分更适合答辩时讲“老师和管理员能看到什么”。展示时优先指出阻断率、培训通过率、低置信问题和最近高风险场景。</p>
               </div>
               <div id="dashboardSummary" class="summary-grid">
                 <div class="summary-card">
@@ -2797,7 +1969,7 @@
                   <span id="dashboardSummaryFocus">正在汇总最需要优先关注的事项...</span>
                 </div>
                 <div class="summary-card">
-                  <strong>产品亮点</strong>
+                  <strong>答辩时怎么说</strong>
                   <span id="dashboardSummaryPitch">正在生成适合展示的一句话口径...</span>
                 </div>
               </div>
@@ -2889,7 +2061,7 @@
                   <h2>1. 事故复盘录入</h2>
                   <p>这里不再把所有字段直接堆成一张长表单，而是借鉴事故与安全产品的录入方式：先抓住事件摘要，再补时间线、原因和整改动作。</p>
                 </div>
-                <div class="inline-tip">日常使用不必一开始展开本页；需要追溯时，按“发生了什么 → 怎么处置 → 后续怎么改”记录即可。</div>
+                <div class="inline-tip">演示时默认不用展开本页；如果老师追问“有没有闭环和追溯”，再打开这里，按“发生了什么 → 怎么处置 → 后续怎么改”来讲就够了。</div>
                 <div class="incident-highlight">
                   <div class="incident-highlight-card">
                     <strong>先录核心摘要</strong>
@@ -3034,23 +2206,11 @@
     const questionInput = document.getElementById('question');
     const result = document.getElementById('result');
     const routeInfo = document.getElementById('routeInfo');
-    let latestRecord = null;
     const metaVersion = document.getElementById('metaVersion');
     const metaAcceptance = document.getElementById('metaAcceptance');
     const metaKbSize = document.getElementById('metaKbSize');
     const metaLane = document.getElementById('metaLane');
-    const productStatusVersion = document.getElementById('productStatusVersion');
-    const productStatusAcceptance = document.getElementById('productStatusAcceptance');
-    const productStatusKb = document.getElementById('productStatusKb');
-    const productStatusLane = document.getElementById('productStatusLane');
-    const productStatusExportBtn = document.getElementById('productStatusExportBtn');
-    const welcomeVersion = document.getElementById('welcomeVersion');
-    const welcomeAcceptance = document.getElementById('welcomeAcceptance');
-    const welcomeKbStatus = document.getElementById('welcomeKbStatus');
-    const welcomeEntryCards = document.querySelectorAll('[data-welcome-role]');
     const lowConfidenceAlert = document.getElementById('lowConfidenceAlert');
-    const saveRecordBtn = document.getElementById('saveRecordBtn');
-    const copyRecordBtn = document.getElementById('copyRecordBtn');
     const riskBox = document.getElementById('riskBox');
     const citationBox = document.getElementById('citationBox');
     const checklistItems = document.getElementById('checklistItems');
@@ -3108,71 +2268,10 @@
     const sidebar = document.querySelector('.sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const backToTopBtn = document.getElementById('backToTopBtn');
-    const oneClickGuideBtn = document.getElementById('oneClickGuideBtn');
     const liveRegion = document.getElementById('liveRegion');
-    const teacherWorkspaceModeBtn = document.getElementById('teacherWorkspaceModeBtn');
-    const guideStepNextBtn = document.getElementById('guideStepNextBtn');
-    const guideStepStatus = document.getElementById('guideStepStatus');
-    const adminAcceptanceEntry = document.getElementById('adminAcceptanceEntry');
-    const adminAcceptanceStatus = document.getElementById('adminAcceptanceStatus');
-    const adminAcceptanceModeBtn = document.getElementById('adminAcceptanceModeBtn');
-    const adminAcceptanceExportBtn = document.getElementById('adminAcceptanceExportBtn');
-    const openOnboardingBtn = document.getElementById('openOnboardingBtn');
-    const onboardingModal = document.getElementById('onboardingModal');
-    const closeOnboardingBtn = document.getElementById('closeOnboardingBtn');
-    const onboardingDoneBtn = document.getElementById('onboardingDoneBtn');
-    const onboardingStudentBtn = document.getElementById('onboardingStudentBtn');
-    const onboardingTeacherBtn = document.getElementById('onboardingTeacherBtn');
-    const roleButtons = document.querySelectorAll('[data-role]');
-    const roleHint = document.getElementById('roleHint');
-    const roleEntryIntro = document.getElementById('roleEntryIntro');
-    const roleEntryActions = document.getElementById('roleEntryActions');
-    const roleFlowText = document.getElementById('roleFlowText');
-    const roleFlowSteps = document.getElementById('roleFlowSteps');
-    const teacherWorkbench = document.getElementById('teacherWorkbench');
-    const teacherWorkbenchHead = document.getElementById('teacherWorkbenchHead');
-    const seedTeacherSampleBtn = document.getElementById('seedTeacherSampleBtn');
-    const clearTeacherSampleBtn = document.getElementById('clearTeacherSampleBtn');
-    const exportTeacherReportBtn = document.getElementById('exportTeacherReportBtn');
-    const downloadTrainingRosterTemplateBtn = document.getElementById('downloadTrainingRosterTemplateBtn');
-    const uploadTrainingRosterInput = document.getElementById('uploadTrainingRosterInput');
-    const teacherSeedStatus = document.getElementById('teacherSeedStatus');
-    const teacherPendingCard = document.getElementById('teacherPendingCard');
-    const teacherPendingCount = document.getElementById('teacherPendingCount');
-    const teacherPendingDesc = document.getElementById('teacherPendingDesc');
-    const teacherPendingLatest = document.getElementById('teacherPendingLatest');
-    const teacherHighRiskCard = document.getElementById('teacherHighRiskCard');
-    const teacherHighRiskCount = document.getElementById('teacherHighRiskCount');
-    const teacherHighRiskDesc = document.getElementById('teacherHighRiskDesc');
-    const teacherHighRiskLatest = document.getElementById('teacherHighRiskLatest');
-    const teacherTrainingCard = document.getElementById('teacherTrainingCard');
-    const teacherTrainingCount = document.getElementById('teacherTrainingCount');
-    const teacherTrainingDesc = document.getElementById('teacherTrainingDesc');
-    const teacherTrainingLatest = document.getElementById('teacherTrainingLatest');
-    const openTrainingRosterModalBtn = document.getElementById('openTrainingRosterModalBtn');
-    const trainingRosterModal = document.getElementById('trainingRosterModal');
-    const closeTrainingRosterModalBtn = document.getElementById('closeTrainingRosterModalBtn');
-    const copyTrainingRosterBtn = document.getElementById('copyTrainingRosterBtn');
-    const trainingRosterModalSummary = document.getElementById('trainingRosterModalSummary');
-    const trainingRosterModalList = document.getElementById('trainingRosterModalList');
-    const teacherAdvice = document.getElementById('teacherAdvice');
-    const teacherAdviceList = document.getElementById('teacherAdviceList');
-    const adminAcceptanceBoard = document.getElementById('adminAcceptanceBoard');
-    const acceptanceKbCount = document.getElementById('acceptanceKbCount');
-    const acceptanceEvidenceCount = document.getElementById('acceptanceEvidenceCount');
-    const acceptanceTestResult = document.getElementById('acceptanceTestResult');
-    const acceptanceExportStatus = document.getElementById('acceptanceExportStatus');
-    const acceptanceSummary = document.getElementById('acceptanceSummary');
-    const acceptanceGoWorkspaceBtn = document.getElementById('acceptanceGoWorkspaceBtn');
-    const acceptanceGoTrainingBtn = document.getElementById('acceptanceGoTrainingBtn');
-    const acceptanceCheckLinksBtn = document.getElementById('acceptanceCheckLinksBtn');
-    const acceptanceExportBtn = document.getElementById('acceptanceExportBtn');
 
     let checklistCache = [];
     let quizSession = null;
-    let latestTrainingStats = null;
-    let latestTrainingRosterStatus = null;
-    let guideStepStep = 0;
     const riskLevelMap = {
       low: '低',
       'medium-low': '较低',
@@ -3209,68 +2308,9 @@
       assistant: { title: '智能问答', desc: '输入场景，查看回答、风险和来源。' },
       gate: { title: '准入阻断', desc: '生成开工检查清单。' },
       workspace: { title: '知识库状态', desc: '查看 Dify 和知识库情况。' },
-      productStatus: { title: '产品状态', desc: '查看当前可用功能、未接入功能和适合使用场景。' },
       training: { title: '培训与看板', desc: '查看培训和统计结果。' },
       incident: { title: '事故复盘', desc: '记录事故和整改状态。' }
     };
-
-    const roleConfigs = {
-      student: {
-        hint: '按学生视角：先问清楚，再判断能不能开工。',
-        intro: '学生常用：提问、检查、培训。',
-        flow: '推荐：问答 → 风险评估 → 开工检查。',
-        steps: ['问答', '风险评估', '开工检查'],
-        entries: [
-          ['assistant', '我有安全问题'],
-          ['gate', '我要开始实验'],
-          ['training', '我要学习/考试']
-        ]
-      },
-      teacher: {
-        hint: '按老师视角：先看高风险，再处理未通过和整改。',
-        intro: '老师常用：审核、培训、复盘。',
-        flow: '推荐：看高风险 → 看培训 → 看整改。',
-        steps: ['高风险', '培训情况', '整改跟进'],
-        entries: [
-          ['training', '查看高风险'],
-          ['gate', '审核开工'],
-          ['incident', '跟进整改']
-        ]
-      },
-      admin: {
-        hint: '按管理员视角：重点看验收材料是否够完整。',
-        intro: '管理员常用：验收看板、证据链接、导出材料。',
-        flow: '推荐：看知识库 → 查证据链接 → 导出材料。',
-        steps: ['知识库数量', '证据链接', '测试结果'],
-        entries: [
-          ['workspace', '看知识库'],
-          ['training', '看测试结果'],
-          ['incident', '看复盘材料']
-        ]
-      }
-    };
-
-    function applyRole(roleName) {
-      const role = roleConfigs[roleName] ? roleName : 'student';
-      const config = roleConfigs[role];
-      localStorage.setItem('labSafetyRole', role);
-      roleButtons.forEach((button) => button.classList.toggle('is-active', button.dataset.role === role));
-      if (roleHint) roleHint.textContent = config.hint;
-      if (roleEntryIntro) roleEntryIntro.textContent = config.intro;
-      if (roleFlowText) roleFlowText.textContent = config.flow;
-      if (teacherWorkbench) teacherWorkbench.classList.toggle('is-visible', role === 'teacher');
-      if (teacherWorkbenchHead) teacherWorkbenchHead.classList.toggle('is-visible', role === 'teacher');
-      if (teacherAdvice) teacherAdvice.classList.toggle('is-visible', role === 'teacher');
-      if (adminAcceptanceEntry) adminAcceptanceEntry.classList.toggle('is-visible', role === 'admin');
-      if (adminAcceptanceBoard) adminAcceptanceBoard.classList.toggle('is-visible', role === 'admin');
-      if (roleFlowSteps) roleFlowSteps.innerHTML = config.steps.map(step => `<span>${escapeHtml(step)}</span>`).join('');
-      if (roleEntryActions) {
-        roleEntryActions.innerHTML = config.entries.map(([target, label]) => `<button class="jump-btn" type="button" data-view-jump="${target}">${escapeHtml(label)}</button>`).join('');
-        roleEntryActions.querySelectorAll('[data-view-jump]').forEach((button) => {
-          button.addEventListener('click', () => setActiveView(button.dataset.viewJump || 'overview'));
-        });
-      }
-    }
 
     function announce(message) {
       if (!liveRegion || !message) return;
@@ -3278,21 +2318,6 @@
       window.setTimeout(() => {
         liveRegion.textContent = message;
       }, 30);
-    }
-
-    function openOnboarding(markSeen = false) {
-      if (onboardingModal) onboardingModal.classList.add('is-visible');
-      if (markSeen) localStorage.setItem('labSafetyOnboardingSeen', 'true');
-    }
-
-    function closeOnboarding() {
-      if (onboardingModal) onboardingModal.classList.remove('is-visible');
-      localStorage.setItem('labSafetyOnboardingSeen', 'true');
-    }
-
-    function runFirstVisitOnboarding() {
-      if (localStorage.getItem('labSafetyOnboardingSeen') === 'true') return;
-      window.setTimeout(() => openOnboarding(true), 450);
     }
 
     function setButtonBusy(button, busy, idleText, busyText = '处理中...') {
@@ -3470,7 +2495,7 @@
       }
       return {
         title: '当前回答支撑不足',
-        detail: '建议继续补知识库，并优先覆盖高频问题。'
+        detail: '建议继续补知识库，并优先覆盖高频演示问题。'
       };
     }
 
@@ -3497,7 +2522,7 @@
       if (!Array.isArray(items) || items.length === 0) {
         return {
           summary: '当前没有命中候选条目，说明这个问题更适合优先补知识库。',
-          recommendation: '建议先补高频问题对应条目，再看是否需要补分类标签和危险源标签。'
+          recommendation: '建议先补高频演示问题对应条目，再看是否需要补分类标签和危险源标签。'
         };
       }
       const top = items[0] || {};
@@ -3529,7 +2554,7 @@
         ? `当前管理端最明显的结论是：高风险场景阻断占比为 ${blockRate}，系统更偏“先拦住风险，再允许开工”。`
         : '当前管理端更适合用来看阻断、培训和复盘是否形成闭环。';
 
-      let focus = '当前没有明显的高优先级告警，可继续补充真实记录让看板更饱满。';
+      let focus = '当前没有明显的高优先级告警，可继续补演示数据让看板更饱满。';
       if (lowConfidenceCount > 0) {
         focus = `当前最需要优先关注的是低置信问题积压，共 ${lowConfidenceCount} 条，说明知识库仍需继续补强。`;
       } else if (Number(openIncidents || 0) > 0) {
@@ -3538,7 +2563,7 @@
         focus = `最近高风险场景以“${latestRisk.scenario}”为代表，当前口径更适合强调高风险实验默认先阻断。`;
       }
 
-      const pitch = `系统不仅能答和拦，还能把培训、低置信补强和复盘状态沉淀成管理看板；当前培训通过率 ${trainingPass || '0%'}，未闭环复盘 ${openIncidents || '0'} 条，逾期整改 ${overdueCount || '0'} 条。`;
+      const pitch = `答辩时可以直接说：系统不仅能答和拦，还能把培训、低置信补强和复盘状态沉淀成管理看板；当前培训通过率 ${trainingPass || '0%'}，未闭环复盘 ${openIncidents || '0'} 条，逾期整改 ${overdueCount || '0'} 条。`;
 
       return { main, focus, pitch };
     }
@@ -3566,82 +2591,6 @@
       return checked ? checked.value : 'lab';
     }
 
-
-    function takeLinesAfter(label, text, maxItems = 3) {
-      const lines = String(text || '').split(/\r?\n/).map(v => v.trim()).filter(Boolean);
-      const start = lines.findIndex(v => v.replace(/[:：]$/, '') === label);
-      if (start < 0) return [];
-      const out = [];
-      for (let i = start + 1; i < lines.length; i += 1) {
-        const line = lines[i];
-        if (/^[\u4e00-\u9fa5A-Za-z ]+[:：]$/.test(line) && out.length) break;
-        const cleaned = line.replace(/^[-*]\s*/, '').replace(/^\d+[.、]\s*/, '').trim();
-        if (cleaned) out.push(cleaned);
-        if (out.length >= maxItems) break;
-      }
-      return out;
-    }
-
-    function renderShortAnswer(target, rawText, citations = [], meta = {}) {
-      const text = String(rawText || '').trim();
-      if (!text) {
-        target.textContent = '没有返回内容。';
-        return;
-      }
-      const lines = text.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
-      let conclusion = lines.find(v => !/^(结论|步骤|禁止事项|应急升级|参考依据|备注)[:：]?$/.test(v)) || '已生成安全建议。';
-      conclusion = conclusion.replace(/^结论[:：]?\s*/, '').trim();
-      const riskLabel = displayRisk(meta.risk_level) || '待确认';
-      const decision = /禁止|不能|不可|阻断|暂停|高风险|High/i.test(conclusion + ' ' + riskLabel)
-        ? '暂不建议开工'
-        : (/低|Low/i.test(riskLabel) ? '可进入开工准备' : '需要老师确认');
-      const decisionClass = decision.includes('可进入') ? 'ok' : (decision.includes('老师') ? 'warn' : '');
-      const reasons = takeLinesAfter('禁止事项', text, 3);
-      const nextSteps = takeLinesAfter('步骤', text, 3);
-      const evidence = (citations || []).slice(0, 3);
-      latestRecord = {
-        time: new Date().toLocaleString(),
-        scenario: questionInput.value.trim(),
-        decision,
-        risk: riskLabel,
-        conclusion,
-        reasons: reasons.length ? reasons : ['存在实验室安全风险，需要先确认防护、审批和现场条件。'],
-        nextSteps: nextSteps.length ? nextSteps : ['暂停操作。', '确认 SOP、PPE 和现场条件。', '必要时联系老师或管理员。'],
-        evidence: evidence.map(item => item.source_title || item.title || item.kb_id || '来源')
-      };
-      target.innerHTML = DOMPurify.sanitize(`
-        <div class="short-answer">
-          ${['High', 'Critical', '高', '极高'].includes(riskLabel) || decision !== '可以继续' ? `
-            <section class="teacher-alert-box">
-              <strong>先联系老师确认</strong>
-              当前属于高风险或条件未确认场景，未完成审批、值守、防护和现场条件确认前，不建议自行开工。
-            </section>
-          ` : ''}
-          <section class="answer-block">
-            <span class="decision-badge ${decisionClass}">${escapeHtml(decision)} · 风险：${escapeHtml(riskLabel)}</span>
-            <h4>结论</h4>
-            <strong class="answer-conclusion">${escapeHtml(conclusion)}</strong>
-          </section>
-          <section class="answer-block">
-            <h4>原因</h4>
-            <ul>${latestRecord.reasons.map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>
-          </section>
-          <section class="answer-block">
-            <h4>下一步</h4>
-            <ul>${latestRecord.nextSteps.map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>
-          </section>
-          <section class="answer-block">
-            <h4>依据</h4>
-            ${evidence.length ? evidence.map((item, index) => `
-              <a class="evidence-card-link" href="${escapeHtml(item.source_url || '#')}" target="_blank" rel="noopener noreferrer">
-                <span>${index + 1}. ${escapeHtml(item.source_title || item.title || item.kb_id || '来源')}</span>
-                <small>打开</small>
-              </a>
-            `).join('') : '<p class="muted">暂无可展示来源。</p>'}
-          </section>
-        </div>
-      `);
-    }
     function renderMarkdown(target, rawText) {
       const text = String(rawText || '').trim();
       if (!text) {
@@ -3739,130 +2688,23 @@
       return data;
     }
 
-    function readFileAsText(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ''));
-        reader.onerror = () => reject(new Error('文件读取失败。'));
-        reader.readAsText(file, 'utf-8');
-      });
-    }
-
-    async function checkAcceptanceEvidenceLinks() {
-      if (!acceptanceCheckLinksBtn) return;
-      setButtonBusy(acceptanceCheckLinksBtn, true, '检查证据链接', '检查中...');
-      try {
-        const resp = await fetch('/api/evidence/link_status?limit=30');
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data.detail || '证据链接检查失败。');
-        if (acceptanceEvidenceCount) {
-          acceptanceEvidenceCount.textContent = `${data.reachable}/${data.checked} 可访问`;
-        }
-        if (acceptanceSummary) {
-          acceptanceSummary.textContent = `已抽查 ${data.checked} 条证据链接，可访问 ${data.reachable} 条，失败 ${data.failed} 条。`;
-        }
-        announce('证据链接检查完成。');
-      } catch (err) {
-        if (acceptanceEvidenceCount) acceptanceEvidenceCount.textContent = '检查失败';
-        if (acceptanceSummary) acceptanceSummary.textContent = `证据链接检查失败：${err.message}`;
-      } finally {
-        setButtonBusy(acceptanceCheckLinksBtn, false, '检查证据链接');
-      }
-    }
-
-    function updateAcceptanceSummary() {
-      if (!acceptanceSummary) return;
-      const kb = acceptanceKbCount?.textContent || '-';
-      const evidence = acceptanceEvidenceCount?.textContent || '-';
-      const test = acceptanceTestResult?.textContent || '-';
-      acceptanceSummary.textContent = `当前可展示知识库 ${kb}，证据链接 ${evidence}，测试结果 ${test}。适合用于项目验收和日常检查。`;
-    }
-
-    async function loadProductMeta() {
+    async function loadDemoMeta() {
       try {
         const resp = await fetch('/api/meta');
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.detail || '加载封版信息失败。');
-        if (metaVersion) metaVersion.textContent = data.app_version || '-';
-        if (metaAcceptance) metaAcceptance.textContent = `${data.acceptance_status || '-'} / ${data.formal_eval_score || '-'}`;
-        if (metaKbSize) metaKbSize.textContent = `${data.knowledge_base_imported || 0} 导入 / ${data.knowledge_base_rows || 0} 本地`;
-        if (metaLane) metaLane.textContent = data.chat_lane_lab || '-';
-        if (productStatusVersion) productStatusVersion.textContent = data.app_version || '-';
-        if (productStatusAcceptance) productStatusAcceptance.textContent = `${data.acceptance_status || '-'} / ${data.formal_eval_score || '-'}`;
-        if (productStatusKb) productStatusKb.textContent = `${data.knowledge_base_imported || 0} 导入 / ${data.knowledge_base_rows || 0} 本地`;
-        if (productStatusLane) productStatusLane.textContent = data.chat_lane_lab || '-';
-        if (welcomeVersion) welcomeVersion.textContent = data.app_version || '-';
-        if (welcomeAcceptance) welcomeAcceptance.textContent = data.acceptance_status || '-';
-        if (welcomeKbStatus) welcomeKbStatus.textContent = `${data.knowledge_base_imported || 0} 条`;
-        if (acceptanceKbCount) acceptanceKbCount.textContent = `${data.knowledge_base_imported || 0} / ${data.knowledge_base_rows || 0}`;
-        if (acceptanceTestResult) acceptanceTestResult.textContent = data.formal_eval_score || '-';
-        if (acceptanceExportStatus) acceptanceExportStatus.textContent = data.acceptance_status || '可导出';
-        updateAcceptanceSummary();
+        metaVersion.textContent = data.app_version || '-';
+        metaAcceptance.textContent = `${data.acceptance_status || '-'} / ${data.formal_eval_score || '-'}`;
+        metaKbSize.textContent = `${data.knowledge_base_imported || 0} 导入 / ${data.knowledge_base_rows || 0} 本地`;
+        metaLane.textContent = data.chat_lane_lab || '-';
       } catch (err) {
-        if (metaVersion) metaVersion.textContent = '加载失败';
-        if (metaAcceptance) metaAcceptance.textContent = '加载失败';
-        if (metaKbSize) metaKbSize.textContent = '加载失败';
-        if (metaLane) metaLane.textContent = '加载失败';
-        if (productStatusVersion) productStatusVersion.textContent = '加载失败';
-        if (productStatusAcceptance) productStatusAcceptance.textContent = '加载失败';
-        if (productStatusKb) productStatusKb.textContent = '加载失败';
-        if (productStatusLane) productStatusLane.textContent = '加载失败';
-        if (welcomeVersion) welcomeVersion.textContent = '加载失败';
-        if (welcomeAcceptance) welcomeAcceptance.textContent = '加载失败';
-        if (welcomeKbStatus) welcomeKbStatus.textContent = '加载失败';
-        if (acceptanceKbCount) acceptanceKbCount.textContent = '加载失败';
-        if (acceptanceTestResult) acceptanceTestResult.textContent = '加载失败';
-        updateAcceptanceSummary();
+        metaVersion.textContent = '加载失败';
+        metaAcceptance.textContent = '加载失败';
+        metaKbSize.textContent = '加载失败';
+        metaLane.textContent = '加载失败';
       }
     }
 
-
-    function formatLatestRecord() {
-      if (!latestRecord) return '';
-      return [
-        `时间：${latestRecord.time}`,
-        `场景：${latestRecord.scenario}`,
-        `结论：${latestRecord.decision}`,
-        `风险：${latestRecord.risk}`,
-        `说明：${latestRecord.conclusion}`,
-        `原因：${latestRecord.reasons.join('；')}`,
-        `下一步：${latestRecord.nextSteps.join('；')}`,
-        `依据：${latestRecord.evidence.join('；') || '暂无'}`
-      ].join('\n');
-    }
-
-    function saveLatestRecord() {
-      const text = formatLatestRecord();
-      if (!text) {
-        announce('当前还没有可保存的记录。');
-        return;
-      }
-      const records = JSON.parse(localStorage.getItem('labSafetyRecords') || '[]');
-      records.unshift(latestRecord);
-      localStorage.setItem('labSafetyRecords', JSON.stringify(records.slice(0, 50)));
-      announce('本次记录已保存到本机浏览器。');
-    }
-
-    async function copyLatestRecord() {
-      const text = formatLatestRecord();
-      if (!text) {
-        announce('当前还没有可复制的记录。');
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(text);
-        announce('记录已复制。');
-      } catch (_) {
-        announce('复制失败，请手动选择结果文本。');
-      }
-    }
-
-    function submitFeedback(type) {
-      const feedback = JSON.parse(localStorage.getItem('labSafetyFeedback') || '[]');
-      feedback.unshift({ time: new Date().toLocaleString(), type, scenario: questionInput.value.trim(), record: latestRecord });
-      localStorage.setItem('labSafetyFeedback', JSON.stringify(feedback.slice(0, 100)));
-      announce(type === 'useful' ? '已记录：这个回答有用。' : '已记录：来源可能需要人工复核。');
-    }
     async function ask() {
       const question = questionInput.value.trim();
       if (!question) return;
@@ -3873,7 +2715,7 @@
       try {
         const data = await postJson('/api/chat', { mode: getMode(), question });
         setActiveResultPanel('answer');
-        renderShortAnswer(result, data.answer || '', data.citations || [], data);
+        renderMarkdown(result, data.answer || '');
         routeInfo.textContent = `链路=${data.model || '-'} | 决策=${data.decision || '-'} | 规则=${data.matched_rule_id || '-'} | 风险=${displayRisk(data.risk_level)}`;
         showLowConfidence(data.low_confidence, data.low_confidence_reason);
         renderCitations(data.citations || []);
@@ -3998,14 +2840,13 @@
         setButtonBusy(submitChecklistBtn, true, '提交清单', '提交中...');
         const data = await postJson('/api/checklist/submit', {
           scenario,
-          operator: document.getElementById('operatorName').value || '未命名用户',
+          operator: document.getElementById('operatorName').value || '演示用户',
           notes: document.getElementById('checklistNotes').value || '',
           checklist
         });
         checklistStatus.style.display = 'block';
         checklistStatus.className = `alert ${data.allow_start ? 'ok' : 'bad'}`;
-        checklistStatus.innerHTML = `<strong>${data.allow_start ? '绿色：可以开工' : '红色：禁止开工'}</strong><br><br><strong>未满足条件：</strong>${data.blocking_reasons.length ? `<ul>${data.blocking_reasons.map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>` : '暂无'}<strong>下一步：</strong><ul>${(data.next_actions || []).map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>`;
-        latestRecord = { time: new Date().toLocaleString(), scenario, decision: data.allow_start ? '可以开工' : '禁止开工', risk: displayRisk(data.risk_level), conclusion: data.allow_start ? '清单通过，可进入开工准备' : '清单阻断，暂不可开工', reasons: data.blocking_reasons || [], nextSteps: data.next_actions || [], evidence: ['开工检查记录'] };
+        checklistStatus.innerHTML = `<strong>${data.allow_start ? '清单通过，可进入开工准备' : '清单阻断，暂不可开工'}</strong><br>${(data.next_actions || []).join('<br>')}${data.blocking_reasons.length ? `<br><br>阻断原因：${data.blocking_reasons.join(' | ')}` : ''}`;
         if (gateReadinessText) gateReadinessText.textContent = data.allow_start ? '当前允许进入开工准备' : '当前已被阻断，暂不可开工';
         loadAdminDashboard();
         announce(data.allow_start ? '清单已通过。' : '清单已阻断，当前不可开工。');
@@ -4071,7 +2912,7 @@
     async function startQuiz() {
       setButtonBusy(startQuizBtn, true, '开始抽题', '抽题中...');
       quizBox.classList.add('is-loading');
-      quizBox.textContent = '正在生成培训题目，请稍候...';
+      quizBox.textContent = '正在生成演示题目，请稍候...';
       try {
         const limit = Math.max(3, Math.min(10, Number(document.getElementById('quizLimit').value || 5)));
         const resp = await fetch(`/api/training/questions?limit=${limit}`);
@@ -4098,7 +2939,7 @@
         setButtonBusy(submitQuizBtn, true, '提交评分', '评分中...');
         const data = await postJson('/api/training/submit', {
           session_id: quizSession.session_id,
-          participant: document.getElementById('participantName').value || '未命名用户',
+          participant: document.getElementById('participantName').value || '演示用户',
           answers
         });
         quizResult.innerHTML = `
@@ -4107,8 +2948,7 @@
           <div>${(data.recommended_actions || []).join('<br>')}</div>
           ${(data.review || []).map(item => `<div class="review-item"><strong>${item.correct ? '答对' : '需复习'}：</strong>${item.prompt}<br><span class="muted">${item.explanation}</span></div>`).join('')}
         `;
-        await Promise.all([loadTrainingStats(), loadTrainingRosterStatus()]);
-        await loadAdminDashboard();
+        await Promise.all([loadTrainingStats(), loadAdminDashboard()]);
         announce(data.passed ? '培训评分已完成，当前结果为通过。' : '培训评分已完成，当前结果为需要复训。');
       } catch (err) {
         quizResult.textContent = err.message;
@@ -4159,14 +2999,10 @@
 
         renderTagCloud(workspaceTopCategories, data.top_categories || [], '当前没有可展示的分类统计。');
         renderTagCloud(workspaceTopHazards, data.top_hazards || [], '当前没有可展示的危险源统计。');
-        if (acceptanceEvidenceCount) acceptanceEvidenceCount.textContent = `${data.kb_rows || 0} 条`;
-        updateAcceptanceSummary();
       } catch (err) {
         workspaceStatusList.innerHTML = `<div class="status-item"><div><strong>状态加载失败</strong><span>${escapeHtml(err.message)}</span></div><div class="status-badge bad">失败</div></div>`;
         renderTagCloud(workspaceTopCategories, [], '分类统计加载失败。');
         renderTagCloud(workspaceTopHazards, [], '危险源统计加载失败。');
-        if (acceptanceEvidenceCount) acceptanceEvidenceCount.textContent = '加载失败';
-        updateAcceptanceSummary();
       } finally {
         setButtonBusy(refreshWorkspaceBtn, false, '刷新工作区状态');
       }
@@ -4238,276 +3074,11 @@
       }
     }
 
-    async function seedTeacherSampleData() {
-      if (!seedTeacherSampleBtn) return;
-      setButtonBusy(seedTeacherSampleBtn, true, '生成示例数据', '生成中...');
-      if (teacherSeedStatus) teacherSeedStatus.textContent = '正在写入示例记录...';
-      try {
-        const data = await postJson('/api/sample/teacher-seed', {});
-        await Promise.all([loadTrainingStats(), loadTrainingRosterStatus()]);
-        await Promise.all([loadAdminDashboard(), loadIncidents()]);
-        if (teacherSeedStatus) teacherSeedStatus.textContent = data.message || '示例数据已生成。';
-        announce('老师工作台数据已生成。');
-      } catch (err) {
-        if (teacherSeedStatus) teacherSeedStatus.textContent = `生成失败：${err.message}`;
-        announce(`示例数据生成失败：${err.message}`);
-      } finally {
-        setButtonBusy(seedTeacherSampleBtn, false, '生成示例数据');
-      }
-    }
-
-    async function clearTeacherSampleData() {
-      if (!clearTeacherSampleBtn) return;
-      setButtonBusy(clearTeacherSampleBtn, true, '清空示例数据', '清空中...');
-      if (teacherSeedStatus) teacherSeedStatus.textContent = '正在清空示例记录...';
-      try {
-        const data = await postJson('/api/sample/teacher-clear', {});
-        await Promise.all([loadTrainingStats(), loadTrainingRosterStatus()]);
-        await Promise.all([loadAdminDashboard(), loadIncidents()]);
-        if (teacherSeedStatus) teacherSeedStatus.textContent = data.message || '示例数据已清空。';
-        announce('老师工作台数据已清空。');
-      } catch (err) {
-        if (teacherSeedStatus) teacherSeedStatus.textContent = `清空失败：${err.message}`;
-        announce(`示例数据清空失败：${err.message}`);
-      } finally {
-        setButtonBusy(clearTeacherSampleBtn, false, '清空示例数据');
-      }
-    }
-
-    async function uploadTrainingRoster(file) {
-      if (!file) return;
-      if (teacherSeedStatus) teacherSeedStatus.textContent = '正在导入培训名单...';
-      try {
-        const csvText = await readFileAsText(file);
-        const data = await postJson('/api/training/roster_upload', { csv_text: csvText });
-        latestTrainingRosterStatus = data.status || null;
-        await loadAdminDashboard();
-        if (teacherSeedStatus) teacherSeedStatus.textContent = data.message || '培训名单已导入。';
-        announce('培训名单已导入。');
-      } catch (err) {
-        if (teacherSeedStatus) teacherSeedStatus.textContent = `导入失败：${err.message}`;
-        announce(`培训名单导入失败：${err.message}`);
-      } finally {
-        if (uploadTrainingRosterInput) uploadTrainingRosterInput.value = '';
-      }
-    }
-
-    function enterTeacherWorkspaceMode() {
-      applyRole('teacher');
-      setActiveView('overview');
-      if (teacherWorkbenchHead) {
-        teacherWorkbenchHead.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      announce('已进入老师工作台快捷入口。');
-    }
-
-    async function enterAdminAcceptanceMode() {
-      applyRole('admin');
-      setActiveView('overview');
-      if (adminAcceptanceStatus) adminAcceptanceStatus.textContent = '正在刷新验收看板数据...';
-      try {
-        await Promise.all([loadProductMeta(), loadWorkspaceStatus(), loadAdminDashboard()]);
-        if (adminAcceptanceStatus) adminAcceptanceStatus.textContent = '使用顺序：切管理员模式 → 查看验收看板 → 导出验收包';
-      } catch (err) {
-        if (adminAcceptanceStatus) adminAcceptanceStatus.textContent = `看板刷新失败：${err.message}`;
-      }
-      if (adminAcceptanceBoard) {
-        adminAcceptanceBoard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      announce('已进入管理员验收看板入口。');
-    }
-
-    async function runGuideNextStep() {
-      if (!guideStepNextBtn) return;
-      setButtonBusy(guideStepNextBtn, true, '工作台引导下一步', '处理中...');
-      try {
-        if (guideStepStep === 0) {
-          if (guideStepStatus) guideStepStatus.textContent = '第 1 步：正在准备示例数据...';
-          await seedTeacherSampleData();
-          guideStepStep = 1;
-          if (guideStepStatus) guideStepStatus.textContent = '第 1 步完成：数据已准备。下一步看老师工作台。';
-        } else if (guideStepStep === 1) {
-          enterTeacherWorkspaceMode();
-          guideStepStep = 2;
-          if (guideStepStatus) guideStepStatus.textContent = '第 2 步完成：现在查看老师工作台。下一步导出处理清单。';
-        } else {
-          if (guideStepStatus) guideStepStatus.textContent = '第 3 步：正在导出老师处理清单...';
-          await downloadFile('/api/teacher/action_report.md?days=30', 'teacher_action_report.md');
-          guideStepStep = 0;
-          if (guideStepStatus) guideStepStatus.textContent = '第 3 步完成：清单已导出。可重新开始。';
-        }
-      } catch (err) {
-        if (guideStepStatus) guideStepStatus.textContent = `引导步骤失败：${err.message}`;
-      } finally {
-        setButtonBusy(guideStepNextBtn, false, '工作台引导下一步');
-      }
-    }
-
-    function metricNumber(data, label) {
-      const item = (data.metrics || []).find(metric => metric.label === label);
-      if (!item) return 0;
-      const match = String(item.value || item.detail || '').match(/\d+/);
-      return match ? Number(match[0]) : 0;
-    }
-
-    function shortText(value, maxLength = 34) {
-      const text = String(value || '').trim();
-      return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
-    }
-
-    function setLatestBox(el, label, text) {
-      if (!el) return;
-      el.innerHTML = `<b>${escapeHtml(label)}：</b>${escapeHtml(text || '暂无')}`;
-    }
-
-    function setTeacherCardState(card, count, dangerAt = 3) {
-      if (!card) return;
-      card.classList.remove('is-ok', 'is-warn', 'is-danger');
-      if (count <= 0) {
-        card.classList.add('is-ok');
-      } else if (count >= dangerAt) {
-        card.classList.add('is-danger');
-      } else {
-        card.classList.add('is-warn');
-      }
-    }
-
-    function updateTeacherAdvice({ pendingCount, highRiskCount, unfinishedTraining, openIncidents }) {
-      if (!teacherAdviceList) return;
-      const advice = [];
-      if (pendingCount > 0) advice.push('先审核被阻断的开工申请，未确认审批、值守和消防条件前不要放行。');
-      if (unfinishedTraining > 0) advice.push('通知未通过培训的学生补考，暂时不要让其独立开展高风险实验。');
-      if (highRiskCount > 0 || openIncidents > 0) advice.push('复盘最近高风险原因，把常见问题补进开工检查和培训题。');
-      if (!advice.length) advice.push('当前没有明显待处理事项，建议保持每周查看一次。');
-      teacherAdviceList.innerHTML = advice.map(item => `<li>${escapeHtml(item)}</li>`).join('');
-    }
-
-    function updateTeacherDashboard(data) {
-      const highRiskItems = data.recent_high_risk_scenarios || [];
-      const pendingItems = highRiskItems.filter(item => !item.allow_start);
-      const latestPending = pendingItems[0];
-      const latestHighRisk = highRiskItems[0];
-      const incidentSummary = data.incident_summary || {};
-      const openIncidents = (incidentSummary.open || 0) + (incidentSummary.in_review || 0) + (incidentSummary.action_in_progress || 0);
-      const trainingAttempts = metricNumber(data, '培训通过率');
-      const passMetric = (data.metrics || []).find(item => item.label === '培训通过率');
-      const passRateMatch = String(passMetric?.value || '').match(/\d+/);
-      const passRate = passRateMatch ? Number(passRateMatch[0]) : 100;
-      const estimatedUnfinishedTraining = trainingAttempts ? Math.max(0, Math.round(trainingAttempts * (100 - passRate) / 100)) : 0;
-      const roster = latestTrainingRosterStatus;
-      const hasRoster = roster && Number.isFinite(Number(roster.total_required)) && Number(roster.total_required) > 0;
-      const unfinishedTraining = hasRoster ? Number(roster.incomplete_count || 0) : estimatedUnfinishedTraining;
-      const latestIncompleteStudent = hasRoster && (roster.incomplete_students || []).length ? roster.incomplete_students[0] : null;
-      const latestTrainingText = latestIncompleteStudent
-        ? `${latestIncompleteStudent.name}${latestIncompleteStudent.class_name ? ' / ' + latestIncompleteStudent.class_name : ''}${latestIncompleteStudent.latest_score ? '，最近' + latestIncompleteStudent.latest_score + '分' : '，未作答'}`
-        : (latestTrainingStats?.latest_submitted_at
-          ? `${latestTrainingStats.latest_submitted_at}，平均分 ${latestTrainingStats.average_score}，通过率 ${Math.round((latestTrainingStats.pass_rate || 0) * 100)}%`
-          : '');
-
-      setTeacherCardState(teacherPendingCard, pendingItems.length, 2);
-      setTeacherCardState(teacherHighRiskCard, highRiskItems.length, 3);
-      setTeacherCardState(teacherTrainingCard, unfinishedTraining, 3);
-      updateTeacherAdvice({
-        pendingCount: pendingItems.length,
-        highRiskCount: highRiskItems.length,
-        unfinishedTraining,
-        openIncidents,
-      });
-
-      if (teacherPendingCount) teacherPendingCount.textContent = `${pendingItems.length} 项`;
-      if (teacherPendingDesc) teacherPendingDesc.textContent = pendingItems.length
-        ? `最近有 ${pendingItems.length} 项开工被阻断，需要老师复核。`
-        : '最近没有待复核的阻断开工记录。';
-      setLatestBox(teacherPendingLatest, '最近', latestPending ? `${displayRisk(latestPending.risk_level)}风险｜${shortText(latestPending.scenario)}` : '暂无待审核记录');
-      if (teacherHighRiskCount) teacherHighRiskCount.textContent = `${highRiskItems.length} 条`;
-      if (teacherHighRiskDesc) teacherHighRiskDesc.textContent = highRiskItems.length
-        ? `最近 ${highRiskItems.length} 条高风险场景，含 ${openIncidents} 条未闭环复盘。`
-        : '最近没有高风险提醒记录。';
-      setLatestBox(teacherHighRiskLatest, '最近', latestHighRisk ? `${latestHighRisk.allow_start ? '已通过' : '已阻断'}｜${shortText(latestHighRisk.scenario)}` : '暂无高风险记录');
-      if (teacherTrainingCount) teacherTrainingCount.textContent = `${unfinishedTraining} 人`;
-      if (teacherTrainingDesc) teacherTrainingDesc.textContent = hasRoster
-        ? `班级名单 ${roster.total_required} 人，已通过 ${roster.passed_count} 人，未完成/未通过 ${unfinishedTraining} 人。`
-        : (trainingAttempts
-          ? `按现有 ${trainingAttempts} 次培训记录估算，仍有 ${unfinishedTraining} 人未通过。`
-          : '暂无培训作答记录，建议先组织一次培训。');
-      setLatestBox(teacherTrainingLatest, latestIncompleteStudent ? '最近未完成' : '最近', latestTrainingText || '暂无培训记录');
-    }
-
-    function renderTrainingRosterModal() {
-      if (!trainingRosterModalSummary || !trainingRosterModalList) return;
-      const roster = latestTrainingRosterStatus;
-      const students = roster?.incomplete_students || [];
-      if (!roster || !roster.total_required) {
-        trainingRosterModalSummary.textContent = '还没有导入班级名单，请先下载模板并上传 CSV。';
-        trainingRosterModalList.innerHTML = '<div class="muted">暂无名单。</div>';
-        return;
-      }
-      trainingRosterModalSummary.textContent = `共 ${roster.total_required} 人，未完成/未通过 ${roster.incomplete_count} 人。`;
-      if (!students.length) {
-        trainingRosterModalList.innerHTML = '<div class="muted">全部学生已完成培训。</div>';
-        return;
-      }
-      trainingRosterModalList.innerHTML = students.map(item => `
-        <div class="roster-list-row">
-          <b>${escapeHtml(item.name || '未命名学生')}</b>
-          <span>${escapeHtml(item.class_name || '未填班级')}</span>
-          <span>${escapeHtml(item.lab_group || '未填分组')}</span>
-          <span class="tag">${item.completed ? '未通过' : '未作答'}</span>
-        </div>
-      `).join('');
-    }
-
-    function buildIncompleteRosterText() {
-      const roster = latestTrainingRosterStatus;
-      const students = roster?.incomplete_students || [];
-      if (!roster || !roster.total_required) return '还没有导入班级名单。';
-      if (!students.length) return '全部学生已完成培训。';
-      const lines = students.map((item, index) => {
-        const status = item.completed ? '未通过' : '未作答';
-        const className = item.class_name || '未填班级';
-        const group = item.lab_group || '未填分组';
-        return `${index + 1}. ${item.name || '未命名学生'}｜${className}｜${group}｜${status}`;
-      });
-      return [`未完成培训名单（${roster.incomplete_count}人）：`, ...lines, '请尽快完成培训/补考。'].join('\n');
-    }
-
-    async function copyIncompleteRosterText() {
-      const text = buildIncompleteRosterText();
-      try {
-        await navigator.clipboard.writeText(text);
-        announce('未完成名单已复制。');
-        if (teacherSeedStatus) teacherSeedStatus.textContent = '未完成名单已复制，可直接发到班群。';
-      } catch (err) {
-        window.prompt('复制失败，请手动复制：', text);
-      }
-    }
-
-    function openTrainingRosterModal() {
-      renderTrainingRosterModal();
-      if (trainingRosterModal) trainingRosterModal.classList.add('is-visible');
-    }
-
-    function closeTrainingRosterModal() {
-      if (trainingRosterModal) trainingRosterModal.classList.remove('is-visible');
-    }
-
-    async function loadTrainingRosterStatus() {
-      try {
-        const resp = await fetch('/api/training/roster_status');
-        const data = await resp.json();
-        latestTrainingRosterStatus = resp.ok ? data : null;
-        renderTrainingRosterModal();
-      } catch (err) {
-        latestTrainingRosterStatus = null;
-      }
-    }
-
     async function loadTrainingStats() {
       const resp = await fetch('/api/training/stats');
       const data = await resp.json();
       if (!resp.ok) {
-        latestTrainingStats = data;
-      trainingStats.innerHTML = `<div class="stats-card">培训统计加载失败。</div>`;
+        trainingStats.innerHTML = `<div class="stats-card">培训统计加载失败。</div>`;
         return;
       }
       trainingStats.innerHTML = `
@@ -4532,10 +3103,8 @@
         dashboardSummaryMain.textContent = '当前无法生成管理端一句话结论。';
         dashboardSummaryFocus.textContent = '请先确认看板接口是否正常返回。';
         dashboardSummaryPitch.textContent = '待看板恢复后再更新展示口径。';
-        updateTeacherDashboard({ metrics: [], recent_high_risk_scenarios: [], incident_summary: {} });
         return;
       }
-      updateTeacherDashboard(data);
       const summary = buildDashboardSummary(data);
       dashboardSummaryMain.textContent = summary.main;
       dashboardSummaryFocus.textContent = summary.focus;
@@ -4604,7 +3173,7 @@
       setButtonBusy(createIncidentBtn, true, '创建复盘记录', '创建中...');
       try {
         const data = await postJson('/api/incidents', {
-          reporter: document.getElementById('incidentReporter').value || '未命名用户',
+          reporter: document.getElementById('incidentReporter').value || '演示用户',
           title: document.getElementById('incidentTitle').value,
           scenario: document.getElementById('incidentScenario').value,
           severity: document.getElementById('incidentSeverity').value,
@@ -4665,68 +3234,6 @@
     }
 
     questionInput.addEventListener('input', syncScenarioPreview);
-    if (teacherWorkspaceModeBtn) {
-      teacherWorkspaceModeBtn.addEventListener('click', enterTeacherWorkspaceMode);
-    }
-    if (adminAcceptanceModeBtn) {
-      adminAcceptanceModeBtn.addEventListener('click', enterAdminAcceptanceMode);
-    }
-    if (adminAcceptanceExportBtn) {
-      adminAcceptanceExportBtn.addEventListener('click', async () => {
-        try {
-          await downloadFile('/api/admin/acceptance_package.md?days=30', 'lab_safety_acceptance_package.md');
-          announce('项目验收材料包已导出。');
-        } catch (err) {
-          if (adminAcceptanceStatus) adminAcceptanceStatus.textContent = `导出失败：${err.message}`;
-          alert(err.message);
-        }
-      });
-    }
-
-    if (guideStepNextBtn) {
-      guideStepNextBtn.addEventListener('click', runGuideNextStep);
-    }
-    if (openOnboardingBtn) openOnboardingBtn.addEventListener('click', () => openOnboarding(true));
-    if (closeOnboardingBtn) closeOnboardingBtn.addEventListener('click', closeOnboarding);
-    if (onboardingDoneBtn) onboardingDoneBtn.addEventListener('click', closeOnboarding);
-    if (onboardingStudentBtn) {
-      onboardingStudentBtn.addEventListener('click', () => {
-        applyRole('student');
-        setActiveView('assistant');
-        closeOnboarding();
-      });
-    }
-    if (onboardingTeacherBtn) {
-      onboardingTeacherBtn.addEventListener('click', () => {
-        applyRole('teacher');
-        setActiveView('overview');
-        closeOnboarding();
-        if (teacherWorkbenchHead) teacherWorkbenchHead.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    }
-    if (onboardingModal) {
-      onboardingModal.addEventListener('click', (event) => {
-        if (event.target === onboardingModal) closeOnboarding();
-      });
-    }
-
-    roleButtons.forEach((button) => {
-      button.addEventListener('click', () => applyRole(button.dataset.role || 'student'));
-    });
-    welcomeEntryCards.forEach((card) => {
-      card.addEventListener('click', () => {
-        const role = card.dataset.welcomeRole || 'student';
-        applyRole(role);
-        if (role === 'student') setActiveView('assistant');
-        if (role === 'teacher') {
-          setActiveView('overview');
-          if (teacherWorkbenchHead) teacherWorkbenchHead.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        if (role === 'admin') setActiveView('productStatus');
-      });
-    });
-    applyRole(localStorage.getItem('labSafetyRole') || 'student');
-
     navButtons.forEach((button) => {
       button.addEventListener('click', () => setActiveView(button.dataset.viewTarget || 'overview'));
     });
@@ -4772,75 +3279,8 @@
     startQuizBtn.addEventListener('click', startQuiz);
     submitQuizBtn.addEventListener('click', submitQuiz);
     createIncidentBtn.addEventListener('click', createIncident);
-    if (acceptanceGoWorkspaceBtn) acceptanceGoWorkspaceBtn.addEventListener('click', () => setActiveView('workspace'));
-    if (acceptanceGoTrainingBtn) acceptanceGoTrainingBtn.addEventListener('click', () => setActiveView('training'));
-    if (acceptanceCheckLinksBtn) acceptanceCheckLinksBtn.addEventListener('click', checkAcceptanceEvidenceLinks);
-    async function exportAcceptancePackage() {
-      try {
-        await downloadFile('/api/admin/acceptance_package.md?days=30', 'lab_safety_acceptance_package.md');
-        announce('项目验收材料包已导出。');
-      } catch (err) {
-        alert(err.message);
-      }
-    }
-    if (acceptanceExportBtn) {
-      acceptanceExportBtn.addEventListener('click', exportAcceptancePackage);
-    }
-    if (productStatusExportBtn) {
-      productStatusExportBtn.addEventListener('click', exportAcceptancePackage);
-    }
     refreshWorkspaceBtn.addEventListener('click', loadWorkspaceStatus);
     workspaceSearchBtn.addEventListener('click', inspectKnowledgeHits);
-    if (seedTeacherSampleBtn) {
-      seedTeacherSampleBtn.addEventListener('click', seedTeacherSampleData);
-    }
-    if (clearTeacherSampleBtn) {
-      clearTeacherSampleBtn.addEventListener('click', clearTeacherSampleData);
-    }
-    if (downloadTrainingRosterTemplateBtn) {
-      downloadTrainingRosterTemplateBtn.addEventListener('click', async () => {
-        try {
-          await downloadFile('/api/training/roster_template.csv', 'training_roster_template.csv');
-          announce('名单模板已下载。');
-        } catch (err) {
-          alert(err.message);
-        }
-      });
-    }
-    if (uploadTrainingRosterInput) {
-      uploadTrainingRosterInput.addEventListener('change', () => uploadTrainingRoster(uploadTrainingRosterInput.files?.[0]));
-    }
-    if (teacherTrainingCard) {
-      teacherTrainingCard.classList.add('is-clickable');
-      teacherTrainingCard.addEventListener('click', (event) => {
-        if (event.target.closest('button')) return;
-        openTrainingRosterModal();
-      });
-    }
-    if (openTrainingRosterModalBtn) {
-      openTrainingRosterModalBtn.addEventListener('click', openTrainingRosterModal);
-    }
-    if (closeTrainingRosterModalBtn) {
-      closeTrainingRosterModalBtn.addEventListener('click', closeTrainingRosterModal);
-    }
-    if (copyTrainingRosterBtn) {
-      copyTrainingRosterBtn.addEventListener('click', copyIncompleteRosterText);
-    }
-    if (trainingRosterModal) {
-      trainingRosterModal.addEventListener('click', (event) => {
-        if (event.target === trainingRosterModal) closeTrainingRosterModal();
-      });
-    }
-    if (exportTeacherReportBtn) {
-      exportTeacherReportBtn.addEventListener('click', async () => {
-        try {
-          await downloadFile('/api/teacher/action_report.md?days=30', 'teacher_action_report.md');
-          announce('老师处理清单已导出。');
-        } catch (err) {
-          alert(err.message);
-        }
-      });
-    }
     refreshDashboardBtn.addEventListener('click', loadAdminDashboard);
     refreshIncidentsBtn.addEventListener('click', loadIncidents);
     exportCsvBtn.addEventListener('click', async () => {
@@ -4872,23 +3312,13 @@
     loadEmergencyCards();
     loadWorkspaceStatus();
     loadTrainingStats();
-    loadTrainingRosterStatus().then(() => loadAdminDashboard());
+    loadAdminDashboard();
     loadIncidents();
-    loadProductMeta();
-    runFirstVisitOnboarding();
+    loadDemoMeta();
   
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
 
 
 

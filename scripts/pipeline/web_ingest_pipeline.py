@@ -1,528 +1,43 @@
 #!/usr/bin/env python3
 """
-Fetch public web pages, clean their main content, and export a CSV that matches
-the project's knowledge base schema.
+Web ingestion pipeline: fetch, extract, chunk, and export to knowledge-base CSV.
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
-import csv
-import hashlib
-import importlib.util
 import json
-import re
 import sys
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
-from urllib.parse import urljoin
+from typing import Any
+
+# Allow importing sibling modules when loaded dynamically
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
 
 try:
-    import httpx
     from bs4 import BeautifulSoup
 except ImportError as exc:  # pragma: no cover
     raise SystemExit(
         "Missing dependencies. Run: pip install -r scripts/requirements-web-ingest.txt"
     ) from exc
 
-
-DEFAULT_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-    ),
-    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-}
-
-REMOVE_SELECTORS = [
-    "script",
-    "style",
-    "noscript",
-    "svg",
-    "canvas",
-    "iframe",
-    "header",
-    "footer",
-    "nav",
-    "aside",
-    "form",
-    "button",
-    ".breadcrumb",
-    ".breadcrumbs",
-    ".sidebar",
-    ".share",
-    ".tools",
-    ".toolbar",
-    ".copyright",
-]
-
-CONTENT_SELECTORS = [
-    "main article",
-    "article",
-    "[role='main']",
-    "main",
-    ".article-content",
-    ".entry-content",
-    ".post-content",
-    ".content",
-    ".article",
-    ".detail",
-    ".show-content",
-    "#content",
-    "#article",
-    ".news-content",
-    ".read",
-    "body",
-]
-
-NOISE_PATTERNS = [
-    r"^首页$",
-    r".*首页$",
-    r"^当前位置",
-    r"^上一篇",
-    r"^下一篇",
-    r"^打印$",
-    r"^关闭窗口$",
-    r"^返回顶部$",
-    r"^版权所有",
-    r"^Copyright",
-    r"^浏览次数",
-    r"^点击数",
-    r"^浏览量[:：]?$",
-    r"^地址[:：]",
-    r"^电话[:：]",
-    r"^邮箱[:：]",
-]
-
-REDIRECT_PATTERNS = [
-    r'window\.location\.replace\("([^"]+)"\)',
-    r'window\.location\.href\s*=\s*"([^"]+)"',
-    r"URL='([^']+)'",
-    r'URL="([^"]+)"',
-]
-
-KB_FIELDNAMES = [
-    "id",
-    "title",
-    "category",
-    "subcategory",
-    "lab_type",
-    "risk_level",
-    "hazard_types",
-    "scenario",
-    "question",
-    "answer",
-    "steps",
-    "ppe",
-    "forbidden",
-    "disposal",
-    "first_aid",
-    "emergency",
-    "legal_notes",
-    "references",
-    "source_type",
-    "source_title",
-    "source_org",
-    "source_version",
-    "source_date",
-    "source_url",
-    "last_updated",
-    "reviewer",
-    "status",
-    "tags",
-    "language",
-]
-
-
-@dataclass
-class SourceRow:
-    source_id: str
-    title: str
-    source_org: str
-    category: str
-    subcategory: str
-    lab_type: str
-    risk_level: str
-    hazard_types: str
-    url: str
-    tags: str
-    language: str
-    question_hint: str
-
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-
-
-def resolve_skill_script_path(raw_path: str = "") -> Path:
-    if raw_path:
-        path = Path(raw_path)
-        if path.exists():
-            return path.resolve()
-    return (
-        Path(__file__).resolve().parents[2]
-        / "skills"
-        / "web-content-fetcher"
-        / "scripts"
-        / "fetch_web_content.py"
-    ).resolve()
-
-
-def load_skill_fetcher_module(script_path: Path) -> Any | None:
-    if not script_path.exists():
-        return None
-    spec = importlib.util.spec_from_file_location("skill_web_content_fetcher", script_path)
-    if spec is None or spec.loader is None:
-        return None
-    module = importlib.util.module_from_spec(spec)
-    try:
-        sys.modules[spec.name] = module
-        spec.loader.exec_module(module)  # type: ignore[attr-defined]
-        return module
-    except Exception:
-        return None
-
-
-def read_manifest(path: Path) -> list[SourceRow]:
-    with path.open("r", encoding="utf-8-sig", newline="") as handle:
-        reader = csv.DictReader(handle)
-        rows: list[SourceRow] = []
-        for raw in reader:
-            rows.append(
-                SourceRow(
-                    source_id=(raw.get("source_id") or "").strip(),
-                    title=(raw.get("title") or "").strip(),
-                    source_org=(raw.get("source_org") or "").strip(),
-                    category=(raw.get("category") or "通用").strip(),
-                    subcategory=(raw.get("subcategory") or "网页资料").strip(),
-                    lab_type=(raw.get("lab_type") or "通用").strip(),
-                    risk_level=(raw.get("risk_level") or "3").strip(),
-                    hazard_types=(raw.get("hazard_types") or "").strip(),
-                    url=(raw.get("url") or "").strip(),
-                    tags=(raw.get("tags") or "").strip(),
-                    language=(raw.get("language") or "zh-CN").strip(),
-                    question_hint=(raw.get("question_hint") or "").strip(),
-                )
-            )
-    return rows
-
-
-def sha1_text(text: str) -> str:
-    return hashlib.sha1(text.encode("utf-8")).hexdigest()
-
-
-def extract_redirect_target(html: str, base_url: str) -> str | None:
-    for pattern in REDIRECT_PATTERNS:
-        match = re.search(pattern, html, re.IGNORECASE)
-        if match:
-            return urljoin(base_url, match.group(1))
-    return None
-
-
-def clean_line(line: str) -> str:
-    line = re.sub(r"\s+", " ", line).strip()
-    return line
-
-
-def is_noise_line(line: str) -> bool:
-    if len(line) <= 1:
-        return True
-    for pattern in NOISE_PATTERNS:
-        if re.search(pattern, line, re.IGNORECASE):
-            return True
-    return False
-
-
-def normalize_text(text: str) -> str:
-    text = text.replace("\r", "\n")
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    raw_lines = [clean_line(line) for line in text.splitlines()]
-    lines: list[str] = []
-    seen: set[str] = set()
-    for line in raw_lines:
-        if not line or is_noise_line(line):
-            continue
-        if line in seen:
-            continue
-        seen.add(line)
-        lines.append(line)
-    joined = "\n".join(lines)
-    joined = re.sub(r"\n{3,}", "\n\n", joined)
-    return joined.strip()
-
-
-def extract_title(soup: BeautifulSoup, fallback: str) -> str:
-    selectors = [
-        ("meta", {"property": "og:title"}),
-        ("meta", {"name": "title"}),
-        ("title", {}),
-        ("h1", {}),
-    ]
-    for tag_name, attrs in selectors:
-        node = soup.find(tag_name, attrs=attrs)
-        if not node:
-            continue
-        if tag_name == "meta":
-            content = (node.get("content") or "").strip()
-            if content:
-                return content
-        else:
-            text = node.get_text(" ", strip=True)
-            if text:
-                return text
-    return fallback
-
-
-def extract_description(soup: BeautifulSoup, fallback_text: str) -> str:
-    meta = soup.find("meta", attrs={"name": "description"}) or soup.find(
-        "meta", attrs={"property": "og:description"}
-    )
-    if meta:
-        content = (meta.get("content") or "").strip()
-        if content:
-            return content
-    return fallback_text[:160]
-
-
-def extract_publish_date(soup: BeautifulSoup, text: str) -> str:
-    meta = soup.find("meta", attrs={"property": "article:published_time"}) or soup.find(
-        "meta", attrs={"name": "publishdate"}
-    )
-    if meta:
-        content = (meta.get("content") or "").strip()
-        if content:
-            return content
-
-    time_node = soup.find("time")
-    if time_node:
-        content = (time_node.get("datetime") or time_node.get_text(" ", strip=True)).strip()
-        if content:
-            return content
-
-    patterns = [
-        r"(20\d{2}-\d{2}-\d{2})",
-        r"(20\d{2}/\d{2}/\d{2})",
-        r"(20\d{2}年\d{1,2}月\d{1,2}日)",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, text)
-        if match:
-            return match.group(1)
-    return ""
-
-
-def extract_publish_date_from_text(text: str) -> str:
-    patterns = [
-        r"(20\d{2}-\d{2}-\d{2})",
-        r"(20\d{2}/\d{2}/\d{2})",
-        r"(20\d{2}年\d{1,2}月\d{1,2}日)",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, text)
-        if match:
-            return match.group(1)
-    return ""
-
-
-def find_best_content_node(soup: BeautifulSoup):
-    def node_score(node) -> float:
-        text = normalize_text(node.get_text("\n", strip=True))
-        if not text:
-            return 0
-        link_text = normalize_text(" ".join(a.get_text(" ", strip=True) for a in node.find_all("a")))
-        short_lines = sum(
-            1
-            for line in text.splitlines()
-            if line.strip() and len(line.strip()) <= 8 and not re.search(r"[。；：:，,]", line)
-        )
-        return len(text) - (len(link_text) * 1.5) - (len(node.find_all("a")) * 40) - (short_lines * 30)
-
-    best_node = None
-    best_score = 0.0
-    for selector in CONTENT_SELECTORS:
-        for node in soup.select(selector):
-            score = node_score(node)
-            if score > best_score:
-                best_node = node
-                best_score = score
-    return best_node or soup.body or soup
-
-
-def extract_main_text(html: str) -> tuple[str, str, str]:
-    soup = BeautifulSoup(html, "html.parser")
-    for selector in REMOVE_SELECTORS:
-        for node in soup.select(selector):
-            node.decompose()
-
-    best_node = find_best_content_node(soup)
-    main_text = normalize_text(best_node.get_text("\n", strip=True))
-    title = extract_title(soup, fallback="")
-    description = extract_description(soup, fallback_text=main_text)
-    return title, description, main_text
-
-
-def split_into_chunks(text: str, max_chars: int, overlap: int) -> list[str]:
-    paragraphs = [item.strip() for item in text.split("\n") if item.strip()]
-    chunks: list[str] = []
-    current = ""
-
-    for paragraph in paragraphs:
-        if not current:
-            current = paragraph
-            continue
-        candidate = f"{current}\n{paragraph}"
-        if len(candidate) <= max_chars:
-            current = candidate
-            continue
-        chunks.append(current)
-        if overlap > 0 and len(current) > overlap:
-            current = current[-overlap:] + "\n" + paragraph
-        else:
-            current = paragraph
-
-    if current:
-        chunks.append(current)
-
-    return [chunk.strip() for chunk in chunks if chunk.strip()]
-
-
-async def fetch_source(
-    client: httpx.AsyncClient,
-    row: SourceRow,
-    raw_dir: Path,
-) -> dict:
-    html_path = raw_dir / f"{row.source_id}.html"
-    result = {
-        "source_id": row.source_id,
-        "requested_url": row.url,
-        "final_url": row.url,
-        "status": "error",
-        "fetch_status": "error",
-        "status_code": 0,
-        "fetched_at": now_iso(),
-        "html_path": str(html_path),
-        "provider": "legacy_html",
-        "quality_score": 0.0,
-        "requires_auth": False,
-        "error": "",
-    }
-
-    try:
-        response = await client.get(row.url, headers=DEFAULT_HEADERS, follow_redirects=True)
-        html = response.text
-        final_url = str(response.url)
-
-        redirect_target = extract_redirect_target(html, final_url)
-        if redirect_target and redirect_target != final_url:
-            response = await client.get(
-                redirect_target, headers=DEFAULT_HEADERS, follow_redirects=True
-            )
-            html = response.text
-            final_url = str(response.url)
-
-        html_path.write_text(html, encoding="utf-8")
-        result.update(
-            {
-                "final_url": final_url,
-                "status": "success",
-                "fetch_status": "ok",
-                "status_code": response.status_code,
-                "content_type": response.headers.get("content-type", ""),
-                "html_sha1": sha1_text(html),
-            }
-        )
-    except Exception as exc:
-        result["error"] = str(exc)
-
-    return result
-
-
-async def fetch_all(rows: list[SourceRow], raw_dir: Path, concurrency: int) -> list[dict]:
-    semaphore = asyncio.Semaphore(concurrency)
-
-    async with httpx.AsyncClient(timeout=20.0) as client:
-        async def runner(row: SourceRow) -> dict:
-            async with semaphore:
-                return await fetch_source(client, row, raw_dir)
-
-        tasks = [runner(row) for row in rows]
-        return await asyncio.gather(*tasks)
-
-
-async def fetch_source_with_skill(
-    row: SourceRow,
-    skill_module: Any,
-    providers: list[str],
-    timeout: int,
-    max_chars: int,
-) -> dict:
-    def run_sync() -> dict:
-        result = skill_module.fetch_with_fallback(
-            row.url,
-            providers=providers,
-            timeout=timeout,
-            max_chars=max_chars,
-        )
-        payload = {
-            "source_id": row.source_id,
-            "requested_url": row.url,
-            "final_url": row.url,
-            "status": "error",
-            "fetch_status": str(getattr(result, "status", "error")),
-            "status_code": int(getattr(result, "http_status", 0) or 0),
-            "fetched_at": str(getattr(result, "fetched_at", now_iso())),
-            "html_path": "",
-            "content_type": "text/markdown",
-            "provider": str(getattr(result, "provider", "")),
-            "quality_score": float(getattr(result, "quality_score", 0.0) or 0.0),
-            "requires_auth": bool(getattr(result, "requires_auth", False)),
-            "error": str(getattr(result, "error_reason", "")),
-            "title": str(getattr(result, "title", "")),
-            "content_text": str(getattr(result, "content", "")),
-            "html_sha1": "",
-        }
-        if payload["fetch_status"] == "ok" and payload["content_text"]:
-            payload["status"] = "success"
-            payload["error"] = ""
-            payload["html_sha1"] = sha1_text(payload["content_text"])
-        return payload
-
-    return await asyncio.to_thread(run_sync)
-
-
-async def fetch_all_with_skill(
-    rows: list[SourceRow],
-    *,
-    skill_module: Any,
-    providers: list[str],
-    timeout: int,
-    max_chars: int,
-    concurrency: int,
-) -> list[dict]:
-    semaphore = asyncio.Semaphore(concurrency)
-
-    async def runner(row: SourceRow) -> dict:
-        async with semaphore:
-            return await fetch_source_with_skill(
-                row,
-                skill_module=skill_module,
-                providers=providers,
-                timeout=timeout,
-                max_chars=max_chars,
-            )
-
-    tasks = [runner(row) for row in rows]
-    return await asyncio.gather(*tasks)
-
-
-def write_jsonl(path: Path, rows: Iterable[dict]) -> None:
-    with path.open("w", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
-
+from libs.common_io import now_iso
+from libs.ingest_io import (
+    sha1_text,
+    split_into_chunks,
+    write_jsonl,
+    write_csv,
+    merge_into_csv,
+)
+from web_content_extractor import extract_main_text, extract_publish_date, extract_publish_date_from_text
+from web_fetcher import (
+    read_manifest, fetch_all, fetch_all_with_skill,
+    SourceRow, resolve_skill_script_path, load_skill_fetcher_module,
+)
 
 def build_clean_documents(rows: list[SourceRow], fetch_results: list[dict]) -> list[dict]:
     row_by_id = {row.source_id: row for row in rows}
@@ -579,6 +94,7 @@ def build_clean_documents(rows: list[SourceRow], fetch_results: list[dict]) -> l
             }
         )
     return documents
+
 
 
 def build_kb_rows(
@@ -638,37 +154,6 @@ def build_kb_rows(
     return kb_rows
 
 
-def write_csv(path: Path, rows: list[dict]) -> None:
-    with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=KB_FIELDNAMES)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
-
-
-def merge_into_csv(path: Path, new_rows: list[dict]) -> int:
-    existing_rows: list[dict] = []
-    existing_ids: set[str] = set()
-
-    if path.exists():
-        with path.open("r", encoding="utf-8-sig", newline="") as handle:
-            reader = csv.DictReader(handle)
-            for row in reader:
-                normalized = {field: row.get(field, "") for field in KB_FIELDNAMES}
-                existing_rows.append(normalized)
-                existing_ids.add(normalized["id"])
-
-    appended = 0
-    for row in new_rows:
-        if row["id"] in existing_ids:
-            continue
-        existing_rows.append({field: row.get(field, "") for field in KB_FIELDNAMES})
-        existing_ids.add(row["id"])
-        appended += 1
-
-    write_csv(path, existing_rows)
-    return appended
-
 
 def write_report(path: Path, fetch_results: list[dict], documents: list[dict], kb_rows: list[dict]) -> None:
     blocked_count = sum(1 for item in fetch_results if item.get("fetch_status") == "blocked")
@@ -686,6 +171,7 @@ def write_report(path: Path, fetch_results: list[dict], documents: list[dict], k
         "knowledge_rows": len(kb_rows),
     }
     path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
 
 
 async def run_pipeline(args: argparse.Namespace) -> None:
@@ -748,6 +234,7 @@ async def run_pipeline(args: argparse.Namespace) -> None:
     print(f"Clean documents: {len(documents)}")
     print(f"Knowledge rows: {len(kb_rows)}")
     print(f"Output dir: {output_dir.resolve()}")
+
 
 
 def parse_args() -> argparse.Namespace:
@@ -817,9 +304,6 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
-def main() -> None:
-    asyncio.run(run_pipeline(parse_args()))
 
 
 if __name__ == "__main__":

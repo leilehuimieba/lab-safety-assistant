@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import json
@@ -7,9 +8,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,13 +40,11 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def resolve(repo_root: Path, rel_or_abs: str) -> Path:
     p = Path(rel_or_abs)
     if p.is_absolute():
         return p
     return (repo_root / p).resolve()
-
 
 def load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
@@ -59,13 +55,11 @@ def load_json(path: Path) -> dict[str, Any]:
         return {}
     return raw if isinstance(raw, dict) else {}
 
-
 def safe_tail(text: str, limit: int = 800) -> str:
     text = (text or "").strip()
     if len(text) <= limit:
         return text
     return text[-limit:]
-
 
 def find_latest_oneclick_report(repo_root: Path) -> Path | None:
     candidates = list((repo_root / "artifacts" / "release_stability_check").glob("run_*/round_*/run_*/eval_release_oneclick_report.json"))
@@ -75,13 +69,11 @@ def find_latest_oneclick_report(repo_root: Path) -> Path | None:
         return None
     return sorted(candidates, key=lambda p: str(p))[-1]
 
-
 def find_latest_health_report(repo_root: Path) -> Path | None:
     candidates = list((repo_root / "artifacts" / "live_health").glob("run_*/health_check_report.json"))
     if not candidates:
         return None
     return sorted(candidates, key=lambda p: str(p))[-1]
-
 
 def build_digest(repo_root: Path, bundle: dict[str, Any], go_live: dict[str, Any], stability: dict[str, Any]) -> dict[str, Any]:
     blockers: list[str] = []
@@ -169,7 +161,6 @@ def build_digest(repo_root: Path, bundle: dict[str, Any], go_live: dict[str, Any
         "next_actions": actions,
     }
 
-
 def to_markdown(payload: dict[str, Any]) -> str:
     lines: list[str] = []
     lines.append("# Go-Live Failure Digest")
@@ -223,7 +214,6 @@ def to_markdown(payload: dict[str, Any]) -> str:
     lines.append("")
     return "\n".join(lines)
 
-
 def main() -> int:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
@@ -245,7 +235,6 @@ def main() -> int:
     print(f"- output json: {output_json}")
     print(f"- output md: {output_md}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

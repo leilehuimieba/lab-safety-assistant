@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-04-27T16:07:58",
+  "method": "参考 D:\\newwork\\intel-weekly-skills-workspace\\scripts\\opencli-local.ps1 的 opencli 搜索入口；Google 适配器在本机返回 NOT_FOUND/CAPTCHA 风险，改用系统 web search 多轮关键词检索并保留 opencli web read/gov-policy 试跑记录。",
+  "opencli_examples": [
+    "D:\\newwork\\intel-weekly-skills-workspace\\scripts\\opencli-local.ps1 google search \"实验室 安全 通风柜 使用 规范 高校\" --limit 5 --lang zh -f json  # returned NOT_FOUND",
+    "D:\\newwork\\intel-weekly-skills-workspace\\scripts\\opencli-local.ps1 gov-policy search \"实验室安全 危险化学品\" --limit 5 -f json  # returned []",
+    "D:\\newwork\\intel-weekly-skills-workspace\\scripts\\opencli-local.ps1 web read --url \"https://ehs.stanford.edu/topic/lab-safety\" --output \".\\artifacts\\opencli_research\" -f json  # cloneNode adapter error"
+  ],
+  "keyword_rounds": [
+    "实验室安全 化学卫生计划 Chemical Hygiene Plan",
+    "hydrofluoric acid laboratory safety calcium gluconate SOP",
+    "pyrophoric air reactive compounds laboratory SOP",
+    "peroxide forming chemicals storage testing disposal",
+    "compressed gas cylinder laboratory safety storage transport leak",
+    "cryogenic liquid liquid nitrogen laboratory safety oxygen deficiency",
+    "autoclave safety biohazardous waste sterilization training log",
+    "centrifuge safety rotor care sealed safety cups aerosols",
+    "biological safety cabinet biosafety manual decontamination certification",
+    "biosafety risk assessment BMBL WHO LBM4",
+    "实验室 危险废弃物 化学废液 生物废弃物 分类收集 台账",
+    "实验室 易制毒 易制爆 剧毒 化学品 管理 采购 台账 双人双锁",
+    "实验室 气瓶 液氮 高压灭菌锅 离心机 特种设备 安全管理"
+  ],
+  "selection_policy": "优先官方/高校EHS/政府/国际组织资料，覆盖化学、生物、设备、废弃物、培训与风险评估，剔除论坛和商业软文。",
+  "count": 40
+}

@@ -4,7 +4,7 @@
 - Fetchable (`status=ok`): `30` (100.0%)
 - Blocked (`status=blocked`): `0` (0.0%)
 - Failed (`status=error/timeout/not_found`): `0` (0.0%)
-- Low quality (`quality_score < 0.70`): `0` (0.0%)
+- Low quality (`quality_score < 0.70`): `3` (10.0%)
 
 ## Blocked / Failed Items (Collector First)
 
@@ -15,6 +15,9 @@
 
 | source_id | status | quality_score | title | suggested_action |
 |---|---|---:|---|---|
+| WEB82-024 | ok | 0.6597 | HSE Biosafety Blood-borne Viruses | cleaner: manually review and rewrite structured summary |
+| WEB82-026 | ok | 0.6739 | HSE Biosafety Infection | cleaner: manually review and rewrite structured summary |
+| WEB82-027 | ok | 0.6558 | HSE COSHH | cleaner: manually review and rewrite structured summary |
 
 ## Import Plan
 

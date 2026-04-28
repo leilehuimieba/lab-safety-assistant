@@ -1,0 +1,24 @@
+# LabSafe Assistant — 统一依赖声明
+# 安装命令: pip install -r requirements.txt
+
+# === Web 服务 (web_demo/) ===
+fastapi==0.115.6
+uvicorn==0.34.0
+requests==2.32.3
+pydantic==2.10.4
+PyYAML==6.0.2
+
+# === 网页抓取 (scripts/pipeline/web) ===
+httpx>=0.28,<0.29
+beautifulsoup4>=4.12,<5
+
+# === 文档解析 (scripts/pipeline/document) ===
+pypdf>=5.0,<6
+python-docx>=1.1,<2
+python-pptx>=1.0,<2
+pymupdf>=1.27,<2
+pdfplumber>=0.11,<0.12
+rapidocr-onnxruntime>=1.2,<2
+
+# === 测试 ===
+pytest>=8.0

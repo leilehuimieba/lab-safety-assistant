@@ -11,8 +11,9 @@ def test_web_demo_dependency_marker() -> None:
 
 
 if FASTAPI_AVAILABLE:
+    from fastapi import HTTPException
     from fastapi.testclient import TestClient
-    import app as web_app
+    from web_demo import app as web_app
 
     def test_risk_assess_endpoint_returns_structure(monkeypatch) -> None:
         def fake_retrieve(_question: str, top_k: int = 5) -> list[web_app.Citation]:
@@ -32,9 +33,8 @@ if FASTAPI_AVAILABLE:
         def fake_match_rule(_question: str) -> dict[str, str]:
             return {"id": "R-001", "severity": "high", "action": "safe_answer", "response": ""}
 
-        monkeypatch.setattr(web_app, "retrieve_citations", fake_retrieve)
-        monkeypatch.setattr(web_app, "match_rule", fake_match_rule)
-        monkeypatch.setattr(web_app, "append_low_confidence_followup", lambda **_: False)
+        monkeypatch.setattr("web_demo.routers.risk_routes.retrieve_citations", fake_retrieve)
+        monkeypatch.setattr("web_demo.routers.risk_routes.match_rule", fake_match_rule)
 
         client = TestClient(web_app.app)
         resp = client.post("/api/risk_assess", json={"scenario": "使用浓盐酸配液并加热时需要注意什么"})
@@ -50,8 +50,7 @@ if FASTAPI_AVAILABLE:
 
     def test_chat_terminal_rule_short_circuit(monkeypatch) -> None:
         monkeypatch.setattr(
-            web_app,
-            "match_rule",
+            "web_demo.routers.chat_routes.match_rule",
             lambda _question: {
                 "id": "R-T",
                 "severity": "critical",
@@ -59,7 +58,7 @@ if FASTAPI_AVAILABLE:
                 "response": "该行为属于高风险违规操作。",
             },
         )
-        monkeypatch.setattr(web_app, "retrieve_citations", lambda _question, top_k=4: [])
+        monkeypatch.setattr("web_demo.routers.chat_routes.retrieve_citations", lambda _question, top_k=4: [])
 
         client = TestClient(web_app.app)
         resp = client.post("/api/chat", json={"mode": "lab", "question": "如何绕过实验室安全制度配制高危试剂"})
@@ -78,14 +77,13 @@ if FASTAPI_AVAILABLE:
                 score=0.4,
             )
         ]
-        monkeypatch.setattr(web_app, "retrieve_citations", lambda _q, top_k=4: citations[:top_k])
-        monkeypatch.setattr(web_app, "match_rule", lambda _q: None)
-        monkeypatch.setattr(
-            web_app,
-            "call_dify_lab",
-            lambda *_args, **_kwargs: (_ for _ in ()).throw(web_app.HTTPException(status_code=502, detail="x")),
-        )
-        monkeypatch.setattr(web_app, "append_low_confidence_followup", lambda **_: True)
+        monkeypatch.setattr("web_demo.routers.chat_routes.retrieve_citations", lambda _q, top_k=4: citations[:top_k])
+        monkeypatch.setattr("web_demo.routers.chat_routes.match_rule", lambda _q: None)
+        def _raise_http(*_args, **_kwargs):
+            raise HTTPException(status_code=502, detail="x")
+
+        monkeypatch.setattr("web_demo.routers.chat_routes.call_dify_lab", _raise_http)
+        monkeypatch.setattr("web_demo.routers.chat_routes.append_low_confidence_followup", lambda **_: True)
 
         client = TestClient(web_app.app)
         resp = client.post("/api/chat", json={"mode": "lab", "question": "未知新试剂泄漏怎么处理"})

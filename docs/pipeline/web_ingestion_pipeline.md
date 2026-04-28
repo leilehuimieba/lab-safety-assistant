@@ -64,7 +64,7 @@
 先在项目根目录创建虚拟环境并安装依赖：
 
 ```powershell
-cd D:\workspace\lab-safe-assistant-github
+cd D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github
 py -m venv .venv
 .venv\Scripts\python -m pip install -r scripts\requirements-web-ingest.txt
 .venv\Scripts\python -m pip install requests html2text scrapling

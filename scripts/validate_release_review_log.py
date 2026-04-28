@@ -6,9 +6,10 @@ Validate docs/eval/release_review_log.md entry completeness and value constraint
 from __future__ import annotations
 
 import argparse
-import csv
 import re
 from pathlib import Path
+
+from libs.common_io import read_csv_rows
 
 
 REQUIRED_KEYS = [
@@ -106,14 +107,6 @@ def validate_entry(title: str, data: dict[str, str], errors: list[str]) -> None:
 
     if e_raw.isdigit() and allow_raw == "yes" and int(e_raw) > 0:
         errors.append(f"[{title}] 高风险错误建议>0 时不允许发布（yes）")
-
-
-def read_csv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        headers = reader.fieldnames or []
-        rows = list(reader)
-    return headers, rows
 
 
 def validate_csv_rows(rows: list[dict[str, str]], errors: list[str]) -> None:

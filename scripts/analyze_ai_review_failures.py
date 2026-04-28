@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from libs.common_io import now_iso
 
 import argparse
 import csv
@@ -7,10 +8,6 @@ import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,14 +31,12 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def split_multi(text: str) -> list[str]:
     raw = (text or "").strip()
     if not raw:
         return []
     parts = re.split(r"[;；\n]+", raw)
     return [item.strip() for item in parts if item.strip()]
-
 
 def classify_error(error_text: str) -> str:
     text = (error_text or "").strip().lower()
@@ -65,7 +60,6 @@ def classify_error(error_text: str) -> str:
         return "parse_error"
     return "other_error"
 
-
 def score_bucket(score_raw: str) -> str:
     try:
         score = int(float((score_raw or "0").strip() or "0"))
@@ -81,7 +75,6 @@ def score_bucket(score_raw: str) -> str:
         return "70-84"
     return "85-100"
 
-
 def top_counter_rows(cluster_type: str, counter: Counter[str], total: int, top_n: int) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for key, count in counter.most_common(top_n):
@@ -96,23 +89,13 @@ def top_counter_rows(cluster_type: str, counter: Counter[str], total: int, top_n
         )
     return rows
 
-
 def read_rows(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         return list(csv.DictReader(f))
 
 
-def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
-    fieldnames = ["cluster_type", "cluster_key", "count", "ratio"]
-    with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
-
-
 def pct(value: float) -> str:
     return f"{value * 100:.1f}%"
-
 
 def main() -> int:
     args = parse_args()
@@ -216,7 +199,6 @@ def main() -> int:
     print(f"- csv: {output_csv}")
     print(f"- md:  {output_md}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

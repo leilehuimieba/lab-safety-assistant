@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-04-27T16:20:00+08:00",
+  "action": "expanded_lab_safety_web_sources_by_keyword_search",
+  "new_seed_files": [
+    "data_sources/web_seed_urls_v9_keyword_expansion.csv",
+    "data_sources/web_seed_urls_v9_1_keyword_expansion_followup.csv"
+  ],
+  "updated_seed_file": "data_sources/web_seed_urls.csv",
+  "search_note": "data_sources/research_notes/lab_safety_keyword_search_20260427.json",
+  "ingest_outputs": [
+    "artifacts/web_ingest_v9_keyword_expansion_20260427",
+    "artifacts/web_ingest_v8_2_candidates_merge_20260427",
+    "artifacts/web_ingest_v9_1_keyword_followup_20260427"
+  ],
+  "counts": {
+    "v9_seed_urls": 40,
+    "v9_1_seed_urls": 15,
+    "web_seed_urls_total": 73,
+    "knowledge_base_total_rows": 142,
+    "new_WEBX_rows_imported": 31,
+    "previous_WEB82_rows_imported_this_run": 15,
+    "web_source_rows_total": 84,
+    "unique_source_urls_total": 68
+  },
+  "coverage_by_category": {
+    "化学": 12,
+    "设备安全": 8,
+    "生物": 14,
+    "通用": 3,
+    "辐射": 1,
+    "实验室管理": 3,
+    "培训": 3,
+    "标准": 2
+  },
+  "validation": [
+    "python scripts/validate_data_sources.py --repo-root . => passed",
+    "python scripts/quality_gate.py --repo-root . --skip-secret-scan => passed"
+  ],
+  "opencli_reference": [
+    "D:\\newwork\\intel-weekly-skills-workspace\\scripts\\opencli-local.ps1 --help",
+    "D:\\newwork\\intel-weekly-skills-workspace\\scripts\\opencli-local.ps1 google search ... -f json",
+    "D:\\newwork\\intel-weekly-skills-workspace\\scripts\\opencli-local.ps1 web read ... -f json"
+  ],
+  "notes": [
+    "opencli google/search 本机试跑返回 NOT_FOUND，web/read 对 Stanford 页面出现 cloneNode 适配器错误；因此保留 opencli 试跑记录，同时用多轮关键词 web search 筛选官方/高校/EHS/国际组织来源，再用项目 web_ingest_pipeline 抓取入库。",
+    "部分候选站点 403/404/timeout，失败记录保留在对应 artifacts/*/fetch_results.jsonl。"
+  ]
+}

@@ -24,7 +24,7 @@
 ### 1. 文档 + 网页一起跑
 
 ```powershell
-cd D:\workspace\lab-safe-assistant-github
+cd D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github
 .venv\Scripts\python scripts\unified_kb_pipeline.py
 ```
 
@@ -33,7 +33,7 @@ cd D:\workspace\lab-safe-assistant-github
 ### 2. 指定文档目录
 
 ```powershell
-.venv\Scripts\python scripts\unified_kb_pipeline.py --document-input-root D:\workspace\data\_extracted
+.venv\Scripts\python scripts\unified_kb_pipeline.py --document-input-root ..\data\_extracted
 ```
 
 ### 3. 控制 PDF OCR fallback
@@ -108,8 +108,8 @@ python skills/web-content-fetcher/scripts/run_unified_kb_pipeline.py --repo-root
 示例：
 
 ```powershell
-.venv\Scripts\python scripts\pdf_batch_validation.py --input-root D:\workspace\data --limit 10
-.venv\Scripts\python scripts\pdf_batch_validation.py --input-root D:\workspace\data --limit 10 --ocr-review-mode auto
+.venv\Scripts\python scripts\pdf_batch_validation.py --input-root ..\data --limit 10
+.venv\Scripts\python scripts\pdf_batch_validation.py --input-root ..\data --limit 10 --ocr-review-mode auto
 ```
 
 说明：

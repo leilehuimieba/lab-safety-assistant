@@ -1,5 +1,5 @@
 param(
-  [string]$InputRoot = "D:\workspace\data",
+  [string]$InputRoot = "..\data",
   [string]$OutputDir = "",
   [int]$Limit = 0,
   [ValidateSet("auto", "off", "always")]

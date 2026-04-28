@@ -9,9 +9,10 @@ Goals:
 """
 
 from __future__ import annotations
+from libs.common_io import now_iso, read_csv_rows, write_csv
 
 import argparse
-import csv
+
 import json
 import os
 import re
@@ -21,7 +22,6 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
 
 KB_FIELDNAMES = [
     "id",
@@ -77,13 +77,9 @@ DEFAULT_MODEL = "gpt-5.2-codex"
 DEFAULT_FALLBACK_MODELS = "grok-3-mini,grok-4,grok-3"
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-
 
 def today_str() -> str:
     return datetime.now().strftime("%Y-%m-%d")
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="AI review/recheck for KB CSV.")
@@ -161,13 +157,11 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def resolve_endpoint(base_url: str) -> str:
     normalized = base_url.rstrip("/")
     if normalized.endswith("/v1"):
         return f"{normalized}/chat/completions"
     return f"{normalized}/v1/chat/completions"
-
 
 def resolve_responses_endpoints(base_url: str) -> list[str]:
     normalized = base_url.rstrip("/")
@@ -186,33 +180,14 @@ def resolve_responses_endpoints(base_url: str) -> list[str]:
             dedup.append(item)
     return dedup
 
-
 def split_csv_tokens(raw: str) -> list[str]:
     return [item.strip() for item in (raw or "").split(",") if item.strip()]
-
-
-def read_csv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        headers = reader.fieldnames or []
-        rows = list(reader)
-    return headers, rows
-
-
-def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
-    with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({k: row.get(k, "") for k in fieldnames})
-
 
 def clip(value: str, max_chars: int) -> str:
     value = (value or "").strip()
     if len(value) <= max_chars:
         return value
     return value[: max_chars - 3] + "..."
-
 
 def row_payload_for_review(row: dict[str, str]) -> dict[str, str]:
     return {
@@ -234,7 +209,6 @@ def row_payload_for_review(row: dict[str, str]) -> dict[str, str]:
         "tags": clip(row.get("tags", ""), 240),
         "language": row.get("language", ""),
     }
-
 
 def build_prompts(stage: str, row: dict[str, str]) -> tuple[str, str]:
     strict_hint = (
@@ -263,7 +237,6 @@ def build_prompts(stage: str, row: dict[str, str]) -> tuple[str, str]:
     )
     return system_prompt, user_prompt
 
-
 def extract_text_content(payload: dict[str, Any]) -> str:
     choices = payload.get("choices")
     if not isinstance(choices, list) or not choices:
@@ -286,7 +259,6 @@ def extract_text_content(payload: dict[str, Any]) -> str:
                     parts.append(text.strip())
         return "\n".join(parts).strip()
     return ""
-
 
 def extract_first_json_object(text: str) -> str:
     text = (text or "").strip()
@@ -321,7 +293,6 @@ def extract_first_json_object(text: str) -> str:
                     return text[start : idx + 1]
     return ""
 
-
 def parse_review_json(raw_text: str) -> tuple[dict[str, Any], str]:
     candidate = extract_first_json_object(raw_text)
     if not candidate:
@@ -334,13 +305,11 @@ def parse_review_json(raw_text: str) -> tuple[dict[str, Any], str]:
         return {}, "json_not_object"
     return parsed, ""
 
-
 def normalize_decision(value: Any) -> str:
     raw = str(value or "").strip().lower()
     if raw in {"pass", "needs_fix", "reject"}:
         return raw
     return "needs_fix"
-
 
 def normalize_bool(value: Any) -> bool:
     if isinstance(value, bool):
@@ -348,13 +317,11 @@ def normalize_bool(value: Any) -> bool:
     raw = str(value or "").strip().lower()
     return raw in {"true", "yes", "1", "y"}
 
-
 def normalize_confidence(value: Any) -> str:
     raw = str(value or "").strip().lower()
     if raw in {"high", "medium", "low"}:
         return raw
     return "medium"
-
 
 def normalize_issues(value: Any) -> list[str]:
     if isinstance(value, list):
@@ -364,14 +331,12 @@ def normalize_issues(value: Any) -> list[str]:
         return [item.strip() for item in parts if item.strip()][:5]
     return []
 
-
 def normalize_score(value: Any) -> int:
     try:
         score = int(float(value))
     except Exception:
         return 0
     return max(0, min(100, score))
-
 
 def call_model(
     *,
@@ -505,7 +470,6 @@ def call_model(
             last_error = f"empty_response_text:{mode_item}"
     return "", "", last_error
 
-
 def post_rule_check(row: dict[str, str], strict_high_risk: bool) -> str:
     issues: list[str] = []
     answer = (row.get("answer") or "").strip()
@@ -524,10 +488,8 @@ def post_rule_check(row: dict[str, str], strict_high_risk: bool) -> str:
                 issues.append("high_risk_missing_emergency")
     return ";".join(issues)
 
-
 def normalize_kb_row(row: dict[str, str]) -> dict[str, str]:
     return {field: (row.get(field) or "").strip() for field in KB_FIELDNAMES}
-
 
 def build_pass_row(
     row: dict[str, str],
@@ -545,7 +507,6 @@ def build_pass_row(
     tag = f"[AI review stage={stage} decision={ai_decision} score={ai_score}]"
     normalized["legal_notes"] = f"{legal} {tag}".strip()
     return normalized
-
 
 def main() -> int:
     args = parse_args()
@@ -679,9 +640,9 @@ def main() -> int:
             f"score={score} pass={'yes' if ai_pass else 'no'}"
         )
 
-    write_csv(reviewed_csv, headers + AI_FIELDNAMES, reviewed_rows)
-    write_csv(pass_csv, KB_FIELDNAMES, pass_rows)
-    write_csv(blocked_csv, headers + AI_FIELDNAMES, blocked_rows)
+    write_csv(reviewed_csv, reviewed_rows, fieldnames=headers + AI_FIELDNAMES)
+    write_csv(pass_csv, pass_rows, fieldnames=KB_FIELDNAMES)
+    write_csv(blocked_csv, blocked_rows, fieldnames=headers + AI_FIELDNAMES)
 
     total = len(rows)
     pass_count = len(pass_rows)
@@ -716,7 +677,6 @@ def main() -> int:
     print(f"- blocked:  {blocked_csv}")
     print(f"- report:   {report_json}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -4,6 +4,8 @@ Run document and web ingestion, then merge both outputs into one unified KB CSV.
 """
 
 from __future__ import annotations
+from libs.common_io import now_iso
+from libs.ingest_io import write_csv
 
 import argparse
 import csv
@@ -12,7 +14,6 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-
 
 KB_FIELDNAMES = [
     "id",
@@ -47,9 +48,6 @@ KB_FIELDNAMES = [
 ]
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-
 
 def read_csv_rows(path: Path) -> list[dict]:
     if not path.exists():
@@ -57,15 +55,6 @@ def read_csv_rows(path: Path) -> list[dict]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         return [{field: row.get(field, "") for field in KB_FIELDNAMES} for row in reader]
-
-
-def write_csv(path: Path, rows: list[dict]) -> None:
-    with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=KB_FIELDNAMES)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({field: row.get(field, "") for field in KB_FIELDNAMES})
-
 
 def merge_rows(row_groups: list[list[dict]]) -> list[dict]:
     merged: list[dict] = []
@@ -79,7 +68,6 @@ def merge_rows(row_groups: list[list[dict]]) -> list[dict]:
             seen_ids.add(row_id)
     return merged
 
-
 def merge_into_csv(path: Path, new_rows: list[dict]) -> int:
     existing_rows = read_csv_rows(path)
     existing_ids = {row["id"] for row in existing_rows if row.get("id")}
@@ -92,7 +80,6 @@ def merge_into_csv(path: Path, new_rows: list[dict]) -> int:
         appended += 1
     write_csv(path, existing_rows)
     return appended
-
 
 def run_command(command: list[str], cwd: Path) -> dict:
     completed = subprocess.run(
@@ -108,7 +95,6 @@ def run_command(command: list[str], cwd: Path) -> dict:
         "stdout": completed.stdout,
         "stderr": completed.stderr,
     }
-
 
 def build_document_command(args: argparse.Namespace, output_dir: Path, repo_root: Path) -> list[str]:
     command = [
@@ -139,7 +125,6 @@ def build_document_command(args: argparse.Namespace, output_dir: Path, repo_root
         command.extend(["--limit", str(args.document_limit)])
     return command
 
-
 def build_web_command(args: argparse.Namespace, output_dir: Path, repo_root: Path) -> list[str]:
     command = [
         sys.executable,
@@ -166,7 +151,6 @@ def build_web_command(args: argparse.Namespace, output_dir: Path, repo_root: Pat
     if args.web_skill_script:
         command.extend(["--skill-script", args.web_skill_script])
     return command
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -294,7 +278,6 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def main() -> None:
     args = parse_args()
     repo_root = Path(__file__).resolve().parent.parent
@@ -373,7 +356,6 @@ def main() -> None:
     print(f"Unified CSV: {merged_csv.resolve()}")
     if args.merge_into:
         print(f"Merged into existing CSV: {Path(args.merge_into).resolve()} ({merged_count} new rows)")
-
 
 if __name__ == "__main__":
     main()
