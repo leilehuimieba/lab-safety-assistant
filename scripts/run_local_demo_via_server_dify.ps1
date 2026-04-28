@@ -131,7 +131,7 @@ $PythonExe -m uvicorn web_demo.app:app --host 127.0.0.1 --port $DemoPort
 
 $demoProc = Start-Process -FilePath "powershell" `
     -ArgumentList @("-NoLogo", "-NoProfile", "-Command", $demoCommand) `
-    -WorkingDirectory $WebDemoDir `
+    -WorkingDirectory $RepoRoot `
     -PassThru `
     -WindowStyle Hidden
 
