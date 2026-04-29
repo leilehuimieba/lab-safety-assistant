@@ -1,0 +1,74 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+.venv312/
+venv/
+ENV/
+env/
+.eggs/
+*.egg-info/
+dist/
+build/
+wheels/
+
+# 测试与开发
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+*.cover
+.hypothesis/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 日志（运行时生成，挂载为 volume）
+logs/
+*.log
+
+# 缓存（运行时生成，挂载为 volume）
+.cache/
+
+# 产物（运行时生成，挂载为 volume）
+artifacts/
+
+# 本地环境
+local_env/
+
+# Playwright MCP 截图与日志
+.playwright-mcp/
+*.png
+
+# Docker 本身
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 部署包（避免把历史部署包打进镜像）
+*.tar.gz
+*.zip
+
+# 大体积数据（镜像中保留核心知识库 CSV，排除历史导出包）
+release_exports/v7/
+release_exports/v8/
+release_exports/v8.1/

@@ -5,8 +5,16 @@
 - 旧 `D:\workspace` 仅作为历史回退点与证据追溯路径，不再作为默认执行入口。
 
 ## 1. 当前主推进 change
-- `2026-04-14-v8-2-demo-flow-freeze`
+- `2026-04-28-demand-realignment-no-dify`
   - 状态：active
+  - 目标：暂停申报书与 Dify 平台导向，重新定位为 no-Dify 自研轻量版 `Lab Safety Copilot / 实验前安全检查助手`，产出新 PRD 并为 MVP 实现拆路
+
+- `2026-04-28-application-requirements-fulfillment`
+  - 状态：paused
+  - 目标：按申报书 `D:\newwork\lab-safe-assistant-workspace\standard_from_doc.docx` 整理并兑现项目承诺，优先补齐需求规格、差距矩阵、知识库规模、评测指标、真实试点反馈和结题验收证据
+
+- `2026-04-14-v8-2-demo-flow-freeze`
+  - 状态：paused
   - 目标：冻结 `v8.2` 最终上台演示脚本、逐步话术版、固定顺序与备用链路，并完成最终主讲人口播计时 Gate
 
 ## 2. 并行 change

@@ -148,5 +148,605 @@
     "explanation": "Early reporting supports immediate control actions and later corrective measures.",
     "references": ["Incident reporting SOP"],
     "multiple": false
+  },
+  {
+    "id": "Q011",
+    "category": "PPE",
+    "prompt": "When working with flammable solvents like ethanol or acetone, which PPE item is critical?",
+    "options": [
+      "Flip-flops for comfort",
+      "Flame-resistant lab coat and splash goggles",
+      "Cotton gloves only",
+      "No special PPE needed for small volumes"
+    ],
+    "correct_indices": [1],
+    "explanation": "Flammable solvent work requires flame-resistant clothing and eye protection as basic barriers against splash and ignition.",
+    "references": ["PPE policy", "SDS Section 8"],
+    "multiple": false
+  },
+  {
+    "id": "Q012",
+    "category": "PPE",
+    "prompt": "Which of the following PPE should be used when handling liquid nitrogen?",
+    "options": [
+      "Cryogenic gloves, face shield, and lab coat",
+      "Disposable latex gloves only",
+      "Cotton gardening gloves",
+      "No PPE is needed for small amounts"
+    ],
+    "correct_indices": [0],
+    "explanation": "Liquid nitrogen can cause severe frostbite. Cryogenic-rated gloves and a face shield are minimum requirements.",
+    "references": ["Cryogenic safety SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q013",
+    "category": "PPE",
+    "prompt": "A student notices their lab coat has a hole in the sleeve. What should they do?",
+    "options": [
+      "Continue working — it is only a small hole",
+      "Cover the hole with tape and continue",
+      "Remove the damaged coat and obtain a new one before continuing lab work",
+      "Roll up the sleeve above the hole"
+    ],
+    "correct_indices": [2],
+    "explanation": "Damaged PPE provides incomplete protection. Replace before resuming work in the laboratory.",
+    "references": ["PPE maintenance policy"],
+    "multiple": false
+  },
+  {
+    "id": "Q014",
+    "category": "PPE",
+    "prompt": "Which PPE items are required when performing a procedure that may generate chemical splashes? (Select all that apply)",
+    "options": [
+      "Splash goggles or face shield",
+      "Chemical-resistant gloves",
+      "Regular prescription glasses are sufficient",
+      "Lab coat or chemical apron"
+    ],
+    "correct_indices": [0, 1, 3],
+    "explanation": "Comprehensive splash protection requires goggles/face shield, chemical-resistant gloves, and body protection. Prescription glasses alone do not provide adequate splash protection.",
+    "references": ["PPE standard", "ANSI Z87.1"],
+    "multiple": true
+  },
+  {
+    "id": "Q015",
+    "category": "Chemical",
+    "prompt": "Concentrated sulfuric acid should be stored separately from which of the following?",
+    "options": [
+      "Other acids in the same cabinet",
+      "Organic solvents and reducing agents",
+      "Glass beakers",
+      "Distilled water bottles"
+    ],
+    "correct_indices": [1],
+    "explanation": "Strong oxidizers like concentrated sulfuric acid must be segregated from organic materials and reducing agents to prevent violent reactions.",
+    "references": ["Chemical storage SOP", "SDS Section 7"],
+    "multiple": false
+  },
+  {
+    "id": "Q016",
+    "category": "Chemical",
+    "prompt": "When diluting a concentrated acid, what is the correct procedure?",
+    "options": [
+      "Add water to acid quickly to disperse heat",
+      "Slowly add acid to water while stirring, never the reverse",
+      "Mix both simultaneously into a third container",
+      "The order does not matter if you work in a fume hood"
+    ],
+    "correct_indices": [1],
+    "explanation": "Always add acid to water slowly while stirring. Adding water to concentrated acid can cause violent boiling and splashing.",
+    "references": ["Chemical handling SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q017",
+    "category": "Chemical",
+    "prompt": "Peroxide-forming chemicals (e.g., diethyl ether, THF) require special attention. Which practice is correct?",
+    "options": [
+      "Store them indefinitely if the bottle is sealed",
+      "Label with date received and date opened, test for peroxides periodically, and dispose before expiration",
+      "Peroxide formation is only a myth — no special handling needed",
+      "Open the cap and sniff to check freshness"
+    ],
+    "correct_indices": [1],
+    "explanation": "Peroxide-forming chemicals can develop explosive peroxides over time. Date tracking, periodic testing, and timely disposal are essential.",
+    "references": ["Peroxide-forming chemical policy"],
+    "multiple": false
+  },
+  {
+    "id": "Q018",
+    "category": "Chemical",
+    "prompt": "A container label has become illegible. What should you do?",
+    "options": [
+      "Use the contents anyway if you remember what was inside",
+      "Open and smell to identify the chemical",
+      "Treat as unknown hazardous waste, label as 'Unknown Chemical', and follow hazardous waste disposal procedures",
+      "Pour it into an empty labeled bottle of any chemical"
+    ],
+    "correct_indices": [2],
+    "explanation": "Unknown chemicals must be treated as hazardous waste. Never guess or smell to identify — this can lead to exposure or dangerous reactions.",
+    "references": ["Chemical labeling SOP", "GHS standard"],
+    "multiple": false
+  },
+  {
+    "id": "Q019",
+    "category": "Electrical",
+    "prompt": "What is the correct response when you notice a frayed power cord on a hotplate?",
+    "options": [
+      "Wrap it with electrical tape and continue using it",
+      "Unplug the device, label it as defective, and report for repair or replacement",
+      "It is still safe to use if you avoid touching the damaged area",
+      "Only a problem if the device smokes"
+    ],
+    "correct_indices": [1],
+    "explanation": "Damaged electrical cords pose shock and fire risks. The device must be taken out of service and tagged until repaired.",
+    "references": ["Electrical safety SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q020",
+    "category": "Electrical",
+    "prompt": "Which of the following practices are unsafe in a wet laboratory area? (Select all that apply)",
+    "options": [
+      "Using extension cords as permanent wiring",
+      "Placing power strips on the floor near sinks",
+      "Keeping electrical equipment at least 15 cm from water sources",
+      "Using equipment with intact grounding and GFCI protection"
+    ],
+    "correct_indices": [0, 1],
+    "explanation": "Extension cords should not substitute for permanent wiring, and power strips near water create electrocution hazards. GFCIs and distance from water are safety measures.",
+    "references": ["Electrical code for labs", "NFPA 70"],
+    "multiple": true
+  },
+  {
+    "id": "Q021",
+    "category": "Electrical",
+    "prompt": "Before opening the case of a high-voltage power supply for maintenance, what is mandatory?",
+    "options": [
+      "Ask a colleague to watch",
+      "Disconnect power, follow lockout/tagout procedure, and verify zero energy state",
+      "Wear rubber boots only",
+      "Work faster to minimize exposure time"
+    ],
+    "correct_indices": [1],
+    "explanation": "High-voltage equipment requires formal lockout/tagout verification before any internal access. Speed does not replace isolation.",
+    "references": ["Lockout/Tagout SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q022",
+    "category": "Electrical",
+    "prompt": "An electrophoresis power supply trips its circuit breaker during a run. What is the appropriate next step?",
+    "options": [
+      "Reset the breaker and restart immediately",
+      "Check for buffer leaks or gel damage, then reset and restart",
+      "Unplug the unit, inspect all connections and the tank for leaks, report if damage is found, and do not restart until the cause is identified",
+      "Switch to a different power supply without investigating"
+    ],
+    "correct_indices": [2],
+    "explanation": "A tripping breaker may indicate a short circuit, buffer leak, or internal fault. The cause must be found before re-energizing.",
+    "references": ["Electrophoresis safety guide"],
+    "multiple": false
+  },
+  {
+    "id": "Q023",
+    "category": "Waste",
+    "prompt": "Halogenated solvent waste (e.g., dichloromethane, chloroform) must be collected in:",
+    "options": [
+      "The same container as non-halogenated solvents",
+      "A separate, clearly labeled halogenated waste container",
+      "The regular trash bin",
+      "Poured down the fume hood sink"
+    ],
+    "correct_indices": [1],
+    "explanation": "Halogenated solvents require separate collection from non-halogenated waste because they need different disposal treatment methods.",
+    "references": ["Waste segregation SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q024",
+    "category": "Waste",
+    "prompt": "What information must appear on a chemical waste label before the container is sealed for disposal?",
+    "options": [
+      "Only the date of disposal",
+      "Full chemical names (no abbreviations), approximate percentages, hazard class, generator name, and date",
+      "Just 'Chemical Waste' is sufficient",
+      "The name of the person who will transport it"
+    ],
+    "correct_indices": [1],
+    "explanation": "Complete waste identification is required by regulation. Abbreviations and incomplete descriptions can create handling risks for waste processors.",
+    "references": ["Waste labeling regulation", "RCRA"],
+    "multiple": false
+  },
+  {
+    "id": "Q025",
+    "category": "Waste",
+    "prompt": "Which of the following items are considered hazardous (chemical) waste and must NOT go in regular trash? (Select all that apply)",
+    "options": [
+      "Used silica gel TLC plates with organic solvent residue",
+      "Pipette tips used with ethidium bromide",
+      "Clean paper towels from hand drying",
+      "Expired or leftover chemical reagents in original containers"
+    ],
+    "correct_indices": [0, 1, 3],
+    "explanation": "Items contaminated with chemicals, including TLC plates and used tips, are hazardous waste. Expired reagents must also follow hazardous waste disposal routes.",
+    "references": ["Hazardous waste determination guide"],
+    "multiple": true
+  },
+  {
+    "id": "Q026",
+    "category": "Waste",
+    "prompt": "A waste collection bottle for organic solvents is 75% full. What is the correct action?",
+    "options": [
+      "Fill it to the very top to maximize efficiency",
+      "Stop adding waste, cap the bottle, label it, and submit for disposal collection",
+      "Pour some out into another bottle to make room",
+      "Leave it uncapped for solvent evaporation overnight"
+    ],
+    "correct_indices": [1],
+    "explanation": "Waste containers should not be filled beyond 80% capacity to allow for vapor expansion. They must be closed when not actively adding waste.",
+    "references": ["Waste container management SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q027",
+    "category": "Emergency",
+    "prompt": "If a colleague collapses in the lab and is unresponsive, what is the correct sequence?",
+    "options": [
+      "Pour water on their face, then call for help",
+      "Check the scene for safety, call for emergency help, check breathing, begin CPR if trained, and send someone to guide responders",
+      "Wait for a supervisor to arrive before doing anything",
+      "Move them to the hallway first, then check what happened"
+    ],
+    "correct_indices": [1],
+    "explanation": "The basic life support chain: ensure scene safety, call for help, assess the victim, and start CPR if qualified. Do not delay while waiting for a supervisor.",
+    "references": ["Emergency response SOP", "Basic Life Support guidelines"],
+    "multiple": false
+  },
+  {
+    "id": "Q028",
+    "category": "Emergency",
+    "prompt": "The fire alarm sounds while you are in the middle of an experiment. What should you do?",
+    "options": [
+      "Finish the critical step of the experiment first, then leave",
+      "Make the experiment safe if it takes less than 10 seconds (stop heating, close open flames), then evacuate immediately",
+      "Ignore the alarm — it is probably a drill",
+      "Call your supervisor first to confirm it is real"
+    ],
+    "correct_indices": [1],
+    "explanation": "Life safety takes priority. Make the setup briefly safe only if it is quick, then evacuate. Never ignore an alarm or delay for non-critical steps.",
+    "references": ["Fire evacuation SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q029",
+    "category": "Emergency",
+    "prompt": "Where should you look first to find the correct emergency response for a specific chemical you are working with?",
+    "options": [
+      "Google search on your phone",
+      "The chemical's SDS, Section 4 (First Aid) and Section 6 (Accidental Release)",
+      "Ask the most senior person in the room",
+      "Check the lab notebook from last semester"
+    ],
+    "correct_indices": [1],
+    "explanation": "The SDS is the authoritative document for chemical-specific emergency response. Sections 4 and 6 contain the most relevant information during an incident.",
+    "references": ["SDS standard", "GHS"],
+    "multiple": false
+  },
+  {
+    "id": "Q030",
+    "category": "Emergency",
+    "prompt": "Which emergency equipment locations must every lab member know before starting experiments? (Select all that apply)",
+    "options": [
+      "Nearest eyewash station and emergency shower",
+      "Nearest fire extinguisher and fire alarm pull station",
+      "Emergency assembly point outside the building",
+      "Location of the coffee machine"
+    ],
+    "correct_indices": [0, 1, 2],
+    "explanation": "Knowing eyewash, extinguisher, alarm, and assembly point locations is essential for rapid emergency response. These should be verified during lab orientation.",
+    "references": ["Lab orientation checklist"],
+    "multiple": true
+  },
+  {
+    "id": "Q031",
+    "category": "Planning",
+    "prompt": "What is the most important reason to read the SDS before using a new chemical?",
+    "options": [
+      "It is a bureaucratic requirement with no practical value",
+      "It provides hazard identification, exposure controls, and emergency procedures specific to that chemical",
+      "It tells you where to buy more of the chemical",
+      "It only matters for large industrial quantities"
+    ],
+    "correct_indices": [1],
+    "explanation": "The SDS is the primary source of hazard, handling, PPE, and emergency information for each chemical. Reading it before use is a key risk control.",
+    "references": ["SDS policy", "GHS"],
+    "multiple": false
+  },
+  {
+    "id": "Q032",
+    "category": "Planning",
+    "prompt": "When planning an experiment involving a new high-pressure reaction, which of the following must be addressed in advance?",
+    "options": [
+      "Pressure rating of all vessels and fittings",
+      "Burst disk or pressure relief pathway",
+      "Whether the fume hood sash can fully close over the setup",
+      "What snacks to bring during the long reaction"
+    ],
+    "correct_indices": [0, 1],
+    "explanation": "Pressure-rated equipment and overpressure protection are mandatory engineering controls. The sash does not need to close fully if other controls are in place.",
+    "references": ["High-pressure experiment SOP"],
+    "multiple": true
+  },
+  {
+    "id": "Q033",
+    "category": "Planning",
+    "prompt": "A pre-start checklist asks 'Has the waste route been confirmed before the experiment starts.' Why is this included?",
+    "options": [
+      "It is just extra paperwork with no real purpose",
+      "Because identifying waste containers, labels, and segregation before generating waste prevents unsafe accumulation and improper disposal",
+      "Because waste can always be sorted after the experiment ends",
+      "Only relevant for large-scale industrial production"
+    ],
+    "correct_indices": [1],
+    "explanation": "Confirming the waste route before starting ensures containers are available, labeled, and compatible — preventing mid-experiment improvisation that leads to safety incidents.",
+    "references": ["Waste planning SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q034",
+    "category": "Planning",
+    "prompt": "An experiment uses both pyrophoric reagents and high pressure. What is the minimum staffing requirement?",
+    "options": [
+      "One person is fine if they are experienced",
+      "At least two trained people must be present — one to operate, one to observe and respond",
+      "One person plus a phone to call for help",
+      "Staffing does not matter if the equipment is automated"
+    ],
+    "correct_indices": [1],
+    "explanation": "High-hazard operations require a buddy system: one operator and one observer who can intervene or call for help if something goes wrong.",
+    "references": ["High-risk operation policy"],
+    "multiple": false
+  },
+  {
+    "id": "Q035",
+    "category": "Biosafety",
+    "prompt": "What is the correct procedure after a biohazardous liquid spill inside a Biosafety Cabinet (BSC)?",
+    "options": [
+      "Turn off the BSC and walk away",
+      "Keep the BSC running, cover spill with absorbent material, apply disinfectant, allow contact time, then clean up while wearing PPE",
+      "Wipe it with a dry paper towel immediately",
+      "Open the sash fully and use a household cleaner"
+    ],
+    "correct_indices": [1],
+    "explanation": "The BSC should remain running to contain aerosols. Disinfection requires proper contact time with an appropriate disinfectant before cleanup.",
+    "references": ["BSC SOP", "BMBL 6th Edition"],
+    "multiple": false
+  },
+  {
+    "id": "Q036",
+    "category": "Biosafety",
+    "prompt": "Which biosafety level (BSL) is appropriate for work with well-characterized agents not known to cause disease in healthy adults?",
+    "options": [
+      "BSL-4",
+      "BSL-3",
+      "BSL-2",
+      "BSL-1"
+    ],
+    "correct_indices": [3],
+    "explanation": "BSL-1 is for agents not known to consistently cause disease in immunocompetent adults. Standard microbiological practices apply, with minimal containment requirements.",
+    "references": ["BMBL 6th Edition", "Biosafety level definitions"],
+    "multiple": false
+  },
+  {
+    "id": "Q037",
+    "category": "Biosafety",
+    "prompt": "Sharps (needles, blades, broken glass contaminated with biological material) should be disposed of in:",
+    "options": [
+      "Regular trash bin",
+      "Recycling bin",
+      "Puncture-resistant sharps container labeled with biohazard symbol",
+      "Glass waste box without biohazard marking"
+    ],
+    "correct_indices": [2],
+    "explanation": "Biohazardous sharps require puncture-resistant containers with biohazard labeling to protect waste handlers from both physical and biological hazards.",
+    "references": ["Biohazard waste SOP", "Bloodborne Pathogens Standard"],
+    "multiple": false
+  },
+  {
+    "id": "Q038",
+    "category": "Biosafety",
+    "prompt": "Which of the following are appropriate decontamination methods for biological waste? (Select all that apply)",
+    "options": [
+      "Autoclaving at 121°C for the validated cycle time",
+      "Immersion in an appropriate chemical disinfectant for the required contact time",
+      "Rinsing with tap water only",
+      "Leaving the waste in direct sunlight for one hour"
+    ],
+    "correct_indices": [0, 1],
+    "explanation": "Autoclaving and chemical disinfection with validated parameters are the two main methods for biological waste decontamination. Water and sunlight are insufficient.",
+    "references": ["Biohazard waste treatment SOP"],
+    "multiple": true
+  },
+  {
+    "id": "Q039",
+    "category": "Incident",
+    "prompt": "A chemical splash to the skin occurs but the person says they feel fine after rinsing. What should happen next?",
+    "options": [
+      "Resume work immediately since they feel fine",
+      "Complete an incident report, seek medical evaluation per SOP, and do not resume hazardous work until cleared",
+      "Note it in a personal notebook but do not report anything",
+      "Only report if blisters appear later"
+    ],
+    "correct_indices": [1],
+    "explanation": "All chemical exposures must be formally reported regardless of immediate symptoms, because some effects are delayed. Medical evaluation and incident documentation are required.",
+    "references": ["Incident reporting SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q040",
+    "category": "Incident",
+    "prompt": "What is the primary purpose of a root cause analysis after a lab incident?",
+    "options": [
+      "To assign blame to the person who made the mistake",
+      "To identify systemic causes and implement corrective actions that prevent recurrence",
+      "To satisfy insurance paperwork requirements",
+      "To decide who pays for the broken equipment"
+    ],
+    "correct_indices": [1],
+    "explanation": "Root cause analysis focuses on system-level improvements, not individual blame. The goal is to prevent the same or similar incidents from happening again.",
+    "references": ["Incident investigation SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q041",
+    "category": "Incident",
+    "prompt": "When should a 'near miss' (an event that could have caused harm but did not) be reported?",
+    "options": [
+      "Never — if nobody was hurt, there is nothing to report",
+      "Only if the lab manager witnessed it",
+      "Immediately — near miss reporting is one of the most effective ways to prevent future actual incidents",
+      "At the annual safety review meeting"
+    ],
+    "correct_indices": [2],
+    "explanation": "Near miss reporting is a leading indicator of safety performance. Reporting and analyzing near misses allows corrective action before someone actually gets hurt.",
+    "references": ["Near miss reporting policy"],
+    "multiple": false
+  },
+  {
+    "id": "Q042",
+    "category": "Incident",
+    "prompt": "After a lab incident is closed, what additional activity helps sustain safety improvement?",
+    "options": [
+      "Nothing — closure means the matter is finished",
+      "Periodic review of closed incidents to check if corrective actions remain effective and have not drifted",
+      "Delete all records after one year",
+      "Only re-open if the same person is involved again"
+    ],
+    "correct_indices": [1],
+    "explanation": "Corrective action effectiveness should be verified periodically. Closed incidents should be reviewed to confirm controls are sustained and effective over time.",
+    "references": ["Safety management system SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q043",
+    "category": "Mechanical",
+    "prompt": "Before using a bench-top grinder or polisher, what must you verify?",
+    "options": [
+      "The tool rest is properly adjusted and the guard is in place",
+      "Only that the power cord is long enough",
+      "Nothing — grinders are inherently safe",
+      "That nobody is watching"
+    ],
+    "correct_indices": [0],
+    "explanation": "Tool rest adjustment and guard integrity are critical safety checks for grinding equipment to prevent entanglement and projectile hazards.",
+    "references": ["Machine shop safety SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q044",
+    "category": "Mechanical",
+    "prompt": "What is a key hazard when operating a high-speed centrifuge with improperly balanced rotors?",
+    "options": [
+      "It makes a slightly louder noise but is otherwise safe",
+      "Rotor imbalance can cause catastrophic mechanical failure, ejection of the rotor, and release of hazardous aerosols",
+      "It only wastes electricity",
+      "The samples will spin slower"
+    ],
+    "correct_indices": [1],
+    "explanation": "An unbalanced rotor at high speed can fail catastrophically, potentially ejecting the rotor through the lid and releasing hazardous contents as aerosols.",
+    "references": ["Centrifuge safety SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q045",
+    "category": "Mechanical",
+    "prompt": "When lifting a heavy gas cylinder for transport, which practice is correct?",
+    "options": [
+      "Roll it horizontally on the floor",
+      "Lift by the valve cap or regulator",
+      "Use a cylinder cart with the cylinder secured by a chain or strap, and keep the valve cap on",
+      "Carry it by hand with one person on each end"
+    ],
+    "correct_indices": [2],
+    "explanation": "Gas cylinders must be transported upright on a cylinder cart with secure restraints and the valve cap in place. Never roll, drag, or lift by the valve.",
+    "references": ["Compressed gas cylinder SOP"],
+    "multiple": false
+  },
+  {
+    "id": "Q046",
+    "category": "Mechanical",
+    "prompt": "Which of the following are rotating equipment hazards that require guarding? (Select all that apply)",
+    "options": [
+      "Exposed belts and pulleys on a vacuum pump",
+      "Rotating shafts without covers",
+      "A stationary glass beaker",
+      "An unguarded centrifuge rotor"
+    ],
+    "correct_indices": [0, 1, 3],
+    "explanation": "Any exposed rotating component — belts, pulleys, shafts, rotors — presents an entanglement or ejection hazard and must be guarded during operation.",
+    "references": ["Machine guarding standard", "OSHA 1910.212"],
+    "multiple": true
+  },
+  {
+    "id": "Q047",
+    "category": "Escalation",
+    "prompt": "A student notices that a safety shower has been blocked by stored equipment. Who should they notify?",
+    "options": [
+      "Nobody — it is not their responsibility",
+      "Report to the lab supervisor and safety officer immediately; do not move the equipment unless it is safe to do so",
+      "Post about it on social media",
+      "Wait until the annual safety inspection"
+    ],
+    "correct_indices": [1],
+    "explanation": "Blocked safety equipment is an imminent hazard. Escalation to the supervisor and safety officer must happen immediately, as delayed access during an emergency could be fatal.",
+    "references": ["Safety equipment SOP", "Escalation policy"],
+    "multiple": false
+  },
+  {
+    "id": "Q048",
+    "category": "Escalation",
+    "prompt": "When should a safety concern be escalated to the institutional safety committee rather than staying within the lab?",
+    "options": [
+      "When the lab supervisor cannot resolve the issue or the hazard affects multiple labs",
+      "Never — all problems should be solved inside the lab",
+      "Only if an injury has already occurred",
+      "Escalation is only for financial issues"
+    ],
+    "correct_indices": [0],
+    "explanation": "Issues that exceed the resources or authority of the lab supervisor, or that affect multiple groups, must be escalated to the institutional level for appropriate resolution.",
+    "references": ["Safety escalation policy"],
+    "multiple": false
+  },
+  {
+    "id": "Q049",
+    "category": "Escalation",
+    "prompt": "A junior researcher is asked to perform a procedure they have not been trained on. What should they do?",
+    "options": [
+      "Try their best and watch a YouTube tutorial",
+      "Refuse to perform the untrained task, inform the supervisor, and request formal training before proceeding",
+      "Ask a similarly untrained colleague for tips",
+      "Skip the procedure and report that it was done"
+    ],
+    "correct_indices": [1],
+    "explanation": "No one should perform a task they are not trained and authorized to do. The correct escalation path is to refuse safely, inform the supervisor, and wait for proper training.",
+    "references": ["Training policy", "Stop work authority"],
+    "multiple": false
+  },
+  {
+    "id": "Q050",
+    "category": "Escalation",
+    "prompt": "Which of the following situations require immediate escalation to emergency services (fire department, ambulance)? (Select all that apply)",
+    "options": [
+      "Uncontrolled fire or spreading smoke",
+      "A person is unresponsive, not breathing, or has severe bleeding",
+      "A minor paper cut from a lab notebook",
+      "A major chemical spill that exceeds the lab's spill kit capacity"
+    ],
+    "correct_indices": [0, 1, 3],
+    "explanation": "Any incident beyond the lab team's capacity to control safely — uncontrolled fire, medical emergencies, or large spills — requires immediate external emergency response.",
+    "references": ["Emergency escalation SOP"],
+    "multiple": true
   }
 ]

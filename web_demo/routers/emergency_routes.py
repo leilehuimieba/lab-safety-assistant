@@ -20,3 +20,11 @@ def emergency_match(q: str) -> EmergencyMatchResponse:
     if not query:
         raise HTTPException(status_code=400, detail="q is required.")
     return match_emergency_card(query)
+
+
+@router.post("/api/emergency/match", response_model=EmergencyMatchResponse)
+def emergency_match_post(payload: dict[str, str]) -> EmergencyMatchResponse:
+    query = (payload.get("query") or payload.get("q") or "").strip()
+    if not query:
+        raise HTTPException(status_code=400, detail="query is required.")
+    return match_emergency_card(query)

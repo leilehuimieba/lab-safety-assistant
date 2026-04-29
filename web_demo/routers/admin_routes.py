@@ -28,6 +28,10 @@ def admin_dashboard(days: int = 30, risk_level: str = "", incident_status: str =
 
 @router.get("/api/admin/export.csv")
 def admin_export_csv(scope: str = "checklists", days: int = 30, risk_level: str = "", incident_status: str = "") -> Response:
+    return _admin_export_csv(scope, days, risk_level, incident_status)
+
+
+def _admin_export_csv(scope: str, days: int, risk_level: str, incident_status: str) -> Response:
     scope_value = (scope or "").strip().lower()
     if scope_value == "checklists":
         rows = filter_checklist_rows(safe_read_csv_rows(CHECKLIST_RUNS_FILE), days=days, risk_level=risk_level)
@@ -82,11 +86,25 @@ def admin_export_csv(scope: str = "checklists", days: int = 30, risk_level: str 
 
 @router.get("/api/admin/weekly_report.md")
 def admin_weekly_report(days: int = 7, risk_level: str = "", incident_status: str = "") -> PlainTextResponse:
+    return _admin_weekly_report(days, risk_level, incident_status)
+
+
+def _admin_weekly_report(days: int, risk_level: str, incident_status: str) -> PlainTextResponse:
     markdown = build_weekly_report_markdown(days=days, risk_level=risk_level, incident_status=incident_status)
     return PlainTextResponse(
         content=markdown,
         headers={"Content-Disposition": f'attachment; filename="weekly_report_{datetime.now().strftime("%Y%m%d")}.md"'},
     )
+
+
+@router.get("/api/admin/export")
+def admin_export(scope: str = "checklists", days: int = 30, risk_level: str = "", incident_status: str = "") -> Response:
+    return _admin_export_csv(scope, days, risk_level, incident_status)
+
+
+@router.get("/api/admin/weekly-report")
+def admin_weekly_report_alias(days: int = 7, risk_level: str = "", incident_status: str = "") -> PlainTextResponse:
+    return _admin_weekly_report(days, risk_level, incident_status)
 
 
 @router.get("/api/workspace/status", response_model=WorkspaceStatusResponse)

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 """知识库检索与规则匹配服务
 
-- retrieve_citations: 基于 token 匹配和模糊搜索检索 KB 条目并排序
+- retrieve_citations: 基于 token 匹配 + 语义检索（bge-m3）混合打分检索 KB 条目
 - match_rule: 按 severity、命中数和规则顺序匹配安全规则
 - should_enforce_terminal_rule: 判断是否触发终止动作（refuse / redirect_emergency / ask_for_more_info）
 """
 
+import os
 from typing import Any
 
 from ..models import Citation
@@ -20,14 +21,64 @@ from ..repositories import (
     extract_tokens,
     get_kb_entries,
     get_rules_config,
+    KB_FILE,
 )
+
+# 语义检索可选依赖：未安装时自动 fallback 到纯文本检索
+try:
+    from libs.embedding_utils import semantic_search
+
+    _EMBEDDING_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    _EMBEDDING_AVAILABLE = False
+
+_EMBEDDING_CACHE_DIR = KB_FILE.parent / ".cache" / "embedding"
+_SEMANTIC_WEIGHT = float(os.getenv("SEMANTIC_WEIGHT", "12.0"))
 
 
 def retrieve_citations(question: str, top_k: int = DEFAULT_TOP_K) -> list[Citation]:
+    entries = get_kb_entries()
+
+    # ---- 语义检索（可选） ----
+    semantic_scores: dict[str, float] = {}
+    if _EMBEDDING_AVAILABLE and entries:
+        try:
+            mtime = os.path.getmtime(KB_FILE) if KB_FILE.exists() else 0.0
+            texts = [
+                " ".join(
+                    [
+                        row.get("title", ""),
+                        row.get("question", ""),
+                        row.get("answer", ""),
+                        row.get("steps", ""),
+                        row.get("forbidden", ""),
+                        row.get("emergency", ""),
+                        row.get("ppe", ""),
+                        row.get("hazard_types", ""),
+                        row.get("tags", ""),
+                    ]
+                )
+                for row in entries
+            ]
+            semantic_results = semantic_search(
+                query=question,
+                entries=entries,
+                texts=texts,
+                cache_dir=_EMBEDDING_CACHE_DIR,
+                kb_file_mtime=mtime,
+                top_k=max(1, top_k) * 3,
+            )
+            if semantic_results:
+                for score, row in semantic_results:
+                    semantic_scores[row.get("id", "")] = score
+        except Exception:
+            pass  # fallback 到纯文本检索
+
+    # ---- 文本检索（原有逻辑） ----
     q = normalize_search_text(question)
     q_tokens = extract_tokens(question)
     scored: list[tuple[float, dict[str, str]]] = []
-    for row in get_kb_entries():
+    for row in entries:
         score = 0.0
         blob = row.get("blob", "")
         title_blob = row.get("title_blob", "")
@@ -52,6 +103,12 @@ def retrieve_citations(question: str, top_k: int = DEFAULT_TOP_K) -> list[Citati
                 score += 0.95 + min(len(token), 4) * 0.11
             elif token in blob:
                 score += 0.65 + min(len(token), 4) * 0.08
+
+        # ---- 混合加权：语义分数加成 ----
+        sem_score = semantic_scores.get(row.get("id", ""), 0.0)
+        if sem_score > 0:
+            score += sem_score * _SEMANTIC_WEIGHT
+
         if score > 0:
             scored.append((score, row))
     scored.sort(key=lambda item: item[0], reverse=True)

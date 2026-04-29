@@ -7,6 +7,7 @@ from __future__ import annotations
 - evaluate_checklist_submission: 评估检查清单提交结果并记录运行数据
 - filter_checklist_rows / dedupe_checklist_items: 检查清单数据筛选与去重工具
 """
+import csv
 import json
 import os
 from datetime import datetime
@@ -16,7 +17,8 @@ from uuid import uuid4
 from fastapi import HTTPException
 
 from ..models import (
-    ChecklistItem, ChecklistSubmitRequest, ChecklistSubmitResponse,
+    ChecklistItem, ChecklistReviewRequest, ChecklistReviewResponse,
+    ChecklistSubmitRequest, ChecklistSubmitResponse,
     ChecklistTemplateResponse, RiskAssessResponse,
 )
 from ..repositories import (
@@ -27,6 +29,7 @@ from ..repositories import (
 )
 from .kb_service import match_rule, retrieve_citations
 from .answer_service import assess_low_confidence
+from libs.time_utils import within_days
 
 def build_risk_assessment(scenario: str, citations: list[Citation], rule: dict[str, Any] | None) -> RiskAssessResponse:
     severity_score = SEVERITY_SCORE.get(str((rule or {}).get("severity", "")).lower(), 1)
@@ -146,6 +149,8 @@ def evaluate_checklist_submission(payload: ChecklistSubmitRequest) -> ChecklistS
     )
     record_id = f"CHK-{datetime.now().strftime('%Y%m%d')}-{uuid4().hex[:8]}"
     submitted_at = datetime.now().isoformat(timespec="seconds")
+    # 有阻断项 → 待审核；全部通过 → 自动通过
+    initial_review_status = "pending" if blocking else "approved"
     write_csv_row(
         CHECKLIST_RUNS_FILE,
         CHECKLIST_HEADERS,
@@ -161,6 +166,10 @@ def evaluate_checklist_submission(payload: ChecklistSubmitRequest) -> ChecklistS
             "blocking_reasons": " | ".join(blocking),
             "items_json": json.dumps([item.model_dump() for item in checked_items], ensure_ascii=False),
             "notes": payload.notes.strip(),
+            "review_status": initial_review_status,
+            "reviewed_by": "",
+            "reviewed_at": "",
+            "review_comment": "",
         },
     )
     return ChecklistSubmitResponse(
@@ -174,6 +183,7 @@ def evaluate_checklist_submission(payload: ChecklistSubmitRequest) -> ChecklistS
         allow_start=allow_start,
         blocking_reasons=blocking,
         next_actions=next_actions,
+        review_status=initial_review_status,
     )
 def filter_checklist_rows(rows: list[dict[str, str]], *, days: int, risk_level: str) -> list[dict[str, str]]:
     target_risk = (risk_level or "").strip().lower()
@@ -185,3 +195,43 @@ def filter_checklist_rows(rows: list[dict[str, str]], *, days: int, risk_level: 
             continue
         filtered.append(row)
     return filtered
+
+def review_checklist_submission(record_id: str, payload: ChecklistReviewRequest) -> ChecklistReviewResponse:
+    if not CHECKLIST_RUNS_FILE.exists():
+        raise HTTPException(status_code=404, detail="no checklist records found.")
+
+    rows: list[dict[str, str]] = []
+    target_found = False
+    reviewed_at = datetime.now().isoformat(timespec="seconds")
+    with CHECKLIST_RUNS_FILE.open("r", encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f):
+            # 补齐旧记录的缺失 review 字段
+            for header in CHECKLIST_HEADERS:
+                if header not in row:
+                    row[header] = ""
+            if (row.get("record_id") or "").strip() == record_id:
+                target_found = True
+                row["review_status"] = "approved" if payload.action == "approve" else "rejected"
+                row["reviewed_by"] = payload.reviewer.strip() or "teacher"
+                row["reviewed_at"] = reviewed_at
+                row["review_comment"] = payload.comment.strip()
+            rows.append(row)
+
+    if not target_found:
+        raise HTTPException(status_code=404, detail=f"checklist record {record_id} not found.")
+
+    CHECKLIST_RUNS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with CHECKLIST_RUNS_FILE.open("w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=CHECKLIST_HEADERS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    action_name = "已批准" if payload.action == "approve" else "已驳回"
+    return ChecklistReviewResponse(
+        record_id=record_id,
+        review_status=("approved" if payload.action == "approve" else "rejected"),
+        reviewed_by=payload.reviewer.strip() or "teacher",
+        reviewed_at=reviewed_at,
+        review_comment=payload.comment.strip(),
+        message=f"{action_name}。操作人: {payload.reviewer}",
+    )

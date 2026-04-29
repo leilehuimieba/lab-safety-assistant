@@ -21,7 +21,7 @@ except ImportError:  # pragma: no cover
 
 BASE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = BASE_DIR.parent
-HTML_FILE = BASE_DIR / "templates" / "index.html"
+HTML_FILE = BASE_DIR / "frontend" / "dist" / "index.html"
 KB_FILE = REPO_ROOT / "knowledge_base_curated.csv"
 RULES_FILE = REPO_ROOT / "safety_rules.yaml"
 EMERGENCY_CARDS_FILE = BASE_DIR / "data" / "emergency_cards.json"
@@ -126,6 +126,10 @@ CHECKLIST_HEADERS = [
     "blocking_reasons",
     "items_json",
     "notes",
+    "review_status",
+    "reviewed_by",
+    "reviewed_at",
+    "review_comment",
 ]
 
 TRAINING_ATTEMPT_HEADERS = [

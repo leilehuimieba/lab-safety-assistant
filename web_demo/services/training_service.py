@@ -21,7 +21,7 @@ from ..models import (
 )
 from ..repositories import (
     DEFAULT_TRAINING_PASS_THRESHOLD,
-    TRAINING_ATTEMPT_HEADERS, TRAINING_MISTAKE_HEADERS,
+    TRAINING_ATTEMPT_HEADERS, TRAINING_ATTEMPTS_FILE, TRAINING_MISTAKE_HEADERS, TRAINING_MISTAKES_FILE,
     get_training_bank, safe_read_csv_rows, write_csv_row,
 )
 

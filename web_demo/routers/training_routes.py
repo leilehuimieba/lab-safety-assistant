@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 
 from ..models import (
@@ -117,6 +117,7 @@ def _load_training_roster_status() -> TrainingRosterStatusResponse:
         passed_count=sum(1 for item in items if item.passed),
         incomplete_count=len(incomplete),
         incomplete_students=incomplete[:10],
+        roster=items,
     )
 
 
@@ -152,9 +153,22 @@ def training_roster_status() -> TrainingRosterStatusResponse:
     return _load_training_roster_status()
 
 
+@router.get("/api/training/roster", response_model=TrainingRosterStatusResponse)
+def training_roster() -> TrainingRosterStatusResponse:
+    return _load_training_roster_status()
+
+
 @router.post("/api/training/roster_upload", response_model=TrainingRosterUploadResponse)
 def training_roster_upload(payload: TrainingRosterUploadRequest) -> TrainingRosterUploadResponse:
     return _save_training_roster_csv(payload.csv_text)
+
+
+@router.post("/api/training/roster", response_model=TrainingRosterStatusResponse)
+async def training_roster_upload_form(file: UploadFile = File(...)) -> TrainingRosterStatusResponse:
+    content = await file.read()
+    csv_text = content.decode("utf-8-sig")
+    _save_training_roster_csv(csv_text)
+    return _load_training_roster_status()
 
 
 @router.get("/api/training/roster_template.csv")

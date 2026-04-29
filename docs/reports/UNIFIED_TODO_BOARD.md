@@ -17,6 +17,23 @@
 
 | Task ID | Priority | 状态 | Owner | 任务 | 完成判据 | 验证命令 |
 |---|---|---|---|---|---|---|
+| NO-DIFY-PRD-01 | P0 | done | 产品 / 项目负责人 | 暂停申报书主线并建立 no-Dify 新需求 PRD | 已完成：`docs/product/prd_lab_safety_copilot_no_dify_20260428.md` 存在，当前 active change 为 `2026-04-28-demand-realignment-no-dify` | 手工检查文档 |
+| NO-DIFY-MVP-01 | P0 | todo | 后端 / 前端 | 实验前自查表单 | 用户可输入实验名称、试剂、设备、步骤、PPE、SOP/SDS 状态，并提交给后端 | 待实现 |
+| NO-DIFY-MVP-02 | P0 | todo | 后端 / 安全规则 | 风险等级与阻断规则 | 高风险或缺关键项时输出 `暂不可开工` 或 `需老师确认`，不依赖 Dify | 待实现 |
+| NO-DIFY-MVP-03 | P0 | todo | 后端 / 前端 | 开工检查清单生成 | 系统能根据实验场景生成可勾选检查项，并能提交检查结果 | 待实现 |
+| NO-DIFY-MVP-04 | P0 | todo | 老师端 / 后端 | 老师审核包 | 高风险提交可生成老师摘要：风险、缺失项、建议动作，并进入待审核列表 | 待实现 |
+| NO-DIFY-MVP-05 | P0 | todo | 检索 / 后端 | 本地知识库安全问答 | 不依赖 Dify，从本地知识库返回带来源答案；低命中时不硬答 | 待实现 |
+| NO-DIFY-MVP-06 | P0 | todo | 后端 / 管理员端 | 低置信问题队列 | 知识库未命中或低置信问题进入待补知识队列，管理员可查看 | 待实现 |
+| NO-DIFY-MVP-07 | P0 | todo | 管理员端 | 管理看板 | 展示高风险场景、阻断原因、低置信问题、待审核数量 | 待实现 |
+| NO-DIFY-MVP-08 | P0 | todo | 测试 / 验收 | no-Dify MVP 回归测试 | pytest 覆盖阻断、来源引用、低置信队列和老师审核包；浏览器可走通主链路 | 待实现 |
+| APP-FULFILL-01 | P0 | done | 项目负责人 / 文档设计 | 按申报书整理需求规格说明 | 已完成：`docs/product/requirements_spec_from_application_20260428.md` 存在，覆盖四大模块、功能需求、非功能需求、验收口径和版本路线 | 手工检查文档 |
+| APP-FULFILL-02 | P0 | done | 项目负责人 / 发布与验收负责人 | 建立申报书目标与现状差距矩阵 | 已完成：`docs/product/application_alignment_gap_matrix_20260428.md` 存在，逐项标明已完成/部分完成/未完成和下一步 | 手工检查文档 |
+| APP-FULFILL-03 | P0 | in_progress | 数据清洗员 / 知识库负责人 | 建立 `v9.0-core-1000` 核心知识库阶段包 | `release_exports/v9.0-core-1000/` 中有 ≥1000 条结构化知识、字段完整率报告、去重报告和来源抽检记录 | 待设计 |
+| APP-FULFILL-04 | P0 | todo | 评测负责人 / 实验室安全老师 | 统一申报书指标评测口径 | `docs/eval/` 中有有效回答率、专业准确率、安全拒答率、意图识别率、响应时延 P95 的定义、脚本输出和人工审核说明 | 待设计 |
+| APP-FULFILL-05 | P0 | todo | 试点负责人 | 收集真实试点反馈并归档 | 至少收集 3-5 名学生、1-2 名老师真实反馈，形成问题清单、优化建议和反馈汇总 | 待执行 |
+| APP-FULFILL-06 | P1 | todo | 数据清洗员 / 发布负责人 | 完成 72 小时知识更新演练 | 选择一批新增 MSDS/SOP/应急资料，完成采集-清洗-审核-发布-评测并形成演练报告 | 待设计 |
+| APP-FULFILL-07 | P1 | todo | 运维 / 后端 | 补连续运行与健康检查证据 | 形成 7×24 或阶段性连续运行报告，包含 `/health`、服务日志、故障恢复和运行时长 | 待设计 |
+| APP-FULFILL-08 | P0 | todo | 数据清洗员 / 知识库负责人 | 建立 `v9.1-full-3000` 申报书最终知识库包 | `release_exports/v9.1-full-3000/` 中有 ≥3000 条结构化知识或在结题材料中给出未达成原因与后续计划 | 待设计 |
 | REL-FIX-16 | P0 | done | 平台维护（主）/ 发布与验收负责人（验收） | 恢复主链路可用，`route_success_rate >= 0.80` | `docs/eval/release_policy_check_prod.json` 为 `PASS`，且阻断原因不再出现 `route_success_rate too low` | CMD-REL-01, CMD-REL-02, CMD-REL-03 |
 | REL-FIX-17 | P0 | done | 平台维护（主）/ 发布与验收负责人（验收） | 将超时率压到阈值内，`route_timeout_rate <= 0.20` | `release_fix_plan_auto.md/csv` 中不再出现 `route_timeout_rate too high` | CMD-REL-01, CMD-REL-02, CMD-REL-05 |
 | GO-LIVE-HEALTH-01 | P0 | done | 平台维护（主）/ 发布与验收负责人（验收） | 修复 `/health` 不可达（10061）问题 | `docs/ops/go_live_readiness.md` 不再包含 `web_health unreachable`，整体不是因健康检查而 `BLOCK` | CMD-GO-01, CMD-GO-02 |

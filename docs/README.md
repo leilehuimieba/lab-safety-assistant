@@ -8,15 +8,18 @@
 - 当前次级目标：后续平台化与稳定化
 
 ## 2. 当前唯一执行主线
-- 当前主线：围绕 `v8.2` 演示链路收敛文档、验证、脚本与答辩可复现性
+- 当前主线：暂停申报书与 Dify 平台导向，重新定位为 no-Dify 自研轻量版 `Lab Safety Copilot / 实验前安全检查助手`
 - 当前优先事项：
-  1. 保证演示链路可复现
-  2. 保证关键场景有验证证据
-  3. 保证答辩材料与项目口径一致
+  1. 明确新产品不再把 Dify 作为核心依赖
+  2. 围绕“学生实验前自查 -> 风险阻断 -> 老师审核 -> 管理看板”建立 MVP
+  3. 优先产出 no-Dify PRD、MVP 任务拆分和本地自研实现路线
+  4. 保留现有 `v8.2` 能力作为可复用资产，但后续 Gate 不再围绕 Dify workflow
+  5. 后续验证重点改为高风险阻断、老师审核包、来源引用、低置信队列和本地可运行
 - 当前不优先事项：
   1. 非必要的大范围重构
-  2. 以 prod 上线为前提的过度工程
-  3. 与展示主线无关的扩展功能
+  2. 以 prod 上线或完整 EHS 平台为前提的过度工程
+  3. 与实验前安全检查 MVP 无关的扩展功能
+  4. 继续把 Dify、MCP 或低代码平台配置作为主交付
 
 ## 3. 当前阶段入口
 - 当前阶段：见 `docs/roadmap.md`
@@ -45,13 +48,17 @@
 
 ## 6. 当前版本口径
 - 当前演示基线：`v8.2`
-- 当前展示主 Gate：demo 可复现 + 关键验证通过
+- 当前产品新定位：`Lab Safety Copilot / 实验前安全检查助手`
+- 当前展示主 Gate：no-Dify MVP 可本地运行 + 实验前自查 / 阻断 / 老师审核 / 看板闭环可演示
+- 当前暂停项：申报书 `1000 -> 3000` 知识库扩容和 Dify workflow 主链路
 - 当前平台化次级 Gate：prod / go-live readiness，暂不作为首要推进目标
 
 ## 7. 当前主线判断依据
+- no-Dify 新 PRD：`docs/product/prd_lab_safety_copilot_no_dify_20260428.md`
+- 当前主推进 change：`docs/changes/2026-04-28-demand-realignment-no-dify/`
+- 申报书兑现主线已暂停：`docs/changes/2026-04-28-application-requirements-fulfillment/`
 - 最新发布包：`release_exports/v8.2/`
-- `docs/eval/v8_2_release_summary.md` 明确说明：`v8.2` 数据扩容和 20 题 demo 回归可继续用于线上演示
-- `docs/ops/go_live_readiness.md` 显示 prod / readiness 仍有阻塞，因此当前不以正式上线为第一优先级
+- `v8.2` 作为历史原型和可复用资产，不作为后续需求边界的唯一来源
 
 ## 7A. 新路径默认展示口径（本地 Dify）
 - 默认工作区：`D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github`

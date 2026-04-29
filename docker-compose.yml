@@ -1,0 +1,61 @@
+# LabSafe Assistant — Docker Compose 一键启动
+# ============================================
+# 用法：
+#   1. 复制环境配置：cp deploy/.env.web_demo.example .env.web_demo
+#   2. 编辑 .env.web_demo，填入 DIFY_APP_API_KEY 和 OPENAI_API_KEY
+#   3. 启动：docker compose up -d
+#   4. 查看日志：docker compose logs -f web
+#   5. 停止：docker compose down
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lab-safe-assistant:latest
+    container_name: lab-safe-assistant
+    restart: unless-stopped
+    ports:
+      - "${DEMO_PORT:-8088}:8088"
+    env_file:
+      - .env.web_demo
+    environment:
+      # 容器内默认使用 Ollama backend（需额外启动 ollama 服务或映射宿主机）
+      - EMBEDDING_BACKEND=${EMBEDDING_BACKEND:-ollama}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-bge-m3}
+      - ENABLE_EMBEDDING=${ENABLE_EMBEDDING:-1}
+      # 容器内 Ollama 默认通过宿主机访问
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    volumes:
+      # 运行时数据持久化到宿主机
+      - ./logs:/app/logs
+      - ./artifacts:/app/artifacts
+      - ./.cache:/app/.cache
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    networks:
+      - lab-safe-net
+
+  # 可选：Nginx 反向代理 + HTTPS（取消注释启用）
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: lab-safe-nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./deploy/nginx/lab-safe-assistant.conf.template:/etc/nginx/conf.d/default.conf:ro
+  #     - ./deploy/nginx/ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - web
+  #   networks:
+  #     - lab-safe-net
+
+networks:
+  lab-safe-net:
+    driver: bridge

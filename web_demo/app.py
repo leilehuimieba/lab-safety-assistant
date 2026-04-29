@@ -1,6 +1,18 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+import mimetypes
+import os
+
+# 默认禁用 embedding 语义检索，避免模型加载导致演示超时
+# 如需启用，在环境变量中设置 ENABLE_EMBEDDING=1
+os.environ.setdefault("ENABLE_EMBEDDING", "0")
+
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .models import Citation
 from .routers import (
@@ -35,6 +47,46 @@ app.include_router(emergency_router)
 app.include_router(training_router)
 app.include_router(incident_router)
 app.include_router(admin_router)
+
+from pathlib import Path
+
+_BASE_DIR = Path(__file__).resolve().parent
+_ASSETS_DIR = _BASE_DIR / "frontend" / "dist" / "assets"
+
+# 自定义静态资源路由（强制正确 MIME 类型，避免 Windows mimetypes 问题）
+@app.get("/assets/{path:path}")
+def serve_asset(path: str):
+    file_path = _ASSETS_DIR / path
+    if not file_path.exists():
+        raise HTTPException(status_code=404)
+    ext = file_path.suffix.lower()
+    media_type = {
+        ".js": "application/javascript",
+        ".mjs": "application/javascript",
+        ".css": "text/css",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".svg": "image/svg+xml",
+        ".woff2": "font/woff2",
+        ".woff": "font/woff",
+        ".ttf": "font/ttf",
+        ".json": "application/json",
+    }.get(ext, "application/octet-stream")
+    return FileResponse(
+        str(file_path),
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
+# SPA catch-all：所有非 API、非 assets 路径返回前端 index.html
+@app.get("/{path:path}")
+def spa_fallback(path: str):
+    if path.startswith(("api/", "assets/")):
+        raise HTTPException(status_code=404)
+    return FileResponse(str(_BASE_DIR / "frontend" / "dist" / "index.html"))
+
 
 # 供测试检测 PyYAML 是否安装
 try:

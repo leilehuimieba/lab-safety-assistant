@@ -54,6 +54,7 @@ from .risk_service import (
     dedupe_checklist_items,
     evaluate_checklist_submission,
     filter_checklist_rows,
+    review_checklist_submission,
 )
 from .training_service import (
     get_training_questions,

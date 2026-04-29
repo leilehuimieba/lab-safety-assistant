@@ -42,3 +42,6 @@ output/
 logs/
 .pytest_cache/
 local_env/
+.cache/
+.playwright-mcp/
+reports/

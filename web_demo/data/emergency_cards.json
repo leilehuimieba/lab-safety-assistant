@@ -4,7 +4,7 @@
     "title": "Chemical Splash to Skin or Eyes",
     "category": "chemical",
     "summary": "Prioritize decontamination, isolate the source, and activate medical escalation early.",
-    "keywords": ["chemical", "acid", "base", "corrosive", "splash", "eyes", "skin"],
+    "keywords": ["chemical", "acid", "base", "corrosive", "splash", "eyes", "skin", "化学品", "酸", "碱", "腐蚀", "溅", "眼睛", "皮肤", "溅入", "溅到"],
     "trigger_signs": [
       "Chemical enters eyes, face, or exposed skin",
       "Burning pain, redness, blurred vision, or damaged gloves/clothing"
@@ -35,7 +35,7 @@
     "title": "Small Laboratory Fire or Ignition",
     "category": "fire",
     "summary": "Only fight a small controllable fire if trained and exit remains clear; otherwise evacuate immediately.",
-    "keywords": ["fire", "flame", "burning", "smoke", "ignition", "reflux", "solvent"],
+    "keywords": ["fire", "flame", "burning", "smoke", "ignition", "reflux", "solvent", "火", "着火", "起火", "冒烟", "燃烧", "火焰", "实验室着火", "灭火"],
     "trigger_signs": [
       "Visible flame, burning solvent, electrical smoke, or overheated equipment",
       "Rapid heat rise, ignition near flammables, or failed heating control"
@@ -65,7 +65,7 @@
     "title": "Electrical Shock or Energized Equipment Incident",
     "category": "electrical",
     "summary": "Cut power first, avoid direct contact with the victim, and escalate medical support immediately.",
-    "keywords": ["electric", "shock", "electrical", "battery", "circuit", "high voltage", "spark"],
+    "keywords": ["electric", "shock", "electrical", "battery", "circuit", "high voltage", "spark", "触电", "电击", "带电", "漏电", "电线", "电源", "有人触电"],
     "trigger_signs": [
       "Person collapses near energized equipment",
       "Sparks, exposed conductors, damaged insulation, or burning smell"
@@ -95,7 +95,7 @@
     "title": "Chemical Spill or Leak",
     "category": "spill",
     "summary": "Assess size and toxicity quickly, isolate the zone, and use the spill SOP instead of improvised cleanup.",
-    "keywords": ["spill", "leak", "release", "solvent", "acid", "base", "unknown chemical", "vapour"],
+    "keywords": ["spill", "leak", "release", "solvent", "acid", "base", "unknown chemical", "vapour", "泄漏", "溢出", "化学品泄漏", "化学品洒了", "溶剂洒了"],
     "trigger_signs": [
       "Liquid on bench or floor, broken container, spreading odor, or visible vapor",
       "Unknown substance outside containment or damaged transport container"
@@ -120,6 +120,254 @@
     "escalation": [
       "Escalate immediately for large, unknown, toxic, or highly volatile spills.",
       "Report the material, quantity, and exposure status to the supervisor and safety contact."
+    ]
+  },
+  {
+    "id": "thermal_burn",
+    "title": "Thermal Burn or Scald Injury",
+    "category": "thermal",
+    "summary": "Cool the burn immediately with running water, protect the wound, and seek medical evaluation for severe burns.",
+    "keywords": ["burn", "scald", "hot", "thermal", "steam", "hotplate", "烫伤", "灼伤", "烧伤", "热水", "蒸汽", "加热", "烫到", "被烫"],
+    "trigger_signs": [
+      "Skin contact with hot surface, boiling liquid, steam, or heated glassware",
+      "Redness, blistering, charring, or severe pain at contact site"
+    ],
+    "immediate_actions": [
+      "Cool the burn under cool running water for at least 15 minutes.",
+      "Remove clothing or jewelry near the burn area if not stuck to skin.",
+      "Cover the burn with a clean, non-stick dressing or cling film.",
+      "Seek medical attention for burns larger than a palm, on face/joints, or deep burns."
+    ],
+    "forbidden": [
+      "Do not apply ice, butter, oil, toothpaste, or home remedies to the burn.",
+      "Do not pop blisters or remove clothing stuck to the burn.",
+      "Do not ignore burns that appear minor — depth may not be immediately visible."
+    ],
+    "ppe": [
+      "Heat-resistant gloves for responders",
+      "Lab coat for secondary protection"
+    ],
+    "escalation": [
+      "Immediate medical evaluation for full-thickness burns, facial burns, or electrical/chemical burns.",
+      "Notify supervisor and record the cause, material, and temperature involved."
+    ]
+  },
+  {
+    "id": "cut_injury",
+    "title": "Cut, Puncture, or Bleeding Injury",
+    "category": "mechanical",
+    "summary": "Control bleeding with direct pressure, protect the wound from contamination, and escalate for deep or uncontrolled wounds.",
+    "keywords": ["cut", "bleeding", "puncture", "laceration", "glass", "needle", "blade", "割伤", "出血", "划伤", "刺伤", "玻璃", "刀片", "流血", "割到"],
+    "trigger_signs": [
+      "Active bleeding from glass breakage, blade cut, needle stick, or sharp equipment",
+      "Embedded foreign object, pulsatile bleeding, or numbness beyond the wound"
+    ],
+    "immediate_actions": [
+      "Apply direct pressure to the wound with clean gauze or cloth.",
+      "Elevate the injured area above heart level if possible.",
+      "For minor cuts, clean with water, apply antiseptic, and bandage.",
+      "For embedded objects, stabilize in place — do not remove."
+    ],
+    "forbidden": [
+      "Do not remove embedded glass, metal, or needle fragments.",
+      "Do not wash deep or heavily bleeding wounds under running water.",
+      "Do not ignore needlestick injuries — always report and seek follow-up."
+    ],
+    "ppe": [
+      "Nitrile or examination gloves for responders",
+      "Eye protection if blood splash risk exists"
+    ],
+    "escalation": [
+      "Seek immediate medical care for uncontrolled bleeding, deep wounds, or needlestick exposure.",
+      "Report all sharps injuries per institutional protocol; preserve the object for identification."
+    ]
+  },
+  {
+    "id": "gas_leak",
+    "title": "Gas Leak or Toxic Vapor Exposure",
+    "category": "gas",
+    "summary": "Evacuate immediately, shut off the gas source only if safe, and ventilate before re-entry.",
+    "keywords": ["gas", "leak", "vapor", "toxic", "fume", "inhalation", "cylinder", "气体", "泄漏", "毒气", "有毒气体", "气瓶", "漏气", "煤气味", "闻到味道"],
+    "trigger_signs": [
+      "Unusual odor, hissing sound from cylinder or gas line, or visible vapor cloud",
+      "Sudden dizziness, headache, nausea, or breathing difficulty among multiple people"
+    ],
+    "immediate_actions": [
+      "Evacuate the area immediately and alert all nearby personnel.",
+      "Shut off the gas source only if it is safe to approach.",
+      "Open windows and activate ventilation from outside the affected zone.",
+      "Account for all personnel at the assembly point."
+    ],
+    "forbidden": [
+      "Do not operate electrical switches, phones, or equipment that may cause sparks.",
+      "Do not re-enter until the area has been declared safe by trained personnel.",
+      "Do not attempt to locate the leak source before evacuation."
+    ],
+    "ppe": [
+      "Self-contained breathing apparatus for responders only",
+      "Gas detection monitor for entry teams"
+    ],
+    "escalation": [
+      "Call institutional emergency number and fire department for any gas release.",
+      "Record the gas type, cylinder ID, and duration of exposure for medical handoff."
+    ]
+  },
+  {
+    "id": "cryogenic_exposure",
+    "title": "Cryogenic Exposure or Cold Burn (Liquid Nitrogen / Dry Ice)",
+    "category": "cryogenic",
+    "summary": "Treat as a thermal burn, but watch for asphyxiation risk from oxygen displacement in enclosed spaces.",
+    "keywords": ["cryogenic", "liquid nitrogen", "dry ice", "frostbite", "cold burn", "液氮", "干冰", "冻伤", "深冷", "低温", "杜瓦", "液氮溅到"],
+    "trigger_signs": [
+      "Skin contact with liquid nitrogen, dry ice, or ultra-cold surfaces",
+      "Waxy white or grey skin, numbness, blistering, or brittle texture at contact site"
+    ],
+    "immediate_actions": [
+      "Remove the cold source and warm the affected area gradually with body heat or tepid water.",
+      "Remove constrictive clothing or jewelry near the affected area.",
+      "Cover with a clean, dry dressing and seek medical evaluation.",
+      "For enclosed-space exposure, check for dizziness or confusion (oxygen depletion)."
+    ],
+    "forbidden": [
+      "Do not rub or massage the frozen tissue.",
+      "Do not apply direct heat, hot water, or radiant heaters to the affected area.",
+      "Do not work alone with cryogenic materials in confined spaces."
+    ],
+    "ppe": [
+      "Cryogenic gloves",
+      "Face shield",
+      "Lab coat or apron"
+    ],
+    "escalation": [
+      "Medical evaluation required for any cryogenic burn beyond superficial redness.",
+      "Monitor for delayed symptoms if oxygen depletion was suspected.",
+      "Report the equipment, duration, and volume involved to the safety officer."
+    ]
+  },
+  {
+    "id": "centrifuge_accident",
+    "title": "Centrifuge Malfunction or Rotor Failure",
+    "category": "mechanical",
+    "summary": "Stop the run immediately if safe, keep the lid closed until rotation stops, and treat any aerosol release as biohazard/chemical exposure.",
+    "keywords": ["centrifuge", "rotor", "vibration", "imbalance", "high speed", "离心机", "离心", "转子", "震动", "异常噪音", "离心机故障", "离心管破裂"],
+    "trigger_signs": [
+      "Abnormal vibration, loud noise, or grinding sound during centrifugation",
+      "Visible imbalance, lid movement, or fluid leakage around the centrifuge"
+    ],
+    "immediate_actions": [
+      "Press emergency stop or power off if abnormal noise or vibration is detected.",
+      "Keep the lid closed until the rotor has completely stopped.",
+      "If aerosol release is suspected, evacuate the immediate area for 30 minutes.",
+      "After the rotor stops, inspect for tube breakage and decontaminate per SOP."
+    ],
+    "forbidden": [
+      "Do not open the lid while the rotor is still spinning.",
+      "Do not attempt to balance the rotor by hand during operation.",
+      "Do not reuse a dropped rotor or one that shows visible damage."
+    ],
+    "ppe": [
+      "Splash goggles",
+      "Lab coat",
+      "Chemical or biohazard gloves as applicable"
+    ],
+    "escalation": [
+      "Report any rotor failure or tube breakage to the equipment manager for inspection.",
+      "If biohazardous or chemical aerosol is suspected, activate institutional exposure protocol."
+    ]
+  },
+  {
+    "id": "autoclave_accident",
+    "title": "Autoclave or High-Pressure Equipment Incident",
+    "category": "thermal",
+    "summary": "Never open under pressure; treat steam burns and report equipment faults immediately.",
+    "keywords": ["autoclave", "high pressure", "steam", "pressure vessel", "高压", "灭菌", "高压釜", "高压灭菌", "蒸汽灭菌", "压力容器", "高压灭菌器"],
+    "trigger_signs": [
+      "Steam escaping from door seal, abnormally high pressure reading, or failure to depressurize",
+      "Sudden pop, burn from steam release, or door that cannot be opened after cycle"
+    ],
+    "immediate_actions": [
+      "Do not attempt to open the door — wait for pressure gauge to return to zero.",
+      "If steam burn occurs, treat as thermal burn: cool under water for 15 minutes.",
+      "Report the equipment fault and lock out the autoclave until inspected.",
+      "If load was biohazardous and containment failed, initiate biohazard spill protocol."
+    ],
+    "forbidden": [
+      "Do not force the autoclave door open under any pressure.",
+      "Do not bypass safety interlocks or pressure relief devices.",
+      "Do not use a malfunctioning autoclave while waiting for repair."
+    ],
+    "ppe": [
+      "Heat-resistant gloves",
+      "Face shield when opening after cycle",
+      "Lab coat"
+    ],
+    "escalation": [
+      "Lock out and tag the equipment immediately after the incident.",
+      "Notify facility manager and safety officer before restart.",
+      "Record cycle parameters, load contents, and time of incident."
+    ]
+  },
+  {
+    "id": "biological_exposure",
+    "title": "Biological Exposure or Biohazard Spill",
+    "category": "biosafety",
+    "summary": "Contain the spill, decontaminate with appropriate disinfectant, and report any potential exposure immediately.",
+    "keywords": ["biohazard", "biological", "culture", "pathogen", "biosafety", "生物", "病原", "培养", "菌液", "生物安全", "生物泄漏", "菌液洒了", "培养基洒了"],
+    "trigger_signs": [
+      "Broken culture plate, spilled liquid culture, or aerosol release from biological sample",
+      "Needlestick with biological material, splash to mucous membranes, or broken skin contact"
+    ],
+    "immediate_actions": [
+      "Stop work and warn nearby personnel immediately.",
+      "Cover the spill with absorbent material soaked in appropriate disinfectant.",
+      "Allow sufficient contact time (usually 20-30 min) before cleanup.",
+      "For personal exposure, wash skin with soap and water; flush eyes/mucous membranes for 15 minutes."
+    ],
+    "forbidden": [
+      "Do not leave the spill unattended without marking the area.",
+      "Do not use bleach on spills containing ammonium compounds.",
+      "Do not delay reporting a potential exposure — prophylactic treatment windows are time-sensitive."
+    ],
+    "ppe": [
+      "Splash goggles or face shield",
+      "Disposable gown or lab coat",
+      "Double gloves for cleanup"
+    ],
+    "escalation": [
+      "Report exposure immediately to the biosafety officer and occupational health.",
+      "Document the agent, route of exposure, and time of incident.",
+      "Preserve the source material for identification if needed."
+    ]
+  },
+  {
+    "id": "ingestion_inhalation",
+    "title": "Chemical Ingestion or Hazardous Inhalation",
+    "category": "chemical",
+    "summary": "Move to fresh air for inhalation; do not induce vomiting for ingestion — follow SDS and seek immediate medical attention.",
+    "keywords": ["ingestion", "ingest", "swallow", "inhalation", "breathe", "fume", "dust", "误食", "吸入", "喝入", "吞入", "有毒气体", "蒸气", "误饮", "吸到"],
+    "trigger_signs": [
+      "Accidental drinking, pipetting by mouth (prohibited), or eating near chemicals",
+      "Coughing, choking, chest tightness, dizziness, or chemical taste in mouth"
+    ],
+    "immediate_actions": [
+      "For inhalation: move the person to fresh air immediately and loosen tight clothing.",
+      "For ingestion: rinse mouth with water; do NOT induce vomiting unless SDS explicitly instructs.",
+      "Bring the chemical container, label, or SDS to the medical provider.",
+      "Monitor breathing and consciousness; perform CPR if trained and needed."
+    ],
+    "forbidden": [
+      "Do not induce vomiting unless the SDS or poison control specifically advises it.",
+      "Do not give anything by mouth to an unconscious person.",
+      "Do not delay seeking medical care while searching for the perfect SDS."
+    ],
+    "ppe": [
+      "Nitrile gloves for responders handling contaminated items",
+      "Respiratory protection only for trained responders in high-vapor environments"
+    ],
+    "escalation": [
+      "Call emergency medical services or poison control immediately.",
+      "Report the chemical name, estimated quantity, route of exposure, and time.",
+      "Keep the original container and any vomitus for medical analysis."
     ]
   }
 ]

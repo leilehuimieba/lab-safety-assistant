@@ -90,6 +90,25 @@ class ChecklistSubmitResponse(BaseModel):
     allow_start: bool
     blocking_reasons: list[str] = Field(default_factory=list)
     next_actions: list[str] = Field(default_factory=list)
+    review_status: str = Field(default="pending", description="pending / approved / rejected")
+    reviewed_by: str = ""
+    reviewed_at: str = ""
+    review_comment: str = ""
+
+
+class ChecklistReviewRequest(BaseModel):
+    action: str = Field(pattern="^(approve|reject)$")
+    reviewer: str = Field(default="teacher", max_length=120)
+    comment: str = Field(default="", max_length=1000)
+
+
+class ChecklistReviewResponse(BaseModel):
+    record_id: str
+    review_status: str
+    reviewed_by: str
+    reviewed_at: str
+    review_comment: str
+    message: str
 
 
 class EmergencyCard(BaseModel):
@@ -189,6 +208,7 @@ class TrainingRosterStatusResponse(BaseModel):
     passed_count: int
     incomplete_count: int
     incomplete_students: list[TrainingRosterItem] = Field(default_factory=list)
+    roster: list[TrainingRosterItem] = Field(default_factory=list)
 
 
 class TrainingRosterUploadRequest(BaseModel):
