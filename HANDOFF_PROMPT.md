@@ -9,156 +9,191 @@
 - **仓库**: `https://github.com/leilehuimieba/lab-safety-assistant`
 - **本地路径**: `D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github`
 - **分支**: `main`
-- **技术栈**: Python 3.13, FastAPI, uvicorn, pytest
-- **pytest**: **138/138 通过**
+- **技术栈**: Python 3.13, FastAPI, Vite, TypeScript, Tailwind CSS, pytest
+- **当前产品名**: `实验安全前置哨（Lab Safety Copilot / 实验前安全检查助手）`
+- **当前阶段**: `Phase 5 - no-Dify 需求重定位与轻量 MVP`
+- **当前 active change**: `docs/changes/2026-04-28-demand-realignment-no-dify/`
+- **pytest 交接口径**: `157 tests, 155 pass`（2 项 `test_eval_smoke.py` 失败待修复）
 
 ---
 
-## 2. 本对话已完成的核心工作
+## 2. 当前主线口径
 
-### 2.1 本地 bge-m3 语义检索集成
+当前项目不再以 Dify/RAG 问答演示、申报书 `1000/3000` 知识库扩容或 v8.2 演示冻结作为第一目标。
 
-**目标**: 为 Web Demo 知识库检索引入向量语义检索，解决纯文本 token 匹配对同义词/语义变体召回能力弱的问题。
+当前主线是 no-Dify 自研轻量 MVP：
 
-**实现方式**:
-- **双后端 Embedding 引擎** (`libs/embedding_utils.py`):
-  - `sentence-transformers` 后端：从 HuggingFace 加载 `BAAI/bge-m3`
-  - `ollama` 后端：调用本地 Ollama `/api/embed` API（**当前使用**）
-  - 通过 `EMBEDDING_BACKEND` 环境变量切换
-  - 支持多数据集独立索引（`_index_states` 字典），知识库和应急卡片各自有独立缓存
-- **混合检索** (`web_demo/services/kb_service.py`):
-  - `retrieve_citations` 现在 = 文本 token 匹配 + bge-m3 语义检索
-  - 默认语义权重 **12.0**（经 5 组关键问题对比测试后确定）
-  - `SEMANTIC_WEIGHT` 支持环境变量调整
-  - `ENABLE_EMBEDDING` 支持动态开关（`0` 关闭，回退纯文本）
-- **评估工具** (`scripts/eval_kb_retrieval.py`):
-  - 对比纯文本 vs 混合检索的召回差异
-  - 支持 `--semantic-weight` 参数调参
+```text
+学生实验前输入
+  -> 风险识别
+  -> 开工前检查清单
+  -> 阻断 / 需老师确认 / 可开工
+  -> 老师审核包
+  -> 管理看板统计与低置信队列
+```
 
-**当前运行状态**:
-- Ollama 服务需**单独运行**（`ollama serve`）
-- bge-m3 模型已安装在 Ollama 中（`ollama list` 可见，1.2GB）
-- 知识库索引已构建：`.cache/embedding/`（1,149 条）
-- 应急卡片索引已构建：`.cache/embedding_emergency/`（4 条）
+当前核心判断：
 
-### 2.2 语义检索扩展到应急卡片
+> 本项目不是普通 AI 问答页，而是把实验前安全判断变成可操作、可阻断、可提交老师确认的轻量闭环。
 
-- **改造** `web_demo/services/emergency_service.py`:
-  - `match_emergency_card` 从纯关键词匹配升级为 **bge-m3 语义 + 文本 token 混合匹配**
-  - 默认语义权重 `EMERGENCY_SEMANTIC_WEIGHT=6.0`
-- 验证结果（中文查询 → 正确匹配）:
-  - "眼睛被酸溅到了" → `chemical_splash`
-  - "实验室着火了" → `lab_fire`
-  - "有人触电了" → `electric_shock`
-  - "化学品泄漏了" → `chemical_leak`
+Dify、v8.2 发布包和历史演示文档只保留为历史资产、可选兼容链路或回退参考，不作为当前 MVP Gate。
 
-### 2.3 测试环境兼容性修复
+---
 
-- `tests/conftest.py`: 默认设置 `ENABLE_EMBEDDING=0`，避免 CI 中自动下载 HuggingFace 模型导致超时
+## 3. 最新文档入口
 
-### 2.4 Docker 产品化封装
+| 文档 | 路径 | 说明 |
+|---|---|---|
+| 执行入口 | `docs/README.md` | 当前主线、阶段、读取顺序和冲突优先级 |
+| 文档索引 | `docs/INDEX.md` | 当前产品/验收/历史文档索引 |
+| 路线图 | `docs/roadmap.md` | Phase 5 和阶段 Gate |
+| 当前定位摘要 | `docs/product/current_positioning_20260501.md` | 最新定位和删旧文档后的统一口径 |
+| no-Dify PRD | `docs/product/prd_lab_safety_copilot_no_dify_20260428.md` | 轻量 MVP 产品需求 |
+| 需求规格说明书 | `docs/product/requirements_spec_20260429.md` | 完整功能、非功能、数据和验收要求 |
+| 系统设计文档 | `docs/product/design_spec_20260429.md` | FastAPI、Vite SPA、规则、检索、Docker 设计 |
+| MVP 验收清单 | `docs/ops/no_dify_mvp_acceptance_checklist.md` | no-Dify 主链路验收步骤 |
+| active status | `docs/changes/2026-04-28-demand-realignment-no-dify/status.md` | 当前完成/未完成/下一步 |
+| active tasks | `docs/changes/2026-04-28-demand-realignment-no-dify/tasks.md` | 当前任务清单 |
 
-- `Dockerfile`: 多阶段构建（`python:3.13-slim`）
-- `docker-compose.yml`: 一键启动，含健康检查、Volume 挂载（logs/artifacts/.cache）
+已删除/降级的旧口径文档包括申报书兑现版需求、差距矩阵、旧产品化草稿和旧命名需求/设计文件。若需恢复申报书或 Dify 主线，必须先切换或新建 change。
+
+---
+
+## 4. 已完成的核心工作
+
+### 4.1 no-Dify 定位和文档清理
+
+- 已确认当前产品方向：`实验安全前置哨 / Lab Safety Copilot / 实验前安全检查助手`
+- 已确认 Dify 不再作为核心依赖，仅保留为历史 demo 或可选链路
+- 已补充当前定位摘要：`docs/product/current_positioning_20260501.md`
+- 已补充 no-Dify MVP 验收清单：`docs/ops/no_dify_mvp_acceptance_checklist.md`
+- 已重写根 `README.md`，改为当前 no-Dify 主线入口
+- 已更新 `docs/INDEX.md`、active change `status.md`、`tasks.md`
+- 已将 `docs/guides/README_MVP_START.md` 和 `docs/guides/safety_rules_guide.md` 从 Dify starter 改为 no-Dify 本地规则口径
+
+### 4.2 本地 bge-m3 语义检索集成
+
+- 新增/维护 `libs/embedding_utils.py`
+- 支持 `sentence-transformers` 和 `ollama` 双后端
+- `ENABLE_EMBEDDING=0/1` 可动态关闭/启用语义检索
+- `web_demo/services/kb_service.py` 支持文本 token + bge-m3 语义混合检索
+- `scripts/eval_kb_retrieval.py` 可对比纯文本 vs 混合检索
+- 知识库索引：`.cache/embedding/`（约 1,149 条向量条目）
+
+### 4.3 应急卡片语义匹配
+
+- `web_demo/services/emergency_service.py` 已支持应急卡片语义 + 文本混合匹配
+- 应急卡片索引：`.cache/embedding_emergency/`（12 张卡片）
+- 已验证示例：
+  - `眼睛被酸溅到了` -> `chemical_splash`
+  - `实验室着火了` -> `lab_fire`
+  - `有人触电了` -> `electric_shock`
+  - `化学品泄漏了` -> `chemical_leak`
+
+### 4.4 前端与后端适配
+
+- 已导入 Vite + TypeScript + Tailwind SPA 到 `web_demo/frontend/`
+- 已完成 FastAPI 静态文件服务和 SPA fallback
+- 已完成 API 兼容层、别名路由和数据模型适配
+- 已修复若干后端导入缺失导致的 500 错误
+
+### 4.5 Docker 封装
+
+- `Dockerfile`: 多阶段构建
+- `docker-compose.yml`: 一键启动，含健康检查和 volume 挂载
 - `.dockerignore`: 排除开发/测试/日志文件
-- `.github/workflows/build-and-push-image.yml`: CI/CD 自动构建多架构镜像（amd64/arm64），推送到 `ghcr.io`
-- `docs/ops/docker_deploy_guide.md`: 完整 Docker 部署文档
+- `.github/workflows/build-and-push-image.yml`: CI/CD 多架构镜像构建
+- `docs/ops/docker_deploy_guide.md`: Docker 部署文档
 
 ---
 
-## 3. 当前项目状态
-
-| 检查项 | 状态 |
-|--------|------|
-| pytest 全部测试 | ✅ 138/138 通过 |
-| 本地 Web Demo 启动 | ✅ 8088 端口正常 |
-| Ollama bge-m3 可用 | ✅ 已安装 |
-| 知识库语义索引 | ✅ 已构建 |
-| 应急卡片语义索引 | ✅ 已构建 |
-| Docker 封装 | ✅ 已完成 |
-| git status | 待提交（新增/修改文件见下方） |
-
-### 本对话新增/修改的文件清单
-
-```
-新增:
-  libs/embedding_utils.py
-  scripts/eval_kb_retrieval.py
-  Dockerfile
-  docker-compose.yml
-  .dockerignore
-  .github/workflows/build-and-push-image.yml
-  docs/ops/docker_deploy_guide.md
-
-修改:
-  web_demo/services/kb_service.py          (混合检索)
-  web_demo/services/emergency_service.py   (语义匹配)
-  tests/conftest.py                        (ENABLE_EMBEDDING=0)
-  requirements.txt                         (+sentence-transformers, +numpy)
-  HANDOFF_PROMPT.md                        (本文件)
-```
-
----
-
-## 4. 关键配置速查
-
-### 环境变量
+## 5. 关键配置速查
 
 | 变量 | 默认值 | 说明 |
-|------|--------|------|
+|---|---|---|
+| `ENABLE_EMBEDDING` | `1` | `0` 关闭语义检索，便于本地快速验证 |
 | `EMBEDDING_BACKEND` | `sentence-transformers` | `ollama` 或 `sentence-transformers` |
 | `EMBEDDING_MODEL` | `BAAI/bge-m3` | HuggingFace 模型名 / Ollama 模型名 |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API 地址 |
-| `ENABLE_EMBEDDING` | `1` | `0` 关闭语义检索（纯文本 fallback） |
 | `SEMANTIC_WEIGHT` | `12.0` | 知识库语义权重 |
 | `EMERGENCY_SEMANTIC_WEIGHT` | `6.0` | 应急卡片语义权重 |
+| `DIFY_APP_API_KEY` | 空 | 可选历史链路；当前 no-Dify 主线不应依赖它 |
 
-### 启动项目
+---
+
+## 6. 启动和验证
+
+### 6.1 本地启动
 
 ```powershell
-# 方式一：Windows 本地开发
+cd D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github
 powershell -ExecutionPolicy Bypass -File scripts\start_web_demo_local.ps1
+```
 
-# 方式二：Docker 一键启动
-cp deploy/.env.web_demo.example .env.web_demo
-# 编辑 .env.web_demo 填入 DIFY_APP_API_KEY
-docker compose up -d
+默认地址：
 
-# 方式三：手动调试
+```text
+http://127.0.0.1:8088
+```
+
+手工调试：
+
+```powershell
+$env:ENABLE_EMBEDDING="0"
 python -m uvicorn web_demo.app:app --host 127.0.0.1 --port 8088
 ```
 
-### 运行测试
+### 6.2 测试
 
 ```powershell
-pytest tests/ -q
+python -m pytest -q
+python scripts/quality_gate.py --repo-root . --skip-secret-scan
 ```
+
+### 6.3 MVP 主链路验收
+
+先看：
+
+```text
+docs/ops/no_dify_mvp_acceptance_checklist.md
+```
+
+推荐高风险测试场景：
+
+```text
+锂电池拆解，使用金属螺丝刀撬开外壳，未阅读 SOP，未穿绝缘手套，未获得老师批准。
+```
+
+期望：
+
+1. 风险等级 High / Critical。
+2. 检查清单包含 SOP、PPE、老师批准和电气/火灾专项项。
+3. 缺关键项时 `allow_start=false`。
+4. `blocking_reasons` 明确指出缺失项。
+5. `review_status=pending`。
+6. 老师可 approve/reject。
+7. 管理看板可展示待审核、高风险或阻断原因。
 
 ---
 
-## 5. 已知注意事项
+## 7. 当前关键数据
 
-1. **Ollama 必须单独运行**: 语义检索依赖本地 Ollama 服务，`ollama serve` 需保持运行。如果 Ollama 未启动，语义检索自动 fallback（不会崩溃，但退化为纯文本检索）。
-2. **`.env.web_demo` 包含密钥**: 该文件在 `.gitignore` 中，不会提交。
-3. **首次构建索引较慢**: 首次调用 `retrieve_citations` 或 `match_emergency_card` 时，会自动为知识库/应急卡片计算 embedding（约 10~30 秒，取决于 Ollama 响应速度）。后续启动秒级加载。
-4. **Docker 中访问宿主机 Ollama**: 容器内默认通过 `http://host.docker.internal:11434` 访问宿主机 Ollama。Linux Docker 需额外配置 `--add-host=host.docker.internal:host-gateway`。
-5. **sentence-transformers 作为备选**: 已加入 `requirements.txt`，但默认不启用。如需切换为 HuggingFace backend，设置 `EMBEDDING_BACKEND=sentence-transformers`，首次会自动下载 bge-m3（约 1.2GB）。
+| 指标 | 数值 |
+|---|---|
+| 知识库 CSV 条目 | 142 条（含 bge-m3 向量索引后约 1,149 条语义条目） |
+| 安全规则 | 24 条（4 critical / 16 high / 3 medium / 1 low） |
+| 应急卡片 | 12 张（覆盖 10 种事故类型） |
+| 培训题库 | 50 题（10 类别，41 单选 + 9 多选） |
+| pytest | 157 项（155 pass, 2 fail，按交接口径） |
+| 前端页面 | 8 个 SPA 页面（Vite + TS + Tailwind） |
+| 服务模块 | 10 个业务服务文件 |
 
 ---
 
-## 6. 如需继续工作
+## 8. 当前最小下一步
 
-建议首先运行：
-```powershell
-pytest tests/ -q          # 确认全部通过
-```
-
-### 可选的下一步方向
-
-1. **构建并验证 Docker 镜像**: `docker build -t lab-safe-assistant:latest .`
-2. **配置 Nginx HTTPS 反向代理**: 基于 `deploy/nginx/` 已有模板
-3. **编写 Helm Chart / K8s 配置**: 云原生部署
-4. **全链路检索评估**: 运行 `python scripts/eval_kb_retrieval.py --output reports/retrieval_compare.csv`
-5. **接入 Rerank 模型**: 在语义检索后增加 `bge-reranker` 精排层
-6. **Pipeline 向量化**: 让文档/网页摄取流程在分块后自动生成 embedding
-7. **其他功能开发**: 培训推荐、事故分析、仪表盘优化等
+1. 按 `docs/ops/no_dify_mvp_acceptance_checklist.md` 跑一轮 API + 浏览器主链路验收。
+2. 建立 FR-01 到 FR-09 的实现对齐表，标明对应 API、service、前端页面和测试文件。
+3. 修复 `test_eval_smoke.py` 中剩余失败项，使 `python -m pytest -q` 全绿。
+4. 提交当前文档清理结果，避免新旧需求口径混杂。
+5. 如继续保留 v8.2 / Dify 文档，统一标注为“历史 / 可选链路”。

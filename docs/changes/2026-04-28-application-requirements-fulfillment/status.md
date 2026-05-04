@@ -21,8 +21,8 @@
   - 当前已有风险评估、准入阻断、培训、看板、事故复盘
   - 当前已有评测与发布证据
   - 当前尚未达到 1000/3000 条知识库和部分申报书指标
-- 已新增需求规格说明：`docs/product/requirements_spec_from_application_20260428.md`
-- 已新增差距矩阵：`docs/product/application_alignment_gap_matrix_20260428.md`
+- 已新增需求规格说明：旧申报书兑现版需求文档（已删除，申报书主线暂停；必要时从 Git 历史恢复）
+- 已新增差距矩阵：旧申报书差距矩阵（已删除，申报书主线暂停；必要时从 Git 历史恢复）
 - 已建立本 change 的五件套文档。
 - 已将本 change 设为当前 active change。
 

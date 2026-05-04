@@ -33,8 +33,8 @@
 
 ## 范围
 - 包含：
-  - `docs/product/requirements_spec_from_application_20260428.md`
-  - `docs/product/application_alignment_gap_matrix_20260428.md`
+  - 旧申报书兑现版需求文档（已删除，申报书主线暂停；必要时从 Git 历史恢复）
+  - 旧申报书差距矩阵（已删除，申报书主线暂停；必要时从 Git 历史恢复）
   - `docs/changes/2026-04-28-application-requirements-fulfillment/`
   - `docs/changes/INDEX.md`
   - `docs/changes/active.txt`

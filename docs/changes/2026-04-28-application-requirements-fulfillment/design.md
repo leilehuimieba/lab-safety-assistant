@@ -20,8 +20,8 @@
 - 决策 4：LoRA / 联邦架构 / 多端正式上线作为增强项，不阻塞 2026-06-30 前的核心结题交付。
 
 ## 影响模块
-- 文档：`docs/product/requirements_spec_from_application_20260428.md`
-- 文档：`docs/product/application_alignment_gap_matrix_20260428.md`
+- 文档：旧申报书兑现版需求文档（已删除，申报书主线暂停；必要时从 Git 历史恢复）
+- 文档：旧申报书差距矩阵（已删除，申报书主线暂停；必要时从 Git 历史恢复）
 - change：`docs/changes/2026-04-28-application-requirements-fulfillment/`
 - 索引：`docs/changes/INDEX.md`、`docs/changes/active.txt`
 - 路线：`docs/roadmap.md`、`docs/README.md`

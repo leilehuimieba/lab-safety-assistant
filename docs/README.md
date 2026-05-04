@@ -60,15 +60,12 @@
 - 最新发布包：`release_exports/v8.2/`
 - `v8.2` 作为历史原型和可复用资产，不作为后续需求边界的唯一来源
 
-## 7A. 新路径默认展示口径（本地 Dify）
+## 7A. 本地运行与可选历史链路
 - 默认工作区：`D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github`
-- 默认本地 Dify 入口：`http://127.0.0.1:8081`
 - 默认本地 web_demo 入口：`http://127.0.0.1:8088`
-- 默认展示 app token：`app-wRwHKLfNDGRk4jfCfYeifipT`
-- 默认展示 app 类型：`advanced-chat（实验室安全小助手）`
-- 当前展示链路口径：
-  - lab lane：`Dify 正式知识库工作流`
-  - agent lane：`OpenAI 兼容直连`
+- 当前主链路：no-Dify 本地 FastAPI + 规则引擎 + 本地知识库 + 可选模型直连
+- Dify 相关入口、token 和 bridge 脚本只作为历史 v8.2 演示或可选兼容链路，不作为当前 MVP Gate
+- 当前验收入口：`docs/ops/no_dify_mvp_acceptance_checklist.md`
 
 ## 7B. 本地 / 服务器目录与同步口径
 - 当前唯一默认事实源：`D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github`

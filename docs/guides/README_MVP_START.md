@@ -1,23 +1,62 @@
-﻿# MVP Starter Pack for Dify
+# MVP 快速入门（no-Dify）
 
-This folder contains three starting artifacts for the Lab Safety Assistant MVP:
+本指南面向当前主线：`实验安全前置哨 / Lab Safety Copilot` 的 no-Dify 自研轻量 MVP。
 
-1. `templates/knowledge_base_template.csv`
-- A CSV template for building the Dify Dataset.
+旧的 Dify Dataset / workflow 启动方式已经不再作为当前主线。当前目标是本地 FastAPI + 本地知识库 + YAML 规则 + 可选模型直连完成实验前安全检查闭环。
 
-2. `templates/eval_set_template.csv`
-- A minimal evaluation set template for testing accuracy and safety.
+## 1. 最小闭环
 
-3. `safety_rules.yaml`
-- A rules library for high-risk intent handling and safe responses.
+```text
+学生输入实验场景
+  -> 规则引擎和知识库识别风险
+  -> 生成开工前检查清单
+  -> 缺关键项则阻断
+  -> 高风险进入老师审核
+  -> 管理看板统计
+```
 
-Optional helper files:
-- `templates/knowledge_entry_template.json`
-- `templates/knowledge_entry_schema.json`
-- `docs/guides/safety_rules_guide.md`
+## 2. 核心文件
 
-How to use
-1. Fill `templates/knowledge_base_template.csv` with real sources.
-2. Import the CSV into Dify Dataset.
-3. Use `safety_rules.yaml` to build your safety guardrails in the workflow.
-4. Use `templates/eval_set_template.csv` as your test set.
+| 文件 | 用途 |
+|---|---|
+| `web_demo/app.py` | FastAPI 入口 |
+| `web_demo/routers/` | API 路由 |
+| `web_demo/services/` | 风险、问答、审核、看板等业务逻辑 |
+| `web_demo/frontend/` | Vite + TypeScript + Tailwind 前端 |
+| `knowledge_base_curated.csv` | 本地知识库 |
+| `safety_rules.yaml` | 安全规则 |
+| `artifacts/` | 运行时记录 |
+| `docs/ops/no_dify_mvp_acceptance_checklist.md` | 当前验收清单 |
+
+## 3. 本地启动
+
+```powershell
+cd D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github
+$env:ENABLE_EMBEDDING="0"
+python -m uvicorn web_demo.app:app --host 127.0.0.1 --port 8088
+```
+
+浏览器访问：
+
+```text
+http://127.0.0.1:8088
+```
+
+## 4. 关键验收点
+
+1. 高风险实验能被评为 High / Critical。
+2. 未勾选 SOP / PPE / 老师批准等关键项时，系统返回 `allow_start=false`。
+3. 阻断原因明确展示。
+4. 老师审核包能看到风险和缺失项。
+5. 管理看板能看到待审核、风险和低置信问题。
+6. 不配置 Dify 时主链路仍可运行。
+
+## 5. 历史 Dify 材料
+
+如果需要复现旧 v8.2 / Dify 演示，可查：
+
+- `docs/ops/local_dify_bridge_quickstart_cn.md`
+- `docs/ops/v8_2_demo_flow_freeze_cn.md`
+- `release_exports/v8.2/`
+
+但这些不再是当前 MVP 的默认入口。
