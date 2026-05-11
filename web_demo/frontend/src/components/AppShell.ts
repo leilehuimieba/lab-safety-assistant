@@ -55,7 +55,7 @@ export function AppShell(options: AppShellOptions): HTMLElement {
 
   const topTitle = document.createElement("span");
   topTitle.className = "text-sm font-semibold text-gray-800";
-  topTitle.textContent = "实验室安全小助手";
+  topTitle.textContent = "实验安全前置哨";
 
   topBar.appendChild(hamburger);
   topBar.appendChild(topTitle);

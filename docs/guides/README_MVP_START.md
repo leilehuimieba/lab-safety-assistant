@@ -51,12 +51,8 @@ http://127.0.0.1:8088
 5. 管理看板能看到待审核、风险和低置信问题。
 6. 不配置 Dify 时主链路仍可运行。
 
-## 5. 历史 Dify 材料
+## 5. 当前建议
 
-如果需要复现旧 v8.2 / Dify 演示，可查：
-
-- `docs/ops/local_dify_bridge_quickstart_cn.md`
-- `docs/ops/v8_2_demo_flow_freeze_cn.md`
-- `release_exports/v8.2/`
-
-但这些不再是当前 MVP 的默认入口。
+- 当前默认只围绕 no-Dify 本地主链路推进
+- 演示时优先使用 `http://127.0.0.1:8088/?demo=1`
+- 如需继续扩展，应优先补齐主链路验收、答辩截图与测试证据

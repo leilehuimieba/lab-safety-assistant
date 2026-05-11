@@ -38,7 +38,7 @@ from .services import (
     call_dify_lab,
 )
 
-app = FastAPI(title="LabSafe Assistant Web Demo")
+app = FastAPI(title="Lab Safety Copilot")
 
 app.include_router(meta_router)
 app.include_router(chat_router)

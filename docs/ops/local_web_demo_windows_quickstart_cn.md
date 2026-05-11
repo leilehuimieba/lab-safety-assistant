@@ -1,54 +1,41 @@
-# Windows 本地 web_demo 启动说明
+# Windows 本地启动说明（当前版本）
 
-## 目标
-- 用统一脚本启动当前仓库版本的 `web_demo`
-- 避免继续手工在不明目录里执行 `uvicorn app:app`
-- 为后续继续接本地 Dify 留出稳定入口
+适用项目：**实验安全前置哨（Lab Safety Copilot）**
 
-## 第一步：准备环境文件
-在仓库根目录检查是否存在：
+## 1. 目标
 
-- `.env.web_demo`
+在 Windows 本地快速启动当前 no-Dify Web 应用，用于开发、调试、答辩演示和截图。
 
-如果不存在，可先复制：
+## 2. 推荐启动方式
 
 ```powershell
-Copy-Item .env.web_demo.example .env.web_demo
-```
-
-至少配置其一：
-
-- `DIFY_APP_API_KEY`
-- `OPENAI_API_KEY`
-
-> 当前如果本机没有 Dify，可先仅填写 `OPENAI_API_KEY`，让 demo 先跑起来；实验室问答会处于“结构化回退模式”。
-
-## 第二步：启动
-
-```powershell
+cd D:\newwork\lab-safe-assistant-workspace\lab-safe-assistant-github
 powershell -ExecutionPolicy Bypass -File scripts/start_web_demo_local.ps1
 ```
 
-成功后默认地址：
+默认地址：
 
 - `http://127.0.0.1:8088`
 
-## 第三步：查看状态
+## 3. 演示模式
+
+如需使用前端 mock 数据进行答辩展示：
+
+- `http://127.0.0.1:8088/?demo=1`
+
+退出演示模式：
+
+- `http://127.0.0.1:8088/?demo=0`
+
+## 4. 手工调试方式
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/status_web_demo_local.ps1
+$env:ENABLE_EMBEDDING="0"
+python -m uvicorn web_demo.app:app --host 127.0.0.1 --port 8088
 ```
 
-## 第四步：停止
+## 5. 当前说明
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/stop_web_demo_local.ps1
-```
-
-## 当前说明
-- 如果本机 `127.0.0.1:8081` 没有 Dify，则 `/api/meta` 中会显示：
-  - `Dify 未配置，当前处于结构化回退模式`
-- 这不影响前端工作台和知识库抽查功能的本地开发
-- 后续若要切到真正本地 Dify，只需补：
-  - `DIFY_BASE_URL`
-  - `DIFY_APP_API_KEY`
+- 当前主链路默认不依赖 Dify
+- 如配置了上游模型接口，可用于增强问答能力
+- 演示与答辩优先使用本地可运行链路

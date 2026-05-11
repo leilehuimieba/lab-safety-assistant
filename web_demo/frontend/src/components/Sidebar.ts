@@ -90,10 +90,10 @@ export function Sidebar(options: SidebarOptions): HTMLElement {
   const titleWrap = document.createElement("div");
   const title = document.createElement("h1");
   title.className = "text-base font-semibold text-white leading-tight";
-  title.textContent = "实验室安全小助手";
+  title.textContent = "实验安全前置哨";
   const subtitle = document.createElement("p");
   subtitle.className = "text-xs text-gray-400 mt-0.5";
-  subtitle.textContent = "Lab Safety Assistant";
+  subtitle.textContent = "Lab Safety Copilot";
   titleWrap.appendChild(title);
   titleWrap.appendChild(subtitle);
 
