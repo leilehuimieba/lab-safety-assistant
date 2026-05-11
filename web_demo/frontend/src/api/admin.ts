@@ -4,12 +4,21 @@
 
 import { get } from "./client";
 import type { AdminDashboardResponse, WeeklyReportResponse } from "../types";
+import { isDemoModeEnabled } from "../mock/demoMode";
+import {
+  getMockAdminDashboard,
+  getMockExportCsv,
+  getMockWeeklyReport,
+} from "../mock/mockApi";
 
 export async function getAdminDashboard(
   days?: number,
   riskLevel?: string,
   incidentStatus?: string
 ): Promise<AdminDashboardResponse> {
+  if (isDemoModeEnabled()) {
+    return getMockAdminDashboard();
+  }
   const params = new URLSearchParams();
   if (days !== undefined) params.set("days", String(days));
   if (riskLevel !== undefined) params.set("risk_level", riskLevel);
@@ -19,6 +28,9 @@ export async function getAdminDashboard(
 }
 
 export async function exportData(scope?: string, days?: number): Promise<Blob> {
+  if (isDemoModeEnabled()) {
+    return getMockExportCsv();
+  }
   const params = new URLSearchParams();
   if (scope !== undefined) params.set("scope", scope);
   if (days !== undefined) params.set("days", String(days));
@@ -27,5 +39,8 @@ export async function exportData(scope?: string, days?: number): Promise<Blob> {
 }
 
 export async function getWeeklyReport(): Promise<WeeklyReportResponse> {
+  if (isDemoModeEnabled()) {
+    return getMockWeeklyReport();
+  }
   return get<WeeklyReportResponse>("/admin/weekly-report");
 }

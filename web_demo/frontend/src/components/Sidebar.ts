@@ -44,6 +44,7 @@ function createNavButton(
   onClick: () => void
 ): HTMLElement {
   const btn = document.createElement("button");
+  btn.setAttribute("data-route", item.route);
   btn.className = [
     "w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm",
     "text-sidebar-text",

@@ -13,6 +13,7 @@ import io
 import os
 from datetime import datetime
 from typing import Any
+import requests
 
 from ..models import (
     AdminDashboardResponse, DashboardHighRiskScenario,
@@ -23,7 +24,7 @@ from ..repositories import (
     CHECKLIST_RUNS_FILE, DIFY_DEFAULT_BASE_URL, DIFY_DEFAULT_TIMEOUT,
     KB_IMPORT_SUCCESS_COUNT, LOW_CONFIDENCE_QUEUE_FILE,
     TRAINING_ATTEMPTS_FILE,
-    safe_read_csv_rows, within_days,
+    safe_read_csv_rows, within_days, get_kb_entries,
 )
 from .upstream_service import resolve_dify_api_base
 from .incident_service import load_incident_records

@@ -8,6 +8,10 @@ export interface AppShellOptions {
   onMobileMenuToggle?: () => void;
 }
 
+export type SidebarStateSyncTarget = HTMLElement & {
+  __syncLayoutState?: (collapsed: boolean) => void;
+};
+
 export function AppShell(options: AppShellOptions): HTMLElement {
   const { sidebar, content, onMobileMenuToggle } = options;
 
@@ -67,7 +71,8 @@ export function AppShell(options: AppShellOptions): HTMLElement {
   root.appendChild(overlay);
   root.appendChild(contentWrapper);
 
-  // 同步移动端侧边栏展开/关闭状态（通过 classList 操作）
+  // 显式同步移动端侧边栏展开/关闭状态，避免通过 MutationObserver 监听 class 变化
+  // 在嵌入式浏览器环境中，观察器回调可能导致连续重排/卡死。
   function syncState(collapsed: boolean): void {
     if (collapsed) {
       sidebar.classList.add("-translate-x-full");
@@ -82,12 +87,7 @@ export function AppShell(options: AppShellOptions): HTMLElement {
     }
   }
 
-  // 挂载后根据 sidebar 当前状态同步遮罩
-  const observer = new MutationObserver(() => {
-    const isCollapsed = sidebar.classList.contains("-translate-x-full");
-    syncState(isCollapsed);
-  });
-  observer.observe(sidebar, { attributes: true, attributeFilter: ["class"] });
+  (sidebar as SidebarStateSyncTarget).__syncLayoutState = syncState;
 
   // 初始化同步一次
   syncState(sidebar.classList.contains("-translate-x-full"));

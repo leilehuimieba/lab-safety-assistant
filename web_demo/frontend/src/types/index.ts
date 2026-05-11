@@ -300,10 +300,17 @@ export interface WorkspaceStatusResponse {
   top_hazards: { label: string; count: number }[];
 }
 
-export interface MetaInfoResponse {
-  version: string;
-  name: string;
-  description: string;
+export interface DemoMetaResponse {
+  app_version: string;
+  chat_lane_lab: string;
+  chat_lane_agent: string;
+  acceptance_status: string;
+  formal_eval_score: string;
+  stability_status: string;
+  knowledge_base_rows: number;
+  knowledge_base_imported: number;
+  demo_port: string;
+  runtime_model: string;
 }
 
 // === 健康检查 ===

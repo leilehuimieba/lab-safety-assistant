@@ -7,7 +7,9 @@ import { Skeleton } from "../components/Skeleton";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
 import { get } from "../api/client";
-import type { WorkspaceStatusResponse, MetaInfoResponse } from "../types";
+import type { WorkspaceStatusResponse, DemoMetaResponse } from "../types";
+import { isDemoModeEnabled } from "../mock/demoMode";
+import { getMockMeta, getMockWorkspaceStatus } from "../mock/mockApi";
 
 function buildHorizontalBarChart(
   items: { label: string; count: number }[],
@@ -95,10 +97,12 @@ export function SystemStatus(): HTMLElement {
 
   async function loadData(): Promise<void> {
     try {
-      const [workspace, meta] = await Promise.all([
-        get<WorkspaceStatusResponse>("/workspace/status"),
-        get<MetaInfoResponse>("/meta"),
-      ]);
+      const [workspace, meta] = isDemoModeEnabled()
+        ? await Promise.all([getMockWorkspaceStatus(), getMockMeta()])
+        : await Promise.all([
+            get<WorkspaceStatusResponse>("/workspace/status"),
+            get<DemoMetaResponse>("/meta"),
+          ]);
 
       // System info card
       const sysCard = document.createElement("div");
@@ -111,13 +115,21 @@ export function SystemStatus(): HTMLElement {
       const sysGrid = document.createElement("div");
       sysGrid.className = "grid grid-cols-2 gap-2 text-sm";
 
-      const nameRow = document.createElement("div");
-      nameRow.innerHTML = `<span class="text-gray-500">系统名称:</span> <span class="text-gray-800">${meta.name}</span>`;
-      sysGrid.appendChild(nameRow);
+      const versionRow = document.createElement("div");
+      versionRow.innerHTML = `<span class="text-gray-500">版本号:</span> <span class="text-gray-800">${meta.app_version}</span>`;
+      sysGrid.appendChild(versionRow);
 
-      const verRow = document.createElement("div");
-      verRow.innerHTML = `<span class="text-gray-500">版本号:</span> <span class="text-gray-800">${meta.version}</span>`;
-      sysGrid.appendChild(verRow);
+      const laneRow = document.createElement("div");
+      laneRow.innerHTML = `<span class="text-gray-500">当前主链路:</span> <span class="text-gray-800">${meta.chat_lane_lab}</span>`;
+      sysGrid.appendChild(laneRow);
+
+      const evalRow = document.createElement("div");
+      evalRow.innerHTML = `<span class="text-gray-500">正式回归:</span> <span class="text-gray-800">${meta.formal_eval_score} / ${meta.stability_status}</span>`;
+      sysGrid.appendChild(evalRow);
+
+      const modelRow = document.createElement("div");
+      modelRow.innerHTML = `<span class="text-gray-500">运行模型:</span> <span class="text-gray-800">${meta.runtime_model}</span>`;
+      sysGrid.appendChild(modelRow);
 
       sysCard.appendChild(sysGrid);
       systemCardWrapper.innerHTML = "";
@@ -164,15 +176,22 @@ export function SystemStatus(): HTMLElement {
       difyCard.className = "card flex items-center gap-3";
 
       const dot = document.createElement("span");
-      dot.className = `w-3 h-3 rounded-full ${
-        workspace.dify_connection_status === "connected" ? "bg-green-500" : "bg-red-500"
-      }`;
+      const difyStatusTone = workspace.dify_connection_status === "reachable"
+        ? "bg-green-500"
+        : workspace.dify_connection_status === "unconfigured"
+          ? "bg-yellow-500"
+          : "bg-red-500";
+      dot.className = `w-3 h-3 rounded-full ${difyStatusTone}`;
 
       const difyText = document.createElement("span");
       difyText.className = "text-sm text-gray-700";
-      difyText.textContent = `Dify ${workspace.dify_enabled ? "已启用" : "未启用"} — ${
-        workspace.dify_connection_status === "connected" ? "连接正常" : "连接异常"
-      }`;
+      const difyStatusLabel =
+        workspace.dify_connection_status === "reachable"
+          ? "连接正常"
+          : workspace.dify_connection_status === "unconfigured"
+            ? "未配置"
+            : "连接异常";
+      difyText.textContent = `Dify ${workspace.dify_enabled ? "已启用" : "未启用"} — ${difyStatusLabel}`;
 
       difyCard.appendChild(dot);
       difyCard.appendChild(difyText);

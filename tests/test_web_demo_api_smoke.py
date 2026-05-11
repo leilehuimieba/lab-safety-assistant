@@ -72,3 +72,12 @@ if FASTAPI_AVAILABLE:
         assert payload["query"] == "acid splash"
         assert payload["count"] == 1
         assert payload["citations"][0]["kb_id"] == "KB-S-1"
+
+    def test_workspace_status_endpoint_returns_ok() -> None:
+        client = TestClient(web_app.app)
+        resp = client.get("/api/workspace/status")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert "dify_enabled" in payload
+        assert "kb_rows" in payload
+        assert "top_categories" in payload

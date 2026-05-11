@@ -10,8 +10,18 @@ import type {
   TrainingStatsResponse,
   TrainingRosterStatusResponse,
 } from "../types";
+import { isDemoModeEnabled } from "../mock/demoMode";
+import {
+  getMockTrainingQuestions,
+  getMockTrainingRoster,
+  getMockTrainingStats,
+  postMockTrainingSubmit,
+} from "../mock/mockApi";
 
 export async function getTrainingQuestions(limit?: number): Promise<TrainingSessionResponse> {
+  if (isDemoModeEnabled()) {
+    return getMockTrainingQuestions();
+  }
   const qs = limit !== undefined ? `?limit=${limit}` : "";
   return get<TrainingSessionResponse>(`/training/questions${qs}`);
 }
@@ -22,14 +32,23 @@ export async function submitTrainingAnswers(
   answers: TrainingSubmitRequest["answers"]
 ): Promise<TrainingSubmitResponse> {
   const request: TrainingSubmitRequest = { session_id: sessionId, participant, answers };
+  if (isDemoModeEnabled()) {
+    return postMockTrainingSubmit(request);
+  }
   return post<TrainingSubmitResponse>("/training/submit", request);
 }
 
 export async function getTrainingStats(): Promise<TrainingStatsResponse> {
+  if (isDemoModeEnabled()) {
+    return getMockTrainingStats();
+  }
   return get<TrainingStatsResponse>("/training/stats");
 }
 
 export async function getTrainingRosterStatus(): Promise<TrainingRosterStatusResponse> {
+  if (isDemoModeEnabled()) {
+    return getMockTrainingRoster();
+  }
   return get<TrainingRosterStatusResponse>("/training/roster");
 }
 

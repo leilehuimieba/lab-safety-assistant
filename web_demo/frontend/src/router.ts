@@ -103,14 +103,8 @@ export function initRouter(container: HTMLElement): () => void {
   }
   renderPage(initialRoute);
 
-  // Listen for navigation events from sidebar
-  const unsubNav = eventBus.on("navigate", ({ route }) => {
-    navigateTo(route, true);
-  });
-
   return () => {
     window.removeEventListener("popstate", handlePopState);
-    unsubNav();
   };
 }
 

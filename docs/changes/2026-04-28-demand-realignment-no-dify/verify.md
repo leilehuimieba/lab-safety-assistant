@@ -49,10 +49,15 @@
 - `/incidents` → 200 HTML ✅
 - `/status` → 200 HTML ✅
 
-### 浏览器自动化验证
-- MCP browser 工具（Playwright）在当前 Windows 环境下完全不可用（"Target page, context or browser has been closed"）❌
-- Chrome headless 本地命令在连接 `127.0.0.1:8088` 时阻塞超时 ❌
-- **结论**：浏览器截图验证因环境工具限制无法完成，需人工本地验证
+### 本轮补充验证（2026-05-11）
+- `npm run build` 重新构建通过 ✅
+- `tests/test_web_demo_api_smoke.py`、`tests/test_web_demo_logic.py`、`tests/test_web_demo_risk_assess.py` 通过 ✅
+- `GET /api/workspace/status` 由 500 修复为 200 ✅
+- 前端导航递归与侧边栏高亮问题已修复，并完成重新构建 ✅
+- 前端首页 in-app browser 卡死问题已修复；`waitUntil: "domcontentloaded"` 可稳定通过 ✅
+- Playwright 浏览器自动化验证通过：桌面端与移动端均可打开首页并切换到 `/status` ✅
+- 已生成验证截图：`docs/product/_tmp_homepage_after_fix.png`、`docs/product/_tmp_status_desktop.png`、`docs/product/_tmp_status_mobile.png` ✅
+- 新增系统设计、数据库设计、API 规范、实施与测试补充文档 ✅
 
 ## 已修复问题
 
@@ -73,12 +78,21 @@
 - **根因**：`index.html` 引用 Google Fonts，中国大陆网络环境下可能导致浏览器加载阻塞
 - **修复**：移除 Google Fonts 链接，改用系统字体栈（`system-ui, -apple-system, Segoe UI, PingFang SC, Microsoft YaHei` 等）
 
+### 5. 当前轮修复（2026-05-11）
+- **前端导航递归触发**：`router.ts` 中监听 `navigate` 后再次调用 `navigateTo()` 会造成重复触发，已删除重复监听。
+- **侧边栏高亮失效**：`Sidebar.ts` 未设置 `data-route`，导致 `main.ts` 的激活态同步失效，已补齐。
+- **首页无响应 / 浏览器卡死**：`AppShell.ts` 中通过 `MutationObserver` 监听 `sidebar.class` 再反向修改类名，在嵌入式浏览器环境中会导致初始化阶段阻塞；现已改为由 `main.ts` 显式调用 `__syncLayoutState` 同步侧边栏与遮罩状态。
+- **工作区状态接口 500**：`dashboard_service.py` 缺少 `requests` 与 `get_kb_entries` 导入，已补齐并恢复 200。
+- **系统状态页字段不一致**：`SystemStatus.ts` 仍按旧 `name/version/description` 读取元信息，已改为对齐 `/api/meta` 的真实响应字段。
+- **补充文档落地**：已新增系统设计、数据库设计、API 规范、实施与测试补充文档，作为后续答辩与实现对齐依据。
+
 ## 证据位置
 - 新前端源码：`web_demo/frontend/src/`
 - 新前端构建产物：`web_demo/frontend/dist/`
 - 后端适配：`web_demo/app.py`、`web_demo/routers/*.py`、`web_demo/models.py`
 - 旧前端备份：`web_demo/templates/index.html.bak_v82`
 - 截图尝试：`output/frontend_verify_home.png`
+- 本轮验证截图：`docs/product/_tmp_homepage_after_fix.png`、`docs/product/_tmp_status_desktop.png`、`docs/product/_tmp_status_mobile.png`
 
 ## 环境准备
 `.venv312` 虚拟环境已安装核心依赖：
@@ -97,5 +111,5 @@ $env:ENABLE_EMBEDDING="0"
 ```
 
 ## 剩余建议
-- 本地启动后，建议人工浏览器走查 8 个客户端路由页面（`/`, `/checklist`, `/emergency`, `/training`, `/teacher`, `/admin`, `/incidents`, `/status`）
+- 当前首页与系统状态页已通过自动化验证；下一轮建议补齐 `/checklist`、`/teacher`、`/admin` 三条高价值演示链路截图
 - 如需重新启用 embedding 语义检索，设置环境变量 `ENABLE_EMBEDDING=1` 并确保模型已预下载

@@ -4,9 +4,11 @@
 
 import "./styles/base.css";
 import { Sidebar } from "./components/Sidebar";
-import { AppShell } from "./components/AppShell";
-import { initRouter } from "./router";
+import { AppShell, type SidebarStateSyncTarget } from "./components/AppShell";
+import { DemoModeBanner } from "./components/DemoModeBanner";
+import { initRouter, navigateTo } from "./router";
 import { eventBus } from "./store/events";
+import { initDemoMode } from "./mock/demoMode";
 
 let sidebarCollapsed = true; // 移动端默认折叠
 
@@ -18,6 +20,8 @@ function createContentContainer(): HTMLElement {
 }
 
 function bootstrap(): void {
+  initDemoMode();
+
   const app = document.getElementById("app");
   if (!app) {
     console.error("App container not found: #app");
@@ -31,7 +35,7 @@ function bootstrap(): void {
     currentRoute: window.location.pathname,
     collapsed: sidebarCollapsed,
     onNavigate: (route: string) => {
-      eventBus.emit("navigate", { route });
+      navigateTo(route, true);
       // Auto-collapse on mobile after navigation
       if (window.innerWidth < 1024) {
         sidebarCollapsed = true;
@@ -56,6 +60,11 @@ function bootstrap(): void {
 
   app.appendChild(appShell);
 
+  const demoBanner = DemoModeBanner();
+  if (demoBanner) {
+    app.appendChild(demoBanner);
+  }
+
   // Sidebar state sync function
   function updateSidebarState(): void {
     if (sidebarCollapsed) {
@@ -65,6 +74,8 @@ function bootstrap(): void {
       sidebar.classList.remove("-translate-x-full");
       sidebar.classList.add("translate-x-0");
     }
+
+    (sidebar as SidebarStateSyncTarget).__syncLayoutState?.(sidebarCollapsed);
   }
 
   // Sync sidebar highlight on navigation
